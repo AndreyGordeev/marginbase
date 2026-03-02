@@ -44,5 +44,6 @@ module "backend_api" {
   entitlements_table_arn  = module.data.entitlements_table_arn
   telemetry_bucket_name   = module.data.telemetry_bucket_name
   telemetry_bucket_arn    = module.data.telemetry_bucket_arn
+  google_client_ids       = var.google_client_ids
   tags                    = local.common_tags
 }

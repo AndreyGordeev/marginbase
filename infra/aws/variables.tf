@@ -32,3 +32,9 @@ variable "telemetry_retention_days" {
   description = "Raw telemetry S3 lifecycle retention days."
   default     = 30
 }
+
+variable "google_client_ids" {
+  type        = string
+  description = "Comma-separated allowed Google OAuth client IDs for /auth/verify."
+  default     = ""
+}
