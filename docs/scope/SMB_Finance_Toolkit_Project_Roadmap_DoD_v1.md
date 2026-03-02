@@ -5,6 +5,9 @@ Date: 2026-03-01
 This document defines sequential implementation steps. Each step is
 considered complete only when its Definition of Done (DoD) is satisfied.
 
+Execution rule (mandatory): each step must be implemented in a dedicated
+git branch and merged through a separate pull request.
+
 ------------------------------------------------------------------------
 
 ## Step 0 --- Monorepo & Tooling Setup
