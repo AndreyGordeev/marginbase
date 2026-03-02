@@ -3,13 +3,10 @@
   "installCommand": "corepack pnpm -w install --no-frozen-lockfile",
   "buildCommand": "corepack pnpm -w build",
   "outputDirectory": "dist",
-  "routes": [
+  "rewrites": [
     {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/.*",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
