@@ -15,6 +15,20 @@ describe('mobile screen coverage', () => {
 });
 
 describe('MobileAppService offline workflow', () => {
+  it('keeps app workflow functional with encrypted default storage', async () => {
+    const service = await MobileAppService.createDefault();
+
+    await service.saveProfitScenario({
+      scenarioName: 'Encrypted default storage scenario',
+      unitPriceMinor: 900,
+      quantity: 30,
+      variableCostPerUnitMinor: 500,
+      fixedCostsMinor: 4000
+    });
+
+    expect((await service.listScenarios('profit')).length).toBe(1);
+  });
+
   it('supports scenario CRUD offline via repository', async () => {
     const service = new MobileAppService(new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection()));
 

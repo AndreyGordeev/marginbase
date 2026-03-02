@@ -40,14 +40,14 @@ const describeModuleAccess = (service: MobileAppService): string => {
   ].join(', ');
 };
 
-const boot = (): void => {
+const boot = async (): Promise<void> => {
   assertAllDefinedScreensPresent();
 
-  const service = MobileAppService.createDefault();
+  const service = await MobileAppService.createDefault();
 
   console.log('MarginBase Mobile Offline App Ready');
   console.log('Screens:', MOBILE_SCREENS.map((screen) => screen.title).join(' | '));
   console.log('Module access:', describeModuleAccess(service));
 };
 
-boot();
+void boot();
