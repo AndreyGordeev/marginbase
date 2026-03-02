@@ -5,7 +5,7 @@
   "main": "dist/main.js",
   "types": "src/main.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && vite build",
     "lint": "eslint src tests --ext .ts",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc -p tsconfig.json --noEmit",
