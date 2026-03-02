@@ -15,6 +15,95 @@ describe('mobile screen coverage', () => {
 });
 
 describe('MobileAppService offline workflow', () => {
+  it('supports iOS and Android purchase flows and unlocks subscription gating', async () => {
+    const service = new MobileAppService(
+      new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection()),
+      {
+        refreshEntitlements: async () => {
+          throw new Error('not used in this test');
+        },
+        verifyBillingPurchase: async (request) => {
+          return {
+            verified: true,
+            userId: request.userId,
+            lastVerifiedAt: '2026-03-02T10:00:00.000Z',
+            entitlements: {
+              bundle: true,
+              profit: true,
+              breakeven: true,
+              cashflow: true
+            },
+            subscription: {
+              platform: request.platform,
+              productId: request.productId,
+              status: 'active',
+              expiresAt: '2026-04-01T10:00:00.000Z'
+            }
+          };
+        }
+      }
+    );
+
+    const iosResult = await service.verifyPurchaseOnDevice({
+      userId: 'user-1',
+      platform: 'ios',
+      productId: 'bundle_monthly',
+      receiptToken: 'ios:valid:receipt-1'
+    });
+
+    const androidResult = await service.verifyPurchaseOnDevice({
+      userId: 'user-1',
+      platform: 'android',
+      productId: 'bundle_monthly',
+      receiptToken: 'android:valid:receipt-1'
+    });
+
+    expect(iosResult.verified).toBe(true);
+    expect(androidResult.verified).toBe(true);
+    expect(service.canOpenModule('breakeven')).toBe(true);
+    expect(service.canOpenModule('cashflow')).toBe(true);
+  });
+
+  it('refreshes entitlements with correct TTL debounce behavior', async () => {
+    let refreshCalls = 0;
+    const now = new Date('2026-03-02T10:00:00.000Z');
+
+    const service = new MobileAppService(
+      new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection()),
+      {
+        refreshEntitlements: async () => {
+          refreshCalls += 1;
+          return {
+            userId: 'user-1',
+            lastVerifiedAt: '2026-03-02T10:00:00.000Z',
+            entitlements: {
+              bundle: true,
+              profit: true,
+              breakeven: true,
+              cashflow: true
+            },
+            trial: {
+              active: false,
+              expiresAt: '2026-04-01T10:00:00.000Z'
+            }
+          };
+        },
+        verifyBillingPurchase: async () => {
+          throw new Error('not used in this test');
+        }
+      },
+      () => now
+    );
+
+    const firstRefresh = await service.refreshEntitlementsIfNeeded('id-token');
+    const secondRefresh = await service.refreshEntitlementsIfNeeded('id-token');
+
+    expect(firstRefresh).toBe(true);
+    expect(secondRefresh).toBe(false);
+    expect(refreshCalls).toBe(1);
+    expect(service.canOpenModule('cashflow')).toBe(true);
+  });
+
   it('keeps app workflow functional with encrypted default storage', async () => {
     const service = await MobileAppService.createDefault();
 

@@ -79,4 +79,41 @@ describe('MarginbaseApiClient', () => {
       code: 'UNAUTHORIZED'
     });
   });
+
+  it('verifies billing purchase and returns entitlement update payload', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        return jsonResponse(200, {
+          verified: true,
+          userId: 'u-2',
+          lastVerifiedAt: '2026-03-02T10:00:00.000Z',
+          entitlements: {
+            bundle: true,
+            profit: true,
+            breakeven: true,
+            cashflow: true
+          },
+          subscription: {
+            platform: 'ios',
+            productId: 'bundle_monthly',
+            status: 'active',
+            expiresAt: '2026-04-01T10:00:00.000Z'
+          }
+        });
+      })
+    );
+
+    const client = new MarginbaseApiClient({ baseUrl: 'https://api.marginbase.test' });
+    const result = await client.verifyBillingPurchase({
+      userId: 'u-2',
+      platform: 'ios',
+      productId: 'bundle_monthly',
+      receiptToken: 'ios:valid:receipt-1'
+    });
+
+    expect(result.verified).toBe(true);
+    expect(result.subscription.platform).toBe('ios');
+    expect(result.entitlements.bundle).toBe(true);
+  });
 });

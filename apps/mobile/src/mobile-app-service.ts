@@ -1,4 +1,11 @@
 import {
+  type BillingVerifyRequest,
+  type BillingVerifyResponse,
+  MarginbaseApiClient,
+  type EntitlementsResponse,
+  type PurchasePlatform
+} from '@marginbase/api-client';
+import {
   calculateBreakEven,
   calculateCashflow,
   calculateProfit,
@@ -7,7 +14,13 @@ import {
   type ImportReplaceAllResult,
   type ScenarioV1
 } from '@marginbase/domain-core';
-import { canUseModule, type EntitlementCache, type EntitlementSet, type ModuleId as EntitlementModuleId } from '@marginbase/entitlements';
+import {
+  canUseModule,
+  shouldRefreshEntitlements,
+  type EntitlementCache,
+  type EntitlementSet,
+  type ModuleId as EntitlementModuleId
+} from '@marginbase/entitlements';
 import {
   InMemorySecureKeyStore,
   SqlCipherConnection,
@@ -114,14 +127,38 @@ export interface MobileImportResultSummary {
   affectedModules?: MobileModuleId[];
 }
 
+export interface MobileEntitlementsApi {
+  refreshEntitlements(idToken: string): Promise<EntitlementsResponse>;
+  verifyBillingPurchase(request: BillingVerifyRequest): Promise<BillingVerifyResponse>;
+}
+
+const applyEntitlementsResponse = (cache: EntitlementCache, response: EntitlementsResponse): EntitlementCache => {
+  return {
+    ...cache,
+    entitlementSet: {
+      bundle: response.entitlements.bundle,
+      profit: response.entitlements.profit,
+      breakeven: response.entitlements.breakeven,
+      cashflow: response.entitlements.cashflow
+    },
+    lastVerifiedAt: response.lastVerifiedAt
+  };
+};
+
 export class MobileAppService {
   private entitlementCache: EntitlementCache;
+  private lastRefreshAt: string | null;
 
-  public constructor(private readonly scenarioRepository: ScenarioRepository) {
+  public constructor(
+    private readonly scenarioRepository: ScenarioRepository,
+    private readonly entitlementsApi?: MobileEntitlementsApi,
+    private readonly nowProvider: () => Date = () => new Date()
+  ) {
     this.entitlementCache = {
       entitlementSet: defaultEntitlements,
       lastVerifiedAt: nowIso()
     };
+    this.lastRefreshAt = null;
   }
 
   public static async createDefault(): Promise<MobileAppService> {
@@ -130,7 +167,12 @@ export class MobileAppService {
       migrationStrategy: 'wipe'
     });
 
-    return new MobileAppService(new SqlCipherScenarioRepository(connection));
+    return new MobileAppService(
+      new SqlCipherScenarioRepository(connection),
+      new MarginbaseApiClient({
+        baseUrl: process.env.MARGINBASE_API_BASE_URL ?? 'https://api.marginbase.local'
+      })
+    );
   }
 
   public canOpenModule(moduleId: MobileModuleId): boolean {
@@ -142,6 +184,41 @@ export class MobileAppService {
       entitlementSet: { bundle: true, profit: true, breakeven: true, cashflow: true },
       lastVerifiedAt: nowIso()
     };
+  }
+
+  public async refreshEntitlementsIfNeeded(idToken: string): Promise<boolean> {
+    if (!this.entitlementsApi) {
+      return false;
+    }
+
+    const now = this.nowProvider();
+    if (!shouldRefreshEntitlements(this.lastRefreshAt, now)) {
+      return false;
+    }
+
+    const response = await this.entitlementsApi.refreshEntitlements(idToken);
+    this.entitlementCache = applyEntitlementsResponse(this.entitlementCache, response);
+    this.lastRefreshAt = now.toISOString();
+    return true;
+  }
+
+  public async verifyPurchaseOnDevice(input: {
+    userId: string;
+    platform: PurchasePlatform;
+    productId: string;
+    receiptToken: string;
+  }): Promise<BillingVerifyResponse> {
+    if (!this.entitlementsApi) {
+      throw new Error('Billing API client is not configured.');
+    }
+
+    const verified = await this.entitlementsApi.verifyBillingPurchase(input);
+    this.entitlementCache = {
+      entitlementSet: verified.entitlements,
+      lastVerifiedAt: verified.lastVerifiedAt
+    };
+    this.lastRefreshAt = this.nowProvider().toISOString();
+    return verified;
   }
 
   public async listScenarios(moduleId: MobileModuleId): Promise<ScenarioV1[]> {

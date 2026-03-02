@@ -1,4 +1,8 @@
 import {
+  MarginbaseApiClient,
+  type EntitlementsResponse
+} from '@marginbase/api-client';
+import {
   calculateBreakEven,
   calculateCashflow,
   calculateProfit,
@@ -7,7 +11,13 @@ import {
   type ImportReplaceAllResult,
   type ScenarioV1
 } from '@marginbase/domain-core';
-import { canUseModule, type ModuleId as EntitlementModuleId, type EntitlementCache, type EntitlementSet } from '@marginbase/entitlements';
+import {
+  canUseModule,
+  shouldRefreshEntitlements,
+  type ModuleId as EntitlementModuleId,
+  type EntitlementCache,
+  type EntitlementSet
+} from '@marginbase/entitlements';
 import {
   IndexedDbConnection,
   IndexedDbScenarioRepository,
@@ -106,13 +116,22 @@ export class WebAppService {
   private readonly baseScenarioRepository: ScenarioRepository;
   private scenarioRepository: ScenarioRepository;
   private entitlementCache: EntitlementCache;
+  private lastRefreshAt: string | null;
   private vaultEnabled: boolean;
+  private readonly apiClient: Pick<MarginbaseApiClient, 'refreshEntitlements'>;
 
-  public constructor(scenarioRepository: ScenarioRepository) {
+  public constructor(
+    scenarioRepository: ScenarioRepository,
+    apiClient: Pick<MarginbaseApiClient, 'refreshEntitlements'> = new MarginbaseApiClient({
+      baseUrl: process.env.MARGINBASE_API_BASE_URL ?? 'https://api.marginbase.local'
+    })
+  ) {
     this.baseScenarioRepository = scenarioRepository;
     this.scenarioRepository = scenarioRepository;
     this.entitlementCache = loadEntitlementCache();
+    this.lastRefreshAt = null;
     this.vaultEnabled = false;
+    this.apiClient = apiClient;
   }
 
   public static createDefault(): WebAppService {
@@ -143,6 +162,17 @@ export class WebAppService {
 
   public canOpenModule(moduleId: ModuleId): boolean {
     return canUseModule(moduleId, this.entitlementCache, new Date());
+  }
+
+  public async refreshEntitlementsIfNeeded(idToken: string): Promise<boolean> {
+    if (!shouldRefreshEntitlements(this.lastRefreshAt, new Date())) {
+      return false;
+    }
+
+    const response = await this.apiClient.refreshEntitlements(idToken);
+    this.applyEntitlementsResponse(response);
+    this.lastRefreshAt = nowIso();
+    return true;
   }
 
   public canUseVault(): boolean {
@@ -369,5 +399,19 @@ export class WebAppService {
     }
 
     localStorage.setItem(VAULT_SALT_STORAGE_KEY, saltBase64);
+  }
+
+  private applyEntitlementsResponse(response: EntitlementsResponse): void {
+    this.entitlementCache = {
+      entitlementSet: {
+        bundle: response.entitlements.bundle,
+        profit: response.entitlements.profit,
+        breakeven: response.entitlements.breakeven,
+        cashflow: response.entitlements.cashflow
+      },
+      lastVerifiedAt: response.lastVerifiedAt
+    };
+
+    saveEntitlementCache(this.entitlementCache);
   }
 }

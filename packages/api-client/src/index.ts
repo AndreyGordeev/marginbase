@@ -48,6 +48,28 @@ export interface TelemetryBatchResponse {
   objectKey: string;
 }
 
+export type PurchasePlatform = 'ios' | 'android';
+
+export interface BillingVerifyRequest {
+  userId: string;
+  platform: PurchasePlatform;
+  productId: string;
+  receiptToken: string;
+}
+
+export interface BillingVerifyResponse {
+  verified: boolean;
+  userId: string;
+  lastVerifiedAt: string;
+  entitlements: EntitlementSet;
+  subscription: {
+    platform: PurchasePlatform;
+    productId: string;
+    status: 'active' | 'expired';
+    expiresAt: string;
+  };
+}
+
 export interface ApiErrorBody {
   code: string;
   message: string;
@@ -125,5 +147,15 @@ export class MarginbaseApiClient {
     });
 
     return parseJson<TelemetryBatchResponse>(response);
+  }
+
+  public async verifyBillingPurchase(request: BillingVerifyRequest): Promise<BillingVerifyResponse> {
+    const response = await fetch(`${this.baseUrl}/billing/verify`, {
+      method: 'POST',
+      headers: buildHeaders(),
+      body: JSON.stringify(request)
+    });
+
+    return parseJson<BillingVerifyResponse>(response);
   }
 }
