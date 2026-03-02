@@ -39,6 +39,7 @@ module "backend_api" {
 
   project_name            = var.project_name
   environment             = var.environment
+  aws_region              = var.aws_region
   log_retention_days      = var.lambda_log_retention_days
   entitlements_table_name = module.data.entitlements_table_name
   entitlements_table_arn  = module.data.entitlements_table_arn

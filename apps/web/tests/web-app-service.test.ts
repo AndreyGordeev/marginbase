@@ -203,6 +203,14 @@ describe('WebAppService', () => {
               expiresAt: '2026-04-01T10:00:00.000Z'
             }
           };
+        },
+        deleteAccount: async () => {
+          return {
+            deleted: true,
+            userId: 'user_1',
+            deletedEntitlements: true,
+            deletedUserProfile: true
+          };
         }
       }
     );
@@ -214,5 +222,57 @@ describe('WebAppService', () => {
     expect(secondRefresh).toBe(false);
     expect(refreshCalls).toBe(1);
     expect(service.canOpenModule('cashflow')).toBe(true);
+  });
+
+  it('supports account deletion and resets local entitlement cache', async () => {
+    installLocalStorage();
+
+    const service = new WebAppService(
+      new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection()),
+      {
+        refreshEntitlements: async () => {
+          throw new Error('not used');
+        },
+        deleteAccount: async () => {
+          return {
+            deleted: true,
+            userId: 'user_1',
+            deletedEntitlements: true,
+            deletedUserProfile: true
+          };
+        }
+      }
+    );
+
+    service.activateBundle();
+    expect(service.canOpenModule('cashflow')).toBe(true);
+
+    const deleted = await service.deleteAccount('user_1');
+    expect(deleted).toBe(true);
+    expect(service.canOpenModule('cashflow')).toBe(false);
+  });
+
+  it('keeps calculations usable when backend endpoints are unavailable', async () => {
+    const service = new WebAppService(
+      new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection()),
+      {
+        refreshEntitlements: async () => {
+          throw new Error('backend unavailable');
+        },
+        deleteAccount: async () => {
+          throw new Error('backend unavailable');
+        }
+      }
+    );
+
+    await service.saveProfitScenario({
+      scenarioName: 'Offline web calc',
+      unitPriceMinor: 1200,
+      quantity: 11,
+      variableCostPerUnitMinor: 500,
+      fixedCostsMinor: 900
+    });
+
+    expect((await service.listScenarios('profit')).length).toBe(1);
   });
 });

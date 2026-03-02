@@ -7,6 +7,7 @@ Purpose: define a stable backend contract for clients and serverless services.
 - `GET /entitlements`
 - `POST /telemetry/batch`
 - `POST /billing/verify`
+- `POST /account/delete`
 
 ## Shared Rules
 - JSON only
