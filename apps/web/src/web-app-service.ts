@@ -13,6 +13,7 @@ import {
   IndexedDbScenarioRepository,
   SqlitePlaceholderConnection,
   SqlitePlaceholderScenarioRepository,
+  WebVaultScenarioRepository,
   type ScenarioRepository
 } from '@marginbase/storage';
 
@@ -47,6 +48,8 @@ const defaultEntitlements: EntitlementSet = {
   breakeven: false,
   cashflow: false
 };
+
+const VAULT_SALT_STORAGE_KEY = 'marginbase_vault_salt';
 
 const loadEntitlementCache = (): EntitlementCache => {
   if (typeof localStorage === 'undefined') {
@@ -100,10 +103,16 @@ export interface CashflowInputState {
 }
 
 export class WebAppService {
+  private readonly baseScenarioRepository: ScenarioRepository;
+  private scenarioRepository: ScenarioRepository;
   private entitlementCache: EntitlementCache;
+  private vaultEnabled: boolean;
 
-  public constructor(private readonly scenarioRepository: ScenarioRepository) {
+  public constructor(scenarioRepository: ScenarioRepository) {
+    this.baseScenarioRepository = scenarioRepository;
+    this.scenarioRepository = scenarioRepository;
     this.entitlementCache = loadEntitlementCache();
+    this.vaultEnabled = false;
   }
 
   public static createDefault(): WebAppService {
@@ -134,6 +143,40 @@ export class WebAppService {
 
   public canOpenModule(moduleId: ModuleId): boolean {
     return canUseModule(moduleId, this.entitlementCache, new Date());
+  }
+
+  public canUseVault(): boolean {
+    return this.entitlementCache.entitlementSet.bundle || this.entitlementCache.entitlementSet.breakeven || this.entitlementCache.entitlementSet.cashflow;
+  }
+
+  public isVaultEnabled(): boolean {
+    return this.vaultEnabled;
+  }
+
+  public async enableLocalVault(passphrase: string): Promise<void> {
+    if (!this.canUseVault()) {
+      throw new Error('Vault is available only for paid entitlements.');
+    }
+
+    const existingSalt = this.getVaultSalt();
+    const vaultRepository = await WebVaultScenarioRepository.fromPassphrase({
+      baseRepository: this.baseScenarioRepository,
+      passphrase,
+      saltBase64: existingSalt ?? undefined
+    });
+
+    if (!existingSalt) {
+      const existingScenarios = await this.scenarioRepository.listScenarios();
+      await vaultRepository.replaceAllScenarios(existingScenarios);
+      this.setVaultSalt(vaultRepository.saltBase64);
+      this.scenarioRepository = vaultRepository;
+      this.vaultEnabled = true;
+      return;
+    }
+
+    await vaultRepository.listScenarios();
+    this.scenarioRepository = vaultRepository;
+    this.vaultEnabled = true;
   }
 
   public async listScenarios(moduleId: ModuleId): Promise<ScenarioV1[]> {
@@ -310,5 +353,21 @@ export class WebAppService {
     }
 
     await this.scenarioRepository.replaceAllScenarios(result.scenarios);
+  }
+
+  private getVaultSalt(): string | null {
+    if (typeof localStorage === 'undefined') {
+      return null;
+    }
+
+    return localStorage.getItem(VAULT_SALT_STORAGE_KEY);
+  }
+
+  private setVaultSalt(saltBase64: string): void {
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
+
+    localStorage.setItem(VAULT_SALT_STORAGE_KEY, saltBase64);
   }
 }

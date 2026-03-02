@@ -44,3 +44,11 @@ export {
   SqlCipherSchemaStateRepository,
   SqlCipherSettingsRepository
 } from './adapters/sqlcipher';
+
+export {
+  type CreateWebVaultScenarioRepositoryInput,
+  WebVaultAccessError,
+  WebVaultScenarioRepository,
+  type WebVaultEncryptedEnvelopeV1,
+  type WebVaultStoredScenario
+} from './adapters/web-vault';
