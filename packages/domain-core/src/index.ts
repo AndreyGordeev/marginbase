@@ -1,9 +1,41 @@
-export type MinorUnits = number;
+export {
+  ROUNDING_POLICY,
+  addMoney,
+  asDecimal,
+  assertNonNegativeInteger,
+  assertNonNegativeMinorUnits,
+  divideMoney,
+  formatMinorUnitsToMajorString,
+  multiplyMoneyByQuantity,
+  parseMajorToMinorUnits,
+  roundWithRule,
+  subtractMoney,
+  toMinorUnits,
+  type MinorUnits,
+  type NumericRoundingPolicy,
+  type RoundingRule
+} from './numeric-policy';
 
-export const toMinorUnits = (value: number): MinorUnits => {
-  if (!Number.isInteger(value)) {
-    throw new Error('Minor units must be integer values.');
-  }
+export {
+  calculateProfit,
+  type ProfitInput,
+  type ProfitResult,
+  type ProfitRevenueModeInput,
+  type ProfitUnitModeInput,
+  type ProfitWarning
+} from './profit';
 
-  return value;
-};
+export {
+  calculateBreakEven,
+  type BreakEvenInput,
+  type BreakEvenResult,
+  type BreakEvenWarning
+} from './breakeven';
+
+export {
+  calculateCashflow,
+  type CashflowInput,
+  type CashflowProjectionPoint,
+  type CashflowResult,
+  type CashflowWarning
+} from './cashflow';
