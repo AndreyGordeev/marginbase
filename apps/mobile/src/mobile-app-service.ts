@@ -9,8 +9,9 @@ import {
 } from '@marginbase/domain-core';
 import { canUseModule, type EntitlementCache, type EntitlementSet, type ModuleId as EntitlementModuleId } from '@marginbase/entitlements';
 import {
-  SqlitePlaceholderConnection,
-  SqlitePlaceholderScenarioRepository,
+  InMemorySecureKeyStore,
+  SqlCipherConnection,
+  SqlCipherScenarioRepository,
   type ScenarioRepository
 } from '@marginbase/storage';
 
@@ -123,8 +124,13 @@ export class MobileAppService {
     };
   }
 
-  public static createDefault(): MobileAppService {
-    return new MobileAppService(new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection()));
+  public static async createDefault(): Promise<MobileAppService> {
+    const connection = await SqlCipherConnection.initialize({
+      secureKeyStore: new InMemorySecureKeyStore('android-keystore'),
+      migrationStrategy: 'wipe'
+    });
+
+    return new MobileAppService(new SqlCipherScenarioRepository(connection));
   }
 
   public canOpenModule(moduleId: MobileModuleId): boolean {

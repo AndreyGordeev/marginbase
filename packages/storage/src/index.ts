@@ -30,3 +30,17 @@ export {
   SqlitePlaceholderSchemaStateRepository,
   SqlitePlaceholderSettingsRepository
 } from './adapters/sqlite-placeholder';
+
+export {
+  InMemorySecureKeyStore,
+  type CreateSqlCipherConnectionInput,
+  type SecureKeyStore,
+  type SecureKeyStorePlatform,
+  SqlCipherConnection,
+  SqlCipherEntitlementRepository,
+  type SqlCipherEncryptionInfo,
+  type SqlCipherMigrationStrategy,
+  SqlCipherScenarioRepository,
+  SqlCipherSchemaStateRepository,
+  SqlCipherSettingsRepository
+} from './adapters/sqlcipher';
