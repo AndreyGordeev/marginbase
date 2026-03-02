@@ -6,7 +6,7 @@
   "types": "src/main.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src tests --ext .ts",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "boot": "node dist/main.js"
@@ -17,5 +17,8 @@
     "@marginbase/entitlements": "workspace:*",
     "@marginbase/storage": "workspace:*",
     "@marginbase/telemetry": "workspace:*"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "^6.2.2"
   }
 }
