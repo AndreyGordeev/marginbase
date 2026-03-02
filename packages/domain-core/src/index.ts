@@ -39,3 +39,22 @@ export {
   type CashflowResult,
   type CashflowWarning
 } from './cashflow';
+
+export {
+  CURRENT_SCENARIO_SCHEMA_VERSION,
+  createScenarioExport,
+  exportScenariosToJson,
+  importScenariosReplaceAllFromJson,
+  migrateScenario,
+  validateScenario,
+  type ImportError,
+  type ImportErrorCode,
+  type ImportReplaceAllResult,
+  type ModuleId,
+  type ScenarioAnyVersion,
+  type ScenarioExportFileV1,
+  type ScenarioV1,
+  type ScenarioValidationError,
+  type ScenarioValidationErrorCode,
+  type ScenarioValidationResult
+} from './scenario-schema';
