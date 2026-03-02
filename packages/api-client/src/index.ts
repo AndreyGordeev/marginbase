@@ -70,6 +70,17 @@ export interface BillingVerifyResponse {
   };
 }
 
+export interface AccountDeleteRequest {
+  userId: string;
+}
+
+export interface AccountDeleteResponse {
+  deleted: boolean;
+  userId: string;
+  deletedEntitlements: boolean;
+  deletedUserProfile: boolean;
+}
+
 export interface ApiErrorBody {
   code: string;
   message: string;
@@ -157,5 +168,15 @@ export class MarginbaseApiClient {
     });
 
     return parseJson<BillingVerifyResponse>(response);
+  }
+
+  public async deleteAccount(request: AccountDeleteRequest): Promise<AccountDeleteResponse> {
+    const response = await fetch(`${this.baseUrl}/account/delete`, {
+      method: 'POST',
+      headers: buildHeaders(),
+      body: JSON.stringify(request)
+    });
+
+    return parseJson<AccountDeleteResponse>(response);
   }
 }

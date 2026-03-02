@@ -17,6 +17,7 @@ const requiredPaths = [
   'modules/web_hosting/main.tf',
   'modules/backend_api/main.tf',
   'modules/backend_api/lambda_stubs/billing-store.js',
+  'modules/backend_api/lambda_stubs/account-delete.js',
   'modules/backend_api/lambda_stubs/billing.js',
   'modules/backend_api/lambda_stubs/auth.js',
   'modules/backend_api/lambda_stubs/entitlements.js',

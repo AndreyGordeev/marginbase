@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { handler as authHandler } from '../modules/backend_api/lambda_stubs/auth.js';
+import { handler as accountDeleteHandler } from '../modules/backend_api/lambda_stubs/account-delete.js';
 import { handler as billingHandler } from '../modules/backend_api/lambda_stubs/billing.js';
 import { handler as entitlementsHandler } from '../modules/backend_api/lambda_stubs/entitlements.js';
 import { handler as telemetryHandler } from '../modules/backend_api/lambda_stubs/telemetry.js';
@@ -10,6 +11,11 @@ const parseBody = (response) => JSON.parse(response.body);
 
 test('auth verify validates Google token and returns identity payload', async () => {
   process.env.GOOGLE_CLIENT_IDS = 'client-id-1';
+
+  let storedProfile = null;
+  globalThis.__userPut = async ({ profile }) => {
+    storedProfile = profile;
+  };
 
   globalThis.fetch = async () => {
     return {
@@ -34,6 +40,9 @@ test('auth verify validates Google token and returns identity payload', async ()
   const body = parseBody(response);
   assert.equal(body.userId, 'google-user-123');
   assert.equal(body.provider, 'google');
+  assert.equal(storedProfile.userId, 'google-user-123');
+
+  delete globalThis.__userPut;
 });
 
 test('entitlements returns valid EntitlementSet contract', async () => {
@@ -99,6 +108,34 @@ test('billing verify updates persisted entitlements and entitlements endpoint re
 
   delete globalThis.__ddbPut;
   delete globalThis.__ddbGet;
+});
+
+test('account delete removes entitlements and minimal user profile data', async () => {
+  const entitlementMap = new Map([['u_delete_1', { userId: 'u_delete_1' }]]);
+  const userMap = new Map([['u_delete_1', { userId: 'u_delete_1', email: 'user@example.com' }]]);
+
+  globalThis.__ddbDelete = async ({ userId }) => {
+    entitlementMap.delete(userId);
+  };
+
+  globalThis.__userDelete = async ({ userId }) => {
+    userMap.delete(userId);
+  };
+
+  const response = await accountDeleteHandler({
+    body: JSON.stringify({
+      userId: 'u_delete_1'
+    })
+  });
+
+  assert.equal(response.statusCode, 200);
+  const body = parseBody(response);
+  assert.equal(body.deleted, true);
+  assert.equal(entitlementMap.has('u_delete_1'), false);
+  assert.equal(userMap.has('u_delete_1'), false);
+
+  delete globalThis.__ddbDelete;
+  delete globalThis.__userDelete;
 });
 
 test('telemetry batch validates payload and writes allowlisted events', async () => {

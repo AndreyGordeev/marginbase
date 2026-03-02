@@ -17,6 +17,8 @@ export const MOBILE_SCREENS: MobileScreenModel[] = [
   { route: '/module/cashflow/editor/:scenarioId', title: 'Cashflow Editor', purpose: 'Cashflow forecasting and warnings.' },
   { route: '/subscription', title: 'Subscription', purpose: 'Plan status and plan actions.' },
   { route: '/settings', title: 'Settings', purpose: 'Preferences + data import/export actions.' },
+  { route: '/legal/privacy', title: 'Privacy Policy', purpose: 'Legal privacy disclosures and data handling details.' },
+  { route: '/legal/terms', title: 'Terms of Service', purpose: 'Product terms and subscription conditions.' },
   { route: '/import-export-result', title: 'Import / Export Result', purpose: 'Success/error summary after data transfer.' },
   { route: '/error-modal', title: 'Error / Validation Modal', purpose: 'Validation, destructive, and system error states.' },
   { route: '/empty-state', title: 'Empty State', purpose: 'No scenarios/no activity reusable state.' }

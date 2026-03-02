@@ -9,9 +9,22 @@ type RoutePath =
   | '/break-even'
   | '/cashflow'
   | '/subscription'
-  | '/settings';
+  | '/settings'
+  | '/legal/privacy'
+  | '/legal/terms';
 
-const ROUTES: RoutePath[] = ['/login', '/gate', '/dashboard', '/profit', '/break-even', '/cashflow', '/subscription', '/settings'];
+const ROUTES: RoutePath[] = [
+  '/login',
+  '/gate',
+  '/dashboard',
+  '/profit',
+  '/break-even',
+  '/cashflow',
+  '/subscription',
+  '/settings',
+  '/legal/privacy',
+  '/legal/terms'
+];
 
 const getRoute = (): RoutePath => {
   const hash = window.location.hash.replace('#', '') as RoutePath;
@@ -117,8 +130,25 @@ const renderLogin = (root: HTMLElement): void => {
   card.className = 'card';
   card.innerHTML = '<h2>SMB Finance Toolkit</h2><p>Financial clarity for small businesses.</p>';
   card.appendChild(createActionButton('Continue with Google', () => goTo('/gate'), 'primary'));
-  card.appendChild(createActionButton('Privacy Policy', () => window.alert('Privacy Policy placeholder')));
-  card.appendChild(createActionButton('Terms of Service', () => window.alert('Terms placeholder')));
+  card.appendChild(createActionButton('Privacy Policy', () => goTo('/legal/privacy')));
+  card.appendChild(createActionButton('Terms of Service', () => goTo('/legal/terms')));
+  page.appendChild(card);
+  root.replaceChildren(page);
+};
+
+const renderLegal = (root: HTMLElement, route: '/legal/privacy' | '/legal/terms'): void => {
+  const page = document.createElement('div');
+  page.className = 'page';
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  if (route === '/legal/privacy') {
+    card.innerHTML = '<h2>Privacy Policy</h2><p>Only minimal identity and entitlement metadata is handled by backend services. Financial scenario values remain local-only.</p>';
+  } else {
+    card.innerHTML = '<h2>Terms of Service</h2><p>Subscription access is governed by active entitlements. Calculations remain available offline through local engines.</p>';
+  }
+
+  card.appendChild(createActionButton('Back to Login', () => goTo('/login')));
   page.appendChild(card);
   root.replaceChildren(page);
 };
@@ -407,6 +437,14 @@ const renderSettings = async (root: HTMLElement, service: WebAppService): Promis
     window.alert('Export completed.');
   }, 'primary');
 
+  const deleteAccountButton = createActionButton('Delete account data', async () => {
+    const deleted = await service.deleteAccount('local_web_user');
+    if (deleted) {
+      window.alert('Account data deleted.');
+      goTo('/login');
+    }
+  });
+
   const importInput = document.createElement('textarea');
   importInput.placeholder = 'Paste import JSON here';
   importInput.rows = 10;
@@ -446,6 +484,9 @@ const renderSettings = async (root: HTMLElement, service: WebAppService): Promis
   }, 'primary');
 
   card.appendChild(exportButton);
+  card.appendChild(deleteAccountButton);
+  card.appendChild(createActionButton('Privacy', () => goTo('/legal/privacy')));
+  card.appendChild(createActionButton('Terms', () => goTo('/legal/terms')));
   card.appendChild(importInput);
   card.appendChild(previewButton);
   card.appendChild(confirmButton);
@@ -493,6 +534,11 @@ const render = async (): Promise<void> => {
 
   if (route === '/settings') {
     await renderSettings(root, service);
+    return;
+  }
+
+  if (route === '/legal/privacy' || route === '/legal/terms') {
+    renderLegal(root, route);
   }
 };
 

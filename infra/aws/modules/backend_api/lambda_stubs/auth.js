@@ -1,4 +1,5 @@
 const { getBearerToken, response } = require('./common');
+const { putUserProfile } = require('./billing-store');
 
 const DEFAULT_TOKENINFO_URL = 'https://oauth2.googleapis.com/tokeninfo';
 
@@ -55,6 +56,14 @@ exports.handler = async (event) => {
         message: 'Google token audience is not allowed.'
       });
     }
+
+    await putUserProfile({
+      userId: subject,
+      email: tokenInfo.email ?? null,
+      emailVerified: tokenInfo.email_verified === 'true',
+      provider: 'google',
+      updatedAt: new Date().toISOString()
+    });
 
     return response(200, {
       userId: subject,

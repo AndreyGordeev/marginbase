@@ -40,6 +40,9 @@ describe('MobileAppService offline workflow', () => {
               expiresAt: '2026-04-01T10:00:00.000Z'
             }
           };
+        },
+        deleteAccount: async () => {
+          return { deleted: true };
         }
       }
     );
@@ -90,6 +93,9 @@ describe('MobileAppService offline workflow', () => {
         },
         verifyBillingPurchase: async () => {
           throw new Error('not used in this test');
+        },
+        deleteAccount: async () => {
+          return { deleted: true };
         }
       },
       () => now
@@ -102,6 +108,35 @@ describe('MobileAppService offline workflow', () => {
     expect(secondRefresh).toBe(false);
     expect(refreshCalls).toBe(1);
     expect(service.canOpenModule('cashflow')).toBe(true);
+  });
+
+  it('keeps calculations usable when backend refresh endpoints are unavailable', async () => {
+    const service = new MobileAppService(
+      new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection()),
+      {
+        refreshEntitlements: async () => {
+          throw new Error('backend unavailable');
+        },
+        verifyBillingPurchase: async () => {
+          throw new Error('backend unavailable');
+        },
+        deleteAccount: async () => {
+          throw new Error('backend unavailable');
+        }
+      }
+    );
+
+    await service.saveCashflowScenario({
+      scenarioName: 'Offline still works',
+      startingCashMinor: 50000,
+      baseMonthlyRevenueMinor: 20000,
+      fixedMonthlyCostsMinor: 14000,
+      variableMonthlyCostsMinor: 3000,
+      forecastMonths: 6,
+      monthlyGrowthRate: 0.02
+    });
+
+    expect((await service.listScenarios('cashflow')).length).toBe(1);
   });
 
   it('keeps app workflow functional with encrypted default storage', async () => {

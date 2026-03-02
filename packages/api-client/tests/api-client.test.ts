@@ -116,4 +116,25 @@ describe('MarginbaseApiClient', () => {
     expect(result.subscription.platform).toBe('ios');
     expect(result.entitlements.bundle).toBe(true);
   });
+
+  it('deletes account and returns deletion flags', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        return jsonResponse(200, {
+          deleted: true,
+          userId: 'u-2',
+          deletedEntitlements: true,
+          deletedUserProfile: true
+        });
+      })
+    );
+
+    const client = new MarginbaseApiClient({ baseUrl: 'https://api.marginbase.test' });
+    const result = await client.deleteAccount({ userId: 'u-2' });
+
+    expect(result.deleted).toBe(true);
+    expect(result.deletedEntitlements).toBe(true);
+    expect(result.deletedUserProfile).toBe(true);
+  });
 });

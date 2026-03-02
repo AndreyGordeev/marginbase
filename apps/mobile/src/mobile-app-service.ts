@@ -41,6 +41,8 @@ export type MobileScreenRoute =
   | '/module/cashflow/editor/:scenarioId'
   | '/subscription'
   | '/settings'
+  | '/legal/privacy'
+  | '/legal/terms'
   | '/import-export-result'
   | '/error-modal'
   | '/empty-state';
@@ -56,6 +58,8 @@ export const MOBILE_SCREEN_ROUTES: readonly MobileScreenRoute[] = [
   '/module/cashflow/editor/:scenarioId',
   '/subscription',
   '/settings',
+  '/legal/privacy',
+  '/legal/terms',
   '/import-export-result',
   '/error-modal',
   '/empty-state'
@@ -130,6 +134,7 @@ export interface MobileImportResultSummary {
 export interface MobileEntitlementsApi {
   refreshEntitlements(idToken: string): Promise<EntitlementsResponse>;
   verifyBillingPurchase(request: BillingVerifyRequest): Promise<BillingVerifyResponse>;
+  deleteAccount(request: { userId: string }): Promise<{ deleted: boolean }>;
 }
 
 const applyEntitlementsResponse = (cache: EntitlementCache, response: EntitlementsResponse): EntitlementCache => {
@@ -219,6 +224,23 @@ export class MobileAppService {
     };
     this.lastRefreshAt = this.nowProvider().toISOString();
     return verified;
+  }
+
+  public async deleteAccount(userId: string): Promise<boolean> {
+    if (!this.entitlementsApi) {
+      throw new Error('Billing API client is not configured.');
+    }
+
+    const result = await this.entitlementsApi.deleteAccount({ userId });
+    if (result.deleted) {
+      this.entitlementCache = {
+        entitlementSet: defaultEntitlements,
+        lastVerifiedAt: nowIso()
+      };
+      this.lastRefreshAt = null;
+    }
+
+    return result.deleted;
   }
 
   public async listScenarios(moduleId: MobileModuleId): Promise<ScenarioV1[]> {

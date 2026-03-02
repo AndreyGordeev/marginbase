@@ -118,11 +118,11 @@ export class WebAppService {
   private entitlementCache: EntitlementCache;
   private lastRefreshAt: string | null;
   private vaultEnabled: boolean;
-  private readonly apiClient: Pick<MarginbaseApiClient, 'refreshEntitlements'>;
+  private readonly apiClient: Pick<MarginbaseApiClient, 'refreshEntitlements' | 'deleteAccount'>;
 
   public constructor(
     scenarioRepository: ScenarioRepository,
-    apiClient: Pick<MarginbaseApiClient, 'refreshEntitlements'> = new MarginbaseApiClient({
+    apiClient: Pick<MarginbaseApiClient, 'refreshEntitlements' | 'deleteAccount'> = new MarginbaseApiClient({
       baseUrl: process.env.MARGINBASE_API_BASE_URL ?? 'https://api.marginbase.local'
     })
   ) {
@@ -173,6 +173,21 @@ export class WebAppService {
     this.applyEntitlementsResponse(response);
     this.lastRefreshAt = nowIso();
     return true;
+  }
+
+  public async deleteAccount(userId: string): Promise<boolean> {
+    const result = await this.apiClient.deleteAccount({ userId });
+
+    if (result.deleted) {
+      this.entitlementCache = {
+        entitlementSet: defaultEntitlements,
+        lastVerifiedAt: nowIso()
+      };
+      this.lastRefreshAt = null;
+      saveEntitlementCache(this.entitlementCache);
+    }
+
+    return result.deleted;
   }
 
   public canUseVault(): boolean {
