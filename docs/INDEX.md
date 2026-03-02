@@ -3,6 +3,7 @@
 ## Start Here
 - ../PROJECT_CONTEXT.md
 - ../.github/copilot-instructions.md
+- release-notes-v1.md
 
 ## Architecture
 - architecture/overview.md
