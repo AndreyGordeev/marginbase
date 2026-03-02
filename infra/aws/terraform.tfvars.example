@@ -1,0 +1,5 @@
+project_name             = "marginbase"
+environment              = "dev"
+aws_region               = "eu-central-1"
+lambda_log_retention_days = 14
+telemetry_retention_days  = 30
