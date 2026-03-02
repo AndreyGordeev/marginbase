@@ -5,7 +5,7 @@
   "scripts": {
     "build": "node scripts/infra-validate.mjs --mode build",
     "lint": "node scripts/infra-validate.mjs --mode lint",
-    "test": "node scripts/infra-validate.mjs --mode test",
+    "test": "node scripts/infra-validate.mjs --mode test && node --test tests/*.test.mjs",
     "typecheck": "node scripts/infra-validate.mjs --mode typecheck"
   }
 }

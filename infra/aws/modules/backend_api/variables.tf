@@ -26,6 +26,10 @@ variable "telemetry_bucket_arn" {
   type = string
 }
 
+variable "google_client_ids" {
+  type = string
+}
+
 variable "tags" {
   type = map(string)
 }

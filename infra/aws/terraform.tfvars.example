@@ -3,3 +3,4 @@ environment              = "dev"
 aws_region               = "eu-central-1"
 lambda_log_retention_days = 14
 telemetry_retention_days  = 30
+google_client_ids         = ""

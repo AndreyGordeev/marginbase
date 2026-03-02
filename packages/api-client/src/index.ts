@@ -1,3 +1,129 @@
 export interface ApiClientConfig {
   baseUrl: string;
 }
+
+export interface AuthVerifyRequest {
+  googleIdToken: string;
+}
+
+export interface AuthVerifyResponse {
+  userId: string;
+  email: string | null;
+  emailVerified: boolean;
+  provider: 'google';
+  verifiedAt: string;
+}
+
+export interface EntitlementSet {
+  bundle: boolean;
+  profit: boolean;
+  breakeven: boolean;
+  cashflow: boolean;
+}
+
+export interface EntitlementsResponse {
+  userId: string;
+  lastVerifiedAt: string;
+  entitlements: EntitlementSet;
+  trial: {
+    active: boolean;
+    expiresAt: string;
+  };
+}
+
+export interface TelemetryEvent {
+  name: string;
+  timestamp: string;
+  attributes?: Record<string, unknown>;
+}
+
+export interface TelemetryBatchRequest {
+  userId: string;
+  events: TelemetryEvent[];
+}
+
+export interface TelemetryBatchResponse {
+  accepted: boolean;
+  count: number;
+  objectKey: string;
+}
+
+export interface ApiErrorBody {
+  code: string;
+  message: string;
+}
+
+export class ApiClientError extends Error {
+  public constructor(
+    public readonly status: number,
+    public readonly code: string,
+    message: string
+  ) {
+    super(message);
+    this.name = 'ApiClientError';
+  }
+}
+
+const normalizeBaseUrl = (baseUrl: string): string => {
+  return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+};
+
+const buildHeaders = (idToken?: string): Record<string, string> => {
+  const headers: Record<string, string> = {
+    'content-type': 'application/json'
+  };
+
+  if (idToken) {
+    headers.authorization = `Bearer ${idToken}`;
+  }
+
+  return headers;
+};
+
+const parseJson = async <T>(response: Response): Promise<T> => {
+  const parsed = (await response.json()) as T | ApiErrorBody;
+
+  if (!response.ok) {
+    const errorBody = parsed as ApiErrorBody;
+    throw new ApiClientError(response.status, errorBody.code ?? 'UNKNOWN_ERROR', errorBody.message ?? 'API request failed.');
+  }
+
+  return parsed as T;
+};
+
+export class MarginbaseApiClient {
+  private readonly baseUrl: string;
+
+  public constructor(config: ApiClientConfig) {
+    this.baseUrl = normalizeBaseUrl(config.baseUrl);
+  }
+
+  public async verifyAuthToken(request: AuthVerifyRequest): Promise<AuthVerifyResponse> {
+    const response = await fetch(`${this.baseUrl}/auth/verify`, {
+      method: 'POST',
+      headers: buildHeaders(request.googleIdToken),
+      body: JSON.stringify(request)
+    });
+
+    return parseJson<AuthVerifyResponse>(response);
+  }
+
+  public async refreshEntitlements(idToken: string): Promise<EntitlementsResponse> {
+    const response = await fetch(`${this.baseUrl}/entitlements`, {
+      method: 'GET',
+      headers: buildHeaders(idToken)
+    });
+
+    return parseJson<EntitlementsResponse>(response);
+  }
+
+  public async sendTelemetryBatch(request: TelemetryBatchRequest): Promise<TelemetryBatchResponse> {
+    const response = await fetch(`${this.baseUrl}/telemetry/batch`, {
+      method: 'POST',
+      headers: buildHeaders(),
+      body: JSON.stringify(request)
+    });
+
+    return parseJson<TelemetryBatchResponse>(response);
+  }
+}
