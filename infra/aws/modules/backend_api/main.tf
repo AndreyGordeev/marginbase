@@ -1,19 +1,25 @@
 data "archive_file" "auth_lambda" {
   type        = "zip"
-  source_file = "${path.module}/lambda_stubs/auth.js"
-  output_path = "${path.module}/lambda_stubs/dist/auth.zip"
+  source_dir  = "${path.module}/lambda_stubs"
+  output_path = "${path.module}/dist/auth.zip"
 }
 
 data "archive_file" "entitlements_lambda" {
   type        = "zip"
-  source_file = "${path.module}/lambda_stubs/entitlements.js"
-  output_path = "${path.module}/lambda_stubs/dist/entitlements.zip"
+  source_dir  = "${path.module}/lambda_stubs"
+  output_path = "${path.module}/dist/entitlements.zip"
 }
 
 data "archive_file" "telemetry_lambda" {
   type        = "zip"
-  source_file = "${path.module}/lambda_stubs/telemetry.js"
-  output_path = "${path.module}/lambda_stubs/dist/telemetry.zip"
+  source_dir  = "${path.module}/lambda_stubs"
+  output_path = "${path.module}/dist/telemetry.zip"
+}
+
+data "archive_file" "billing_lambda" {
+  type        = "zip"
+  source_dir  = "${path.module}/lambda_stubs"
+  output_path = "${path.module}/dist/billing.zip"
 }
 
 data "aws_iam_policy_document" "lambda_assume_role" {
@@ -53,6 +59,12 @@ resource "aws_cloudwatch_log_group" "telemetry" {
   tags              = var.tags
 }
 
+resource "aws_cloudwatch_log_group" "billing" {
+  name              = "/aws/lambda/${var.project_name}-${var.environment}-billing"
+  retention_in_days = var.log_retention_days
+  tags              = var.tags
+}
+
 data "aws_iam_policy_document" "lambda_access" {
   statement {
     sid    = "AllowCloudWatchLogs"
@@ -64,7 +76,8 @@ data "aws_iam_policy_document" "lambda_access" {
     resources = [
       "${aws_cloudwatch_log_group.auth.arn}:*",
       "${aws_cloudwatch_log_group.entitlements.arn}:*",
-      "${aws_cloudwatch_log_group.telemetry.arn}:*"
+      "${aws_cloudwatch_log_group.telemetry.arn}:*",
+      "${aws_cloudwatch_log_group.billing.arn}:*"
     ]
   }
 
@@ -150,6 +163,24 @@ resource "aws_lambda_function" "telemetry" {
   tags = var.tags
 }
 
+resource "aws_lambda_function" "billing" {
+  function_name    = "${var.project_name}-${var.environment}-billing"
+  role             = aws_iam_role.lambda_role.arn
+  runtime          = "nodejs20.x"
+  handler          = "billing.handler"
+  filename         = data.archive_file.billing_lambda.output_path
+  source_code_hash = data.archive_file.billing_lambda.output_base64sha256
+
+  environment {
+    variables = {
+      ENVIRONMENT             = var.environment
+      ENTITLEMENTS_TABLE_NAME = var.entitlements_table_name
+    }
+  }
+
+  tags = var.tags
+}
+
 resource "aws_apigatewayv2_api" "http" {
   name          = "${var.project_name}-${var.environment}-http-api"
   protocol_type = "HTTP"
@@ -189,6 +220,13 @@ resource "aws_apigatewayv2_integration" "telemetry" {
   payload_format_version = "2.0"
 }
 
+resource "aws_apigatewayv2_integration" "billing" {
+  api_id                 = aws_apigatewayv2_api.http.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.billing.invoke_arn
+  payload_format_version = "2.0"
+}
+
 resource "aws_apigatewayv2_route" "auth_verify" {
   api_id    = aws_apigatewayv2_api.http.id
   route_key = "POST /auth/verify"
@@ -205,6 +243,12 @@ resource "aws_apigatewayv2_route" "telemetry_batch" {
   api_id    = aws_apigatewayv2_api.http.id
   route_key = "POST /telemetry/batch"
   target    = "integrations/${aws_apigatewayv2_integration.telemetry.id}"
+}
+
+resource "aws_apigatewayv2_route" "billing_verify" {
+  api_id    = aws_apigatewayv2_api.http.id
+  route_key = "POST /billing/verify"
+  target    = "integrations/${aws_apigatewayv2_integration.billing.id}"
 }
 
 resource "aws_lambda_permission" "allow_apigw_auth" {
@@ -227,6 +271,14 @@ resource "aws_lambda_permission" "allow_apigw_telemetry" {
   statement_id  = "AllowInvokeFromHttpApiTelemetry"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.telemetry.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.http.execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "allow_apigw_billing" {
+  statement_id  = "AllowInvokeFromHttpApiBilling"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.billing.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.http.execution_arn}/*/*"
 }

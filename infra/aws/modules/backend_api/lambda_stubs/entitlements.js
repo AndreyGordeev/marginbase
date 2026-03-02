@@ -1,4 +1,5 @@
 const { parseJsonBody, response } = require('./common');
+const { getRecord } = require('./billing-store');
 
 const parseBoolean = (value, fallback) => {
   if (value === 'true' || value === true) {
@@ -33,6 +34,16 @@ const resolveUserId = (event) => {
 
 exports.handler = async (event) => {
   const userId = resolveUserId(event);
+
+  const stored = await getRecord(userId);
+  if (stored) {
+    return response(200, {
+      userId: stored.userId,
+      lastVerifiedAt: stored.lastVerifiedAt,
+      entitlements: stored.entitlements,
+      trial: stored.trial
+    });
+  }
 
   const bundle = parseBoolean(process.env.ENTITLEMENT_BUNDLE, false);
   const profit = parseBoolean(process.env.ENTITLEMENT_PROFIT, true);

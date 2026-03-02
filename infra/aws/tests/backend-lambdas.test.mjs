@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { handler as authHandler } from '../modules/backend_api/lambda_stubs/auth.js';
+import { handler as billingHandler } from '../modules/backend_api/lambda_stubs/billing.js';
 import { handler as entitlementsHandler } from '../modules/backend_api/lambda_stubs/entitlements.js';
 import { handler as telemetryHandler } from '../modules/backend_api/lambda_stubs/telemetry.js';
 
@@ -55,6 +56,49 @@ test('entitlements returns valid EntitlementSet contract', async () => {
   assert.deepEqual(Object.keys(body.entitlements).sort(), ['breakeven', 'bundle', 'cashflow', 'profit']);
   assert.equal(typeof body.trial.active, 'boolean');
   assert.equal(typeof body.trial.expiresAt, 'string');
+});
+
+test('billing verify updates persisted entitlements and entitlements endpoint returns updated state', async () => {
+  const tableData = new Map();
+
+  process.env.ENTITLEMENTS_TABLE_NAME = 'entitlements-table';
+  globalThis.__ddbPut = async ({ tableName, record }) => {
+    assert.equal(tableName, 'entitlements-table');
+    tableData.set(record.userId, record);
+  };
+
+  globalThis.__ddbGet = async ({ tableName, userId }) => {
+    assert.equal(tableName, 'entitlements-table');
+    return tableData.get(userId) ?? null;
+  };
+
+  const verifyResponse = await billingHandler({
+    body: JSON.stringify({
+      userId: 'u_paid_1',
+      platform: 'ios',
+      productId: 'bundle_monthly',
+      receiptToken: 'ios:valid:receipt-bundle-1'
+    })
+  });
+
+  assert.equal(verifyResponse.statusCode, 200);
+  const verifyBody = parseBody(verifyResponse);
+  assert.equal(verifyBody.verified, true);
+  assert.equal(verifyBody.entitlements.bundle, true);
+
+  const entitlementsResponse = await entitlementsHandler({
+    queryStringParameters: {
+      userId: 'u_paid_1'
+    }
+  });
+
+  assert.equal(entitlementsResponse.statusCode, 200);
+  const entitlementsBody = parseBody(entitlementsResponse);
+  assert.equal(entitlementsBody.entitlements.bundle, true);
+  assert.equal(entitlementsBody.entitlements.cashflow, true);
+
+  delete globalThis.__ddbPut;
+  delete globalThis.__ddbGet;
 });
 
 test('telemetry batch validates payload and writes allowlisted events', async () => {

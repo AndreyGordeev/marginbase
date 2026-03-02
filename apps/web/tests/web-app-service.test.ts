@@ -179,4 +179,40 @@ describe('WebAppService', () => {
     expect(localStorageMock.getItem('marginbase_vault_salt')).not.toBeNull();
     expect(localStorageMock.getItem('marginbase_vault_salt')).not.toContain('correct-passphrase');
   });
+
+  it('refreshes entitlements with debounce TTL behavior', async () => {
+    installLocalStorage();
+
+    let refreshCalls = 0;
+    const service = new WebAppService(
+      new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection()),
+      {
+        refreshEntitlements: async () => {
+          refreshCalls += 1;
+          return {
+            userId: 'user_1',
+            lastVerifiedAt: '2026-03-02T10:00:00.000Z',
+            entitlements: {
+              bundle: true,
+              profit: true,
+              breakeven: true,
+              cashflow: true
+            },
+            trial: {
+              active: false,
+              expiresAt: '2026-04-01T10:00:00.000Z'
+            }
+          };
+        }
+      }
+    );
+
+    const firstRefresh = await service.refreshEntitlementsIfNeeded('id-token');
+    const secondRefresh = await service.refreshEntitlementsIfNeeded('id-token');
+
+    expect(firstRefresh).toBe(true);
+    expect(secondRefresh).toBe(false);
+    expect(refreshCalls).toBe(1);
+    expect(service.canOpenModule('cashflow')).toBe(true);
+  });
 });
