@@ -19,6 +19,7 @@
     "@marginbase/telemetry": "workspace:*"
   },
   "devDependencies": {
-    "fake-indexeddb": "^6.2.2"
+    "fake-indexeddb": "^6.2.2",
+    "vite": "^7.1.11"
   }
 }
