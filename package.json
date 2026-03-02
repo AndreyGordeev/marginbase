@@ -1,0 +1,21 @@
+{
+  "name": "marginbase",
+  "private": true,
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "build": "corepack pnpm -r run build",
+    "lint": "corepack pnpm -r run lint",
+    "test": "corepack pnpm -r run test",
+    "typecheck": "corepack pnpm -r run typecheck",
+    "boot:web": "corepack pnpm --filter @marginbase/web boot",
+    "boot:mobile": "corepack pnpm --filter @marginbase/mobile boot"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.25.0",
+    "@typescript-eslint/parser": "^8.25.0",
+    "eslint": "^9.21.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.8"
+  }
+}

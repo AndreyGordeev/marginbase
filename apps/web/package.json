@@ -1,0 +1,21 @@
+{
+  "name": "@marginbase/web",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/main.js",
+  "types": "src/main.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "boot": "node dist/main.js"
+  },
+  "dependencies": {
+    "@marginbase/api-client": "workspace:*",
+    "@marginbase/domain-core": "workspace:*",
+    "@marginbase/entitlements": "workspace:*",
+    "@marginbase/storage": "workspace:*",
+    "@marginbase/telemetry": "workspace:*"
+  }
+}

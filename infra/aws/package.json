@@ -1,0 +1,11 @@
+{
+  "name": "@marginbase/infra-aws",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "node -e \"console.log('infra build placeholder')\"",
+    "lint": "node -e \"console.log('infra lint placeholder')\"",
+    "test": "node -e \"console.log('infra test placeholder')\"",
+    "typecheck": "node -e \"console.log('infra typecheck placeholder')\""
+  }
+}

@@ -25,3 +25,8 @@ MarginBase is an offline-first finance toolkit for SMB with 3 calculators:
 - UI must not access DB directly (use repositories).
 - Telemetry must not include monetary values.
 - Never log tokens/receipts/payloads with sensitive fields.
+
+## Delivery Workflow (Mandatory)
+- Each roadmap step is implemented in a dedicated git branch.
+- Each roadmap step is delivered as a separate pull request.
+- No mixed-step PRs.
