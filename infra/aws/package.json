@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "node -e \"console.log('infra build placeholder')\"",
-    "lint": "node -e \"console.log('infra lint placeholder')\"",
-    "test": "node -e \"console.log('infra test placeholder')\"",
-    "typecheck": "node -e \"console.log('infra typecheck placeholder')\""
+    "build": "node scripts/infra-validate.mjs --mode build",
+    "lint": "node scripts/infra-validate.mjs --mode lint",
+    "test": "node scripts/infra-validate.mjs --mode test",
+    "typecheck": "node scripts/infra-validate.mjs --mode typecheck"
   }
 }
