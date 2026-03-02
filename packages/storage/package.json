@@ -6,8 +6,14 @@
   "types": "src/index.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src tests --ext .ts",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@marginbase/domain-core": "workspace:*"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "^6.2.2"
   }
 }
