@@ -62,6 +62,10 @@ importers:
       '@marginbase/telemetry':
         specifier: workspace:*
         version: link:../../packages/telemetry
+    devDependencies:
+      fake-indexeddb:
+        specifier: ^6.2.2
+        version: 6.2.5
 
   infra/aws: {}
 
