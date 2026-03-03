@@ -20,8 +20,8 @@ export const ROUNDING_POLICY: NumericRoundingPolicy = Object.freeze({
 });
 
 export const toMinorUnits = (value: number, fieldName = 'value'): MinorUnits => {
-  if (!Number.isFinite(value) || !Number.isInteger(value)) {
-    throw new Error(`${fieldName} must be an integer in minor units.`);
+  if (!Number.isFinite(value) || !Number.isInteger(value) || !Number.isSafeInteger(value)) {
+    throw new Error(`${fieldName} must be a safe integer in minor units.`);
   }
 
   return value;
@@ -38,8 +38,8 @@ export const assertNonNegativeMinorUnits = (value: MinorUnits, fieldName: string
 };
 
 export const assertNonNegativeInteger = (value: number, fieldName: string): number => {
-  if (!Number.isFinite(value) || !Number.isInteger(value) || value < 0) {
-    throw new Error(`${fieldName} must be an integer greater than or equal to 0.`);
+  if (!Number.isFinite(value) || !Number.isInteger(value) || !Number.isSafeInteger(value) || value < 0) {
+    throw new Error(`${fieldName} must be a safe integer greater than or equal to 0.`);
   }
 
   return value;

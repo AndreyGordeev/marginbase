@@ -16,6 +16,7 @@ describe('numeric policy', () => {
   it('validates minor units as integers', () => {
     expect(toMinorUnits(1500)).toBe(1500);
     expect(() => toMinorUnits(15.2)).toThrowError(/integer in minor units/i);
+    expect(() => toMinorUnits(Number.MAX_SAFE_INTEGER + 1)).toThrowError(/safe integer in minor units/i);
   });
 
   it('parses major units to minor units with explicit half-up rounding', () => {
