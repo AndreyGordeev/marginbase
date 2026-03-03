@@ -7,6 +7,12 @@ describe('formatters', () => {
     expect(formatMoneyFromMinor(785, 'EUR')).toContain('85');
   });
 
+  it('formats zero-fraction currencies without decimal places', () => {
+    const formatted = formatMoneyFromMinor(785, 'JPY');
+    expect(formatted).toContain('785');
+    expect(formatted).not.toContain('.00');
+  });
+
   it('formats percent with rounding up to 2 decimals', () => {
     expect(formatPct('0.123456', 2)).toContain('12.35');
   });
