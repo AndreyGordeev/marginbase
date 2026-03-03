@@ -65,132 +65,517 @@ const LEGAL_DOCS: Record<LegalRoute, string> = {
 
 **Effective Date:** 2026-03-03
 
-These Terms of Service govern access to and use of SMB Finance Toolkit.
+These Terms of Service ("Terms") govern access to and use of the SMB Finance Toolkit ("Service"). By accessing or using the Service, you agree to be bound by these Terms.
 
-## Service Provider
+------------------------------------------------------------------------
 
-Andrii Gordieiev (Sole Trader, JDG), Kraków, Poland.
-NIP: 6793258209 • VAT ID: PL6793258209
-Contact: andrii.gordieiev@gmail.com
+## 1. Service Provider
 
-## Key Points
+The Service is operated by:
 
-- The Service provides financial modeling tools (profit, break-even, cashflow).
-- Outputs are informational and are not financial, tax, accounting, or legal advice.
-- A free trial may require payment details and may convert to paid subscription if not canceled.
-- Subscriptions renew automatically unless canceled before renewal.
-- Consumer rights under EU/Polish law apply where mandatory.
-- Liability is limited to the maximum extent permitted by law.
-
-## Governing Law
-
-These Terms are governed by Polish law, without prejudice to mandatory consumer rights under EU law.
-`,
-  '/privacy': `# Privacy Policy
-
-**Effective Date:** 2026-03-03
-
-This Privacy Policy explains how personal data is processed in connection with SMB Finance Toolkit.
-
-## Data Controller
-
-Andrii Gordieiev (Sole Trader, JDG), Kraków, Poland.
-NIP: 6793258209 • VAT ID: PL6793258209
-Email: andrii.gordieiev@gmail.com
-
-## Categories of Data
-
-- Account and identity data (email, account identifiers)
-- Subscription and billing metadata
-- Technical/security data (IP, device/browser metadata)
-
-Financial modeling inputs and outputs remain local on the user's device unless explicitly exported.
-
-## Legal Bases (GDPR Art. 6)
-
-- Contract performance
-- Legal obligation
-- Legitimate interests
-- Consent where required
-
-## Rights
-
-Users may request access, rectification, erasure, restriction, objection, and portability, and may lodge a complaint with a supervisory authority.
-`,
-  '/legal': `# Legal Notice
-
-**Effective Date:** 2026-03-03
-
-## Provider Information
-
-Andrii Gordieiev
+**Andrii Gordieiev**
 Sole Trader (Jednoosobowa Działalność Gospodarcza)
 Address: Przyjaźni Polsko-Węgierskiej 6A/102, 30-644 Kraków, Poland
 NIP: 6793258209
 VAT ID: PL6793258209
 Contact: andrii.gordieiev@gmail.com
 
-## Scope
+The Service is operated under Polish law.
 
-This notice provides legal identification and contact information for SMB Finance Toolkit.
+------------------------------------------------------------------------
+
+## 2. Description of the Service
+
+SMB Finance Toolkit provides digital financial calculation and modeling tools, including:
+
+- Profit and margin calculations
+- Break-even analysis
+- Cashflow forecasting
+
+The Service may operate partially or fully offline using local computation engines.
+
+We reserve the right to modify, suspend, or discontinue features where legally permitted.
+
+------------------------------------------------------------------------
+
+## 3. No Financial, Legal, or Tax Advice
+
+The Service provides calculation tools for informational purposes only.
+
+The Service does NOT provide:
+
+- Financial advice
+- Investment advice
+- Tax advice
+- Accounting advice
+- Legal advice
+
+Nothing within the Service constitutes professional advice under Polish or EU law.
+
+Users are solely responsible for verifying outputs and consulting qualified professionals before making financial decisions.
+
+Use of the Service does not create a fiduciary, advisory, or professional-client relationship.
+
+------------------------------------------------------------------------
+
+## 4. Free Trial and Subscription Model
+
+The Service is provided on a subscription basis.
+
+### 4.1 Free Trial
+
+A one-month free trial may be offered.
+Payment details (credit or debit card) are required to activate the trial.
+
+By starting a trial, you:
+
+- Explicitly request immediate access to digital content, and
+- Acknowledge that upon full performance of the digital service, your 14-day withdrawal right may be lost in accordance with EU consumer law.
+
+If not cancelled before the end of the trial period, the subscription automatically converts into a paid subscription.
+
+### 4.2 Auto-Renewal
+
+Subscriptions automatically renew at the end of each billing period unless cancelled prior to renewal.
+
+Cancellation can be performed through:
+
+- The web account dashboard (if subscribed via Stripe), or
+- The respective app marketplace (App Store / Google Play).
+
+For subscriptions purchased via Apple App Store or Google Play, billing and cancellation are governed by the respective platform's terms.
+
+------------------------------------------------------------------------
+
+## 5. Consumer Rights (EU & Poland)
+
+If you are a consumer within the meaning of EU or Polish law:
+
+- You may have a 14-day right of withdrawal for digital services, unless performance has begun with your express consent and acknowledgment of loss of that right.
+- Mandatory consumer protection provisions cannot be excluded.
+
+Business users are not entitled to consumer withdrawal rights.
+
+------------------------------------------------------------------------
+
+## 6. Fees and VAT
+
+All prices are displayed including VAT where applicable, in accordance with Polish and EU VAT regulations.
+
+As a VAT-registered business (VAT czynny), VAT is applied in compliance with EU VAT rules.
+
+We reserve the right to change pricing with prior notice.
+
+------------------------------------------------------------------------
+
+## 7. Accuracy Disclaimer
+
+All outputs depend entirely on user-provided data.
+
+We do not guarantee:
+
+- Accuracy of calculations
+- Suitability for a specific business purpose
+- Continuous or uninterrupted availability
+
+Users assume full responsibility for decisions made based on Service outputs.
+
+------------------------------------------------------------------------
+
+## 8. Intellectual Property
+
+All intellectual property rights in the Service, including software, algorithms, branding, and design, remain the exclusive property of the Service Provider.
+
+Users are granted a limited, non-exclusive, non-transferable license to use the Service.
+
+Users MAY:
+
+- Use calculation results for personal or commercial purposes
+- Include generated outputs in reports, presentations, or business documentation
+
+Users MAY NOT:
+
+- Resell or sublicense access to the Service
+- Copy, reproduce, or distribute the software
+- Reverse engineer, decompile, or attempt to extract source code
+- Bypass payment systems or entitlement controls
+
+------------------------------------------------------------------------
+
+## 9. Limitation of Liability
+
+To the maximum extent permitted by Polish and EU law, the Service Provider shall not be liable for:
+
+- Loss of profit
+- Business interruption
+- Indirect or consequential damages
+- Financial losses resulting from decisions based on calculations
+- Data loss not caused by gross negligence
+
+Nothing in these Terms excludes liability for:
+
+- Death or personal injury caused by negligence
+- Fraud or fraudulent misrepresentation
+- Mandatory consumer rights under applicable law
+
+Where liability may be limited, total liability shall not exceed the total subscription fees paid by the user in the preceding 12 months.
+
+------------------------------------------------------------------------
+
+## 10. Data Protection
+
+Processing of personal data is governed by the Privacy Policy and complies with:
+
+- Regulation (EU) 2016/679 (GDPR)
+- Polish data protection laws
+
+------------------------------------------------------------------------
+
+## 11. Termination
+
+We may suspend or terminate access for:
+
+- Violation of these Terms
+- Misuse of the Service
+- Legal obligations
+
+Users may discontinue use at any time.
+
+------------------------------------------------------------------------
+
+## 12. Governing Law and Jurisdiction
+
+These Terms are governed by the laws of Poland.
+
+For consumers, mandatory consumer protection provisions of their country of residence apply where required by EU law.
+
+Disputes shall be resolved before competent courts in Poland, without prejudice to mandatory consumer jurisdiction rights.
+
+------------------------------------------------------------------------
+
+## 13. Force Majeure
+
+The Service Provider shall not be liable for failure to perform due to events beyond reasonable control.
+
+------------------------------------------------------------------------
+
+## 14. Severability
+
+If any provision of these Terms is found invalid, the remaining provisions remain in effect.
+
+------------------------------------------------------------------------
+
+## 15. Amendments
+
+We may update these Terms from time to time.
+
+Continued use of the Service after updates constitutes acceptance of revised Terms.
+
+------------------------------------------------------------------------
+
+By using the Service, you confirm that you have read, understood, and agreed to these Terms.
+`,
+  '/privacy': `# Privacy Policy
+
+**Effective Date:** 2026-03-03
+
+This Privacy Policy explains how personal data is processed in connection with the SMB Finance Toolkit ("Service").
+
+The Service complies with:
+
+- Regulation (EU) 2016/679 (General Data Protection Regulation -- GDPR)
+- Polish data protection laws
+
+By using the Service, you acknowledge this Privacy Policy.
+
+------------------------------------------------------------------------
+
+## 1. Data Controller
+
+The Data Controller is:
+
+**Andrii Gordieiev**
+Sole Trader (Jednoosobowa Działalność Gospodarcza)
+Address: Przyjaźni Polsko-Węgierskiej 6A/102, 30-644 Kraków, Poland
+NIP: 6793258209
+VAT ID: PL6793258209
+Email: andrii.gordieiev@gmail.com
+
+------------------------------------------------------------------------
+
+## 2. Categories of Personal Data Processed
+
+Depending on usage, the following categories of personal data may be processed:
+
+### 2.1 Account & Identity Data
+
+- Name (if provided)
+- Email address
+- Authentication provider identifier (e.g., Google ID)
+- Account ID
+
+### 2.2 Subscription & Billing Data
+
+- Subscription status
+- Entitlement metadata
+- Billing identifiers (processed via third-party payment providers)
+
+### 2.3 Technical & Security Data
+
+- IP address
+- Device/browser metadata
+- Log data necessary for service security
+
+### 2.4 Financial Modeling Data
+
+Financial scenario inputs and calculation data remain stored locally on the user's device unless explicitly exported by the user.
+
+The Service does not store or access local financial scenario values on backend servers.
+
+------------------------------------------------------------------------
+
+## 3. Legal Basis for Processing (GDPR Art. 6)
+
+Personal data is processed under the following legal bases:
+
+- Performance of a contract (Art. 6(1)(b)) -- account creation, subscription access
+- Legal obligation (Art. 6(1)(c)) -- tax and accounting compliance
+- Legitimate interests (Art. 6(1)(f)) -- service security, fraud prevention
+- Consent (Art. 6(1)(a)) -- where required (e.g., optional analytics)
+
+------------------------------------------------------------------------
+
+## 4. Purpose of Processing
+
+Personal data is processed to:
+
+- Provide access to the Service
+- Manage subscriptions and trial activation
+- Process payments and billing
+- Ensure platform security
+- Comply with legal obligations
+
+Personal data is not sold.
+
+------------------------------------------------------------------------
+
+## 5. Payment & Platform Processors
+
+Payments may be processed by:
+
+- Stripe (for web subscriptions)
+- Apple App Store
+- Google Play Store
+
+When subscribing via Apple or Google platforms, billing data is processed directly by the respective platform under their own privacy policies.
+
+------------------------------------------------------------------------
+
+## 6. Data Retention
+
+Personal data is retained only as long as necessary:
+
+- Account data: for the duration of account activity
+- Billing data: as required by Polish tax law
+- Security logs: limited retention for security purposes
+
+Upon account deletion, personal data is deleted or anonymized unless retention is required by law.
+
+Local financial data remains solely on the user's device.
+
+------------------------------------------------------------------------
+
+## 7. Data Sharing
+
+Personal data may be shared with:
+
+- Hosting infrastructure providers (EU-based where applicable)
+- Authentication providers (e.g., Google)
+- Payment processors (Stripe, Apple, Google)
+- Legal authorities when required by law
+
+Data Processing Agreements (DPAs) are in place where required.
+
+Personal data is not transferred outside the European Economic Area (EEA) without appropriate safeguards (e.g., Standard Contractual Clauses).
+
+------------------------------------------------------------------------
+
+## 8. Data Security
+
+Appropriate technical and organizational measures are implemented, including:
+
+- TLS encryption in transit
+- Restricted access controls
+- Infrastructure-level monitoring
+- Minimal data processing architecture
+
+Users are responsible for securing their own devices and locally stored data.
+
+------------------------------------------------------------------------
+
+## 9. Your GDPR Rights
+
+Under GDPR, you have the right to:
+
+- Access your personal data
+- Rectify inaccurate data
+- Request erasure
+- Restrict processing
+- Object to processing
+- Data portability
+- Withdraw consent where applicable
+- Lodge a complaint with a supervisory authority
+
+Requests may be submitted to: andrii.gordieiev@gmail.com
+
+In Poland, the supervisory authority is the President of the Personal Data Protection Office (UODO).
+
+------------------------------------------------------------------------
+
+## 10. Automated Decision-Making
+
+The Service does not conduct automated decision-making producing legal or similarly significant effects within the meaning of Article 22 GDPR.
+
+------------------------------------------------------------------------
+
+## 11. Cookies
+
+Essential cookies may be used for authentication and security purposes.
+
+If analytics or non-essential cookies are introduced, explicit consent will be obtained where required by law.
+
+------------------------------------------------------------------------
+
+## 12. Children's Data
+
+The Service is not intended for individuals under 18 years of age.
+
+Personal data of minors is not knowingly collected.
+
+------------------------------------------------------------------------
+
+## 13. Changes to This Policy
+
+This Privacy Policy may be updated from time to time.
+
+Material changes will be communicated appropriately.
+
+Continued use of the Service after updates constitutes acceptance of the revised Policy.
+
+------------------------------------------------------------------------
+
+By using the Service, you confirm that you have read and understood this Privacy Policy.
+`,
+  '/legal': `# Legal Notice
+
+Service Provider:
+
+Andrii Gordieiev
+Jednoosobowa Działalność Gospodarcza
+Przyjaźni Polsko-Węgierskiej 6A/102
+30-644 Kraków, Poland
+
+NIP: 6793258209
+VAT ID: PL6793258209
+
+Contact: andrii.gordieiev@gmail.com
+
+The Service is operated under Polish law.
 `,
   '/cancellation': `# Cancellation & Withdrawal Policy
 
 **Effective Date:** 2026-03-03
 
-## Subscription Cancellation
+This policy applies to subscriptions for SMB Finance Toolkit.
 
-- You can cancel auto-renewal before the end of the current billing period.
-- Web subscriptions can be canceled in the account dashboard.
-- App Store / Google Play subscriptions must be canceled through the respective platform.
+## 1. Right of Withdrawal (EU Consumers)
 
-## EU Consumer Withdrawal
+If you are a consumer within the European Union, you have the right to withdraw from a digital services contract within 14 days without giving any reason.
 
-- Consumers may have a 14-day withdrawal right for digital services.
-- If service delivery begins immediately with express consent and acknowledgment, this right may be reduced or lost as permitted by law.
+However, by starting a free trial or subscription that provides immediate access to digital content, you:
 
-Mandatory consumer protections under EU and Polish law remain unaffected.
+- Explicitly request immediate performance of the digital service; and
+- Acknowledge that you may lose your right of withdrawal once the service has been fully performed.
+
+If the service has not been fully performed, you may withdraw within 14 days by contacting: andrii.gordieiev@gmail.com
+
+## 2. Cancellation of Subscription
+
+Subscriptions renew automatically unless cancelled before the renewal date.
+
+You may cancel:
+
+- Via your web account dashboard (Stripe subscriptions); or
+- Through Apple App Store or Google Play subscription settings.
+
+Cancellation prevents future charges but does not refund past billing periods unless required by law.
+
+## 3. Effect of Cancellation
+
+After cancellation:
+- Access remains active until the end of the current billing period.
+- No further charges will occur.
 `,
   '/refund': `# Refund Policy
 
 **Effective Date:** 2026-03-03
 
-## General Policy
+## 1. General Rule
 
-- Charges are generally non-refundable unless required by applicable law.
-- Refund eligibility may depend on billing platform rules (Stripe, Apple App Store, Google Play).
+Subscription fees are non-refundable once a billing period has started, except where required by applicable EU or Polish consumer protection law.
 
-## Platform Purchases
+## 2. Free Trial
 
-- Purchases via Apple or Google are governed by each platform's refund policy.
+If a subscription is not cancelled before the end of the free trial period, it automatically converts into a paid subscription and the first billing cycle begins.
 
-## Contact
+Charges after trial conversion are non-refundable unless legally required.
 
-For billing inquiries, contact: andrii.gordieiev@gmail.com
+## 3. App Store / Google Play Purchases
+
+Refunds for subscriptions purchased via Apple App Store or Google Play are governed exclusively by the policies of the respective platform.
+
+## 4. Chargebacks
+
+Improper chargebacks may result in account suspension.
 `,
   '/cookies': `# Cookie Policy
 
 **Effective Date:** 2026-03-03
 
-## Current Usage
+## 1. Essential Cookies
 
-- Essential cookies may be used for authentication and security.
-- Non-essential cookies or analytics are not enabled by default.
+The Service uses essential cookies necessary for authentication, session management, and security.
 
-## Future Changes
+These cookies cannot be disabled as they are required for operation.
 
-If non-essential cookies are introduced, consent will be obtained where required by law.
+## 2. Analytics & Optional Cookies
+
+If analytics or tracking tools are introduced, explicit consent will be requested in accordance with EU ePrivacy and GDPR requirements.
+
+## 3. Cookie Management
+
+Users may manage cookies via browser settings.
+
+Any future implementation of non-essential cookies will require prior consent.
 `
 };
 
-const setLegalBackTarget = (target: '/login' | '/'): void => {
+const setLegalBackTarget = (target: '/login' | '/' | '/legal-center'): void => {
   window.sessionStorage.setItem('legal-back-target', target);
 };
 
 const resolveLegalBackTarget = (): RoutePath => {
   const value = window.sessionStorage.getItem('legal-back-target');
   window.sessionStorage.removeItem('legal-back-target');
-  return value === '/login' ? '/login' : '/';
+  if (value === '/login') {
+    return '/login';
+  }
+
+  if (value === '/legal-center') {
+    return '/legal-center';
+  }
+
+  return '/';
 };
 
 const renderMarkdownSafe = (markdown: string): HTMLElement => {
@@ -299,13 +684,13 @@ const addBaseStyles = (): void => {
   .login-wrap { width: min(1120px, 100%); display: grid; gap: 12px; }
   .login-shell { width: 100%; display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 18px; align-items: stretch; }
   .login-panel, .login-preview { box-shadow: 0 10px 24px rgba(17, 24, 39, 0.08); }
-  .login-panel { display: grid; gap: 18px; padding: 24px; }
+  .login-panel { display: grid; gap: 14px; padding: 24px; }
   .login-heading { margin: 0; font-size: 34px; line-height: 1.15; }
   .login-subheading { margin: 0; color: #374151; font-size: 18px; line-height: 1.35; }
-  .login-values { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+  .login-values { margin: -4px 0 0; padding-left: 20px; display: grid; gap: 8px; }
   .login-values li { color: #1f2937; }
   .login-auth { display: grid; gap: 10px; }
-  .login-auth button { width: fit-content; min-width: 200px; padding: 12px 16px; font-size: 16px; font-weight: 600; }
+  .login-auth button { width: fit-content; min-width: 200px; min-height: 46px; padding: 0 18px; font-size: 16px; font-weight: 600; line-height: 1.2; border-radius: 10px; }
   .login-trust { display: grid; gap: 6px; color: #4b5563; font-size: 13px; line-height: 1.35; }
   .login-legal { border-top: 1px solid #e5e7eb; padding-top: 12px; display: flex; gap: 8px; align-items: center; color: #6b7280; font-size: 13px; }
   .login-legal-sep { color: #9ca3af; }
@@ -595,7 +980,7 @@ const renderLegalCenter = (root: HTMLElement): void => {
     link.textContent = entry.label;
     link.onclick = (event) => {
       event.preventDefault();
-      setLegalBackTarget('/');
+      setLegalBackTarget('/legal-center');
       goTo(entry.route);
     };
     item.appendChild(link);
