@@ -79,7 +79,7 @@ const addBaseStyles = (): void => {
   .login-values { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
   .login-values li { color: #1f2937; }
   .login-auth { display: grid; gap: 10px; }
-  .login-auth button { width: fit-content; min-width: 220px; }
+  .login-auth button { width: fit-content; min-width: 200px; padding: 12px 16px; font-size: 16px; font-weight: 600; }
   .login-trust { display: grid; gap: 6px; color: #4b5563; font-size: 13px; line-height: 1.35; }
   .login-legal { border-top: 1px solid #e5e7eb; padding-top: 12px; display: flex; gap: 8px; align-items: center; color: #6b7280; font-size: 13px; }
   .login-legal-sep { color: #9ca3af; }
