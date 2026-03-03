@@ -57,15 +57,6 @@ const emptyState = (title: string, description: string, actionText?: string, onA
   return container;
 };
 
-const systemErrorCard = (message: string, retry: () => void): HTMLElement => {
-  const card = document.createElement('div');
-  card.className = 'system-error-card';
-  card.innerHTML = `<h3>Something went wrong.</h3><p>${message}</p>`;
-  card.appendChild(createActionButton('Retry', retry));
-  card.appendChild(createActionButton('Go to Dashboard', () => goTo('/dashboard')));
-  return card;
-};
-
 const addBaseStyles = (): void => {
   const existing = document.getElementById('web-app-styles');
   if (existing) {
@@ -77,15 +68,23 @@ const addBaseStyles = (): void => {
   style.textContent = `
   body { margin: 0; font-family: Arial, sans-serif; background: #f5f6f8; color: #1f2937; }
   .page { padding: 20px; }
+  .page-centered { min-height: 100vh; display: grid; place-items: center; }
   .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
   .sidebar { background: #111827; color: #f9fafb; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
   .sidebar button { text-align: left; background: #1f2937; color: #f9fafb; border: 0; padding: 10px; border-radius: 8px; }
-  .main { padding: 24px; display: grid; gap: 16px; }
+  .main { padding: 24px; display: grid; gap: 16px; align-content: start; }
   .card { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 16px; }
-  .workspace { display: grid; grid-template-columns: 260px 1fr 320px; gap: 16px; }
-  .scenario-list { display: grid; gap: 8px; }
-  .scenario-item { display: flex; justify-content: space-between; gap: 8px; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; }
+  .workspace { display: grid; grid-template-columns: 260px 1fr 320px; gap: 16px; align-items: start; }
+  .scenario-list { display: flex; flex-direction: column; gap: 8px; }
+  .scenario-create { align-self: flex-start; padding: 8px 12px; }
+  .scenario-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; }
+  .scenario-item span { flex: 1; min-width: 0; }
+  .scenario-item button { padding: 6px 10px; }
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .form-grid label { display: grid; gap: 6px; }
+  .form-submit { grid-column: 1 / -1; justify-self: end; min-width: 180px; }
+  .button-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .inline-error { border: 1px solid #fdba74; border-radius: 8px; background: #fff7ed; color: #9a3412; padding: 10px; }
   input, select, textarea { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; }
   button { cursor: pointer; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 10px; background: #fff; }
   .primary { background: #2563eb; color: #fff; border-color: #2563eb; }
@@ -95,6 +94,7 @@ const addBaseStyles = (): void => {
   .status { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; }
   .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
   .modal { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; background: #fff; }
+  .modal:empty { display: none; }
   .space-y-6 { display: grid; gap: 24px; }
   `;
 
@@ -129,7 +129,7 @@ const renderSidebar = (active: RoutePath): HTMLElement => {
 
 const renderLogin = (root: HTMLElement): void => {
   const page = document.createElement('div');
-  page.className = 'page';
+  page.className = 'page page-centered';
   const card = document.createElement('div');
   card.className = 'card';
   card.innerHTML = '<h2>SMB Finance Toolkit</h2><p>Financial clarity for small businesses.</p>';
@@ -243,8 +243,14 @@ const renderWorkspace = async (
     '/break-even': 'breakeven',
     '/cashflow': 'cashflow'
   };
+  const moduleTitleMap: Record<ModuleId, string> = {
+    profit: 'Profit',
+    breakeven: 'Break-even',
+    cashflow: 'Cashflow'
+  };
 
   const moduleId = moduleMap[route];
+  const moduleTitle = moduleTitleMap[moduleId];
   const allowed = service.canOpenModule(moduleId);
   const scenarios = await service.listScenarios(moduleId);
   const selectedScenario = scenarios[0] ?? null;
@@ -260,11 +266,11 @@ const renderWorkspace = async (
 
   const listPanel = document.createElement('section');
   listPanel.className = 'card scenario-list';
-  listPanel.innerHTML = `<h3>${moduleId} scenarios</h3>`;
+  listPanel.innerHTML = `<h3>${moduleTitle} Scenarios</h3>`;
   listPanel.appendChild(createActionButton('+ New Scenario', async () => {
     await service.createDefaultScenario(moduleId);
     await render();
-  }, 'primary'));
+  }, 'primary scenario-create'));
 
   if (scenarios.length === 0) {
     listPanel.appendChild(emptyState('No scenarios yet', 'Create your first scenario to start analyzing.'));
@@ -283,7 +289,7 @@ const renderWorkspace = async (
 
   const center = document.createElement('section');
   center.className = 'card';
-  center.innerHTML = `<h3>${moduleId} editor</h3>`;
+  center.innerHTML = `<h3>${moduleTitle} Editor</h3>`;
 
   const form = document.createElement('form');
   form.className = 'form-grid';
@@ -365,7 +371,7 @@ const renderWorkspace = async (
       }
 
       await render();
-    }, 'primary')
+    }, 'primary form-submit')
   );
 
   center.appendChild(form);
@@ -408,11 +414,16 @@ const renderSubscription = (root: HTMLElement, service: WebAppService): void => 
   const card = document.createElement('div');
   card.className = 'card';
   card.innerHTML = '<h2>Subscription</h2><p>Monthly plans (Price TBD)</p>';
-  card.appendChild(createActionButton('Activate Bundle (Local Mock)', () => {
+
+  const actions = document.createElement('div');
+  actions.className = 'button-row';
+  actions.appendChild(createActionButton('Activate Bundle (Local Mock)', () => {
     service.activateBundle();
     goTo('/dashboard');
   }, 'primary'));
-  card.appendChild(createActionButton('Refresh subscription status', () => goTo('/subscription')));
+  actions.appendChild(createActionButton('Refresh Subscription Status', () => goTo('/subscription')));
+
+  card.appendChild(actions);
   main.appendChild(card);
   shell.appendChild(main);
   root.replaceChildren(shell);
@@ -454,9 +465,7 @@ const renderDataBackup = async (root: HTMLElement, service: WebAppService): Prom
   const previewButton = createActionButton('Preview Import', () => {
     const preview = service.previewImport(importInput.value);
     if (!preview.ok) {
-      importSummary.replaceChildren(systemErrorCard(preview.errors[0]?.message ?? 'Import preview failed.', () => {
-        importSummary.textContent = '';
-      }));
+      importSummary.innerHTML = `<div class="inline-error"><strong>Preview failed.</strong> ${preview.errors[0]?.message ?? 'Import preview failed.'}</div>`;
       return;
     }
 
@@ -490,9 +499,12 @@ const renderDataBackup = async (root: HTMLElement, service: WebAppService): Prom
   const importCard = document.createElement('section');
   importCard.className = 'card';
   importCard.innerHTML = '<h3>Import</h3><p>Import scenarios from JSON. This replaces all existing scenarios.</p>';
+  const importActions = document.createElement('div');
+  importActions.className = 'button-row';
   importCard.appendChild(importInput);
-  importCard.appendChild(previewButton);
-  importCard.appendChild(confirmButton);
+  importActions.appendChild(previewButton);
+  importActions.appendChild(confirmButton);
+  importCard.appendChild(importActions);
   importCard.appendChild(importSummary);
 
   sections.appendChild(exportCard);
