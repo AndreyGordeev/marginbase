@@ -71,7 +71,7 @@ export const addBaseStyles = (): void => {
   .form-submit { grid-column: 1 / -1; justify-self: end; min-width: 180px; }
   .button-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .inline-error { border: 1px solid #fdba74; border-radius: 8px; background: #fff7ed; color: #9a3412; padding: 10px; }
-  input, select, textarea { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; }
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; }
   button { cursor: pointer; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 10px; background: #fff; }
   .primary { background: #2563eb; color: #fff; border-color: #2563eb; }
   .warning-banner { background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; padding: 10px; border-radius: 8px; }
@@ -90,10 +90,10 @@ export const addBaseStyles = (): void => {
   .results-secondary-lines div { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
   .results-secondary-lines span { color: #4b5563; }
   .results-secondary-lines strong { color: #111827; }
-  .results-metrics-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .results-metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
   .results-metric-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px; background: #fff; display: grid; gap: 6px; }
-  .results-metric-label { color: #6b7280; font-size: 12px; }
-  .results-metric-value { font-size: 22px; font-weight: 600; }
+  .results-metric-label { color: #6b7280; font-size: 12px; overflow-wrap: anywhere; }
+  .results-metric-value { font-size: clamp(18px, 2vw, 22px); line-height: 1.1; font-weight: 600; overflow-wrap: anywhere; }
   .metric-positive { color: #166534; }
   .metric-negative { color: #991b1b; }
   .metric-neutral { color: #1f2937; }
