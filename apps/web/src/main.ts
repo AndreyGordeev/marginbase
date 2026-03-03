@@ -70,7 +70,8 @@ const addBaseStyles = (): void => {
   .page { padding: 20px; }
   .page-centered { min-height: 100vh; display: grid; place-items: center; }
   .page-login { min-height: 100vh; padding: 24px; display: grid; place-items: center; background: linear-gradient(180deg, #f8fafc 0%, #f3f4f6 100%); }
-  .login-shell { width: min(1120px, 100%); display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 18px; align-items: stretch; }
+  .login-wrap { width: min(1120px, 100%); display: grid; gap: 12px; }
+  .login-shell { width: 100%; display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 18px; align-items: stretch; }
   .login-panel, .login-preview { box-shadow: 0 10px 24px rgba(17, 24, 39, 0.08); }
   .login-panel { display: grid; gap: 18px; padding: 24px; }
   .login-heading { margin: 0; font-size: 34px; line-height: 1.15; }
@@ -80,24 +81,31 @@ const addBaseStyles = (): void => {
   .login-auth { display: grid; gap: 10px; }
   .login-auth button { width: fit-content; min-width: 220px; }
   .login-trust { display: grid; gap: 6px; color: #4b5563; font-size: 13px; line-height: 1.35; }
-  .login-footer { border-top: 1px solid #e5e7eb; padding-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .login-legal { border-top: 1px solid #e5e7eb; padding-top: 12px; display: flex; gap: 8px; align-items: center; color: #6b7280; font-size: 13px; }
+  .login-legal-sep { color: #9ca3af; }
+  .link-muted { background: transparent; border: 0; padding: 0; margin: 0; color: #6b7280; font-size: 13px; text-decoration: none; }
+  .link-muted:hover { text-decoration: underline; }
   .login-preview { padding: 20px; display: grid; gap: 12px; }
   .preview-title { margin: 0; font-size: 18px; }
   .preview-subtitle { margin: 0; color: #6b7280; font-size: 13px; }
   .preview-surface { border: 1px solid #e5e7eb; border-radius: 10px; background: #f8fafc; padding: 12px; display: grid; gap: 10px; }
   .preview-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-  .preview-kpi { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px; display: grid; gap: 4px; }
-  .preview-kpi-label { font-size: 11px; color: #6b7280; }
-  .preview-kpi-value { font-size: 14px; font-weight: 700; color: #111827; }
-  .preview-chart { height: 96px; border-radius: 8px; border: 1px solid #dbeafe; background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%); position: relative; overflow: hidden; }
-  .preview-chart::after { content: ''; position: absolute; inset: 18px 10px 12px 10px; border-left: 2px solid #93c5fd; border-bottom: 2px solid #93c5fd; border-radius: 0 0 0 6px; }
-  .preview-chart::before { content: ''; position: absolute; left: 26px; right: 14px; bottom: 24px; height: 2px; background: linear-gradient(90deg, #60a5fa 0%, #2563eb 40%, #1d4ed8 100%); transform: skewX(-26deg) translateY(-4px); }
+  .preview-kpi { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; display: grid; gap: 4px; }
+  .preview-kpi-label { font-size: 12px; color: #6b7280; }
+  .preview-kpi-value { font-size: 30px; line-height: 1; font-weight: 600; color: #111827; letter-spacing: -0.02em; }
+  .preview-kpi-delta { font-size: 12px; color: #16a34a; }
+  .preview-chart { height: 118px; border-radius: 8px; border: 1px solid #dbeafe; background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%); }
+  .preview-chart svg { width: 100%; height: 100%; display: block; }
   .preview-calc { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; display: grid; gap: 8px; }
-  .preview-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .preview-field { border: 1px solid #e5e7eb; border-radius: 6px; background: #f9fafb; height: 28px; }
-  .preview-cta { height: 30px; border-radius: 6px; background: #2563eb; }
+  .preview-row { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: #374151; }
+  .preview-field { display: flex; justify-content: space-between; align-items: center; border: 1px solid #e5e7eb; border-radius: 6px; background: #f9fafb; padding: 6px 8px; font-size: 12px; color: #6b7280; }
+  .preview-field strong { color: #111827; font-size: 13px; }
+  .preview-result { border: 1px solid #bfdbfe; border-radius: 6px; background: #eff6ff; padding: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .preview-result strong { font-size: 20px; color: #1d4ed8; }
+  .preview-cta { height: 30px; border-radius: 6px; background: #2563eb; color: #fff; display: grid; place-items: center; font-size: 12px; }
   @media (max-width: 940px) {
     .login-shell { grid-template-columns: 1fr; }
+    .login-wrap { gap: 10px; }
   }
   .auth-card { width: min(620px, calc(100vw - 48px)); padding: 26px; display: grid; gap: 18px; }
   .auth-copy { display: grid; gap: 10px; }
@@ -170,6 +178,9 @@ const renderLogin = (root: HTMLElement): void => {
   const page = document.createElement('div');
   page.className = 'page-login';
 
+  const wrap = document.createElement('div');
+  wrap.className = 'login-wrap';
+
   const shell = document.createElement('div');
   shell.className = 'login-shell';
 
@@ -195,17 +206,10 @@ const renderLogin = (root: HTMLElement): void => {
     <div>🔒 Offline-first. Your data stays on your device.</div>
     <div>🇪🇺 EU-hosted infrastructure</div>
     <div>No spreadsheets required</div>
-    <div>No credit card required</div>
   `;
-
-  const footer = document.createElement('div');
-  footer.className = 'login-footer';
-  footer.appendChild(createActionButton('Privacy Policy', () => goTo('/legal/privacy')));
-  footer.appendChild(createActionButton('Terms of Service', () => goTo('/legal/terms')));
 
   left.appendChild(auth);
   left.appendChild(trust);
-  left.appendChild(footer);
 
   const right = document.createElement('section');
   right.className = 'card login-preview';
@@ -214,22 +218,60 @@ const renderLogin = (root: HTMLElement): void => {
     <p class="preview-subtitle">Live calculations, structured insights, no spreadsheet chaos.</p>
     <div class="preview-surface">
       <div class="preview-kpis">
-        <div class="preview-kpi"><span class="preview-kpi-label">Margin</span><span class="preview-kpi-value">31.8%</span></div>
-        <div class="preview-kpi"><span class="preview-kpi-label">Break-even</span><span class="preview-kpi-value">174 u</span></div>
-        <div class="preview-kpi"><span class="preview-kpi-label">Cash Runway</span><span class="preview-kpi-value">5.4 mo</span></div>
+        <div class="preview-kpi"><span class="preview-kpi-label">Margin</span><span class="preview-kpi-value">31.8%</span><span class="preview-kpi-delta">↑ 2.1%</span></div>
+        <div class="preview-kpi"><span class="preview-kpi-label">Break-even</span><span class="preview-kpi-value">174</span><span class="preview-kpi-delta">units</span></div>
+        <div class="preview-kpi"><span class="preview-kpi-label">Cash Runway</span><span class="preview-kpi-value">5.4</span><span class="preview-kpi-delta">months</span></div>
       </div>
-      <div class="preview-chart"></div>
+      <div class="preview-chart">
+        <svg viewBox="0 0 320 118" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="previewArea" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#93c5fd" stop-opacity="0.45" />
+              <stop offset="100%" stop-color="#93c5fd" stop-opacity="0.05" />
+            </linearGradient>
+          </defs>
+          <path d="M0 94 C45 82, 90 68, 130 72 C175 76, 220 58, 260 48 C285 42, 305 32, 320 28 L320 118 L0 118 Z" fill="url(#previewArea)"/>
+          <path d="M0 94 C45 82, 90 68, 130 72 C175 76, 220 58, 260 48 C285 42, 305 32, 320 28" stroke="#2563eb" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <circle cx="90" cy="68" r="4" fill="#2563eb"/>
+          <circle cx="220" cy="58" r="4" fill="#2563eb"/>
+          <circle cx="305" cy="32" r="4" fill="#2563eb"/>
+        </svg>
+      </div>
       <div class="preview-calc">
-        <div class="preview-row"><div class="preview-field"></div><div class="preview-field"></div></div>
-        <div class="preview-row"><div class="preview-field"></div><div class="preview-field"></div></div>
-        <div class="preview-cta"></div>
+        <div class="preview-field"><span>Revenue</span><strong>120,000</strong></div>
+        <div class="preview-field"><span>Costs</span><strong>82,000</strong></div>
+        <div class="preview-result"><span>Margin</span><strong>31.8%</strong></div>
+        <div class="preview-cta">Open Profit Calculator</div>
       </div>
     </div>
   `;
 
   shell.appendChild(left);
   shell.appendChild(right);
-  page.appendChild(shell);
+
+  const legal = document.createElement('div');
+  legal.className = 'login-legal';
+  const privacyLink = document.createElement('button');
+  privacyLink.className = 'link-muted';
+  privacyLink.textContent = 'Privacy Policy';
+  privacyLink.onclick = () => goTo('/legal/privacy');
+
+  const termsLink = document.createElement('button');
+  termsLink.className = 'link-muted';
+  termsLink.textContent = 'Terms of Service';
+  termsLink.onclick = () => goTo('/legal/terms');
+
+  const separator = document.createElement('span');
+  separator.className = 'login-legal-sep';
+  separator.textContent = '·';
+
+  legal.appendChild(privacyLink);
+  legal.appendChild(separator);
+  legal.appendChild(termsLink);
+
+  wrap.appendChild(shell);
+  wrap.appendChild(legal);
+  page.appendChild(wrap);
   root.replaceChildren(page);
 };
 
