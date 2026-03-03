@@ -58,5 +58,6 @@ This folder contains Terraform modules to provision the Step 10 dev environment 
 - Lambda handlers are deployment stubs under `modules/backend_api/lambda_stubs`.
 - Stripe integration uses Terraform variables `stripe_secret_key`, `stripe_webhook_secret`, and `stripe_mode`.
 - Stripe test-mode E2E checklist is documented in `docs/testing/stripe-test-mode-e2e.md`.
+- Production sign-off evidence template is documented in `docs/testing/stripe-production-readiness-evidence.md`.
 - Telemetry payload persistence is designed for time-partitioned object keys in application layer.
 - Scenario financial values are not stored in AWS resources.

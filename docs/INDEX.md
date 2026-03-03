@@ -42,3 +42,4 @@
 
 ## Testing
 - testing/stripe-test-mode-e2e.md
+- testing/stripe-production-readiness-evidence.md

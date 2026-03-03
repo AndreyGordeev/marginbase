@@ -135,3 +135,4 @@ Mark ready only if all are true:
 - API responses for key transitions
 - Test run output (`infra-aws` + `web`)
 - Final sign-off checklist with date and owner
+- Completed template: `docs/testing/stripe-production-readiness-evidence.md`
