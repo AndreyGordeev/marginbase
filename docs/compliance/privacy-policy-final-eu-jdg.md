@@ -45,6 +45,9 @@ processed:
 - Subscription status
 - Entitlement metadata
 - Billing identifiers (processed via third-party payment providers)
+- Stripe customer / subscription / invoice identifiers (web only)
+- Payment event metadata (e.g., payment success/failure, cancellation,
+  chargeback/dispute status)
 
 ### 2.3 Technical & Security Data
 
@@ -100,6 +103,16 @@ Payments may be processed by:
 When subscribing via Apple or Google platforms, billing data is
 processed directly by the respective platform under their own privacy
 policies.
+
+For Stripe web subscriptions, payment card data is processed by Stripe
+as independent payment processor under Stripe's PCI-compliant systems.
+The Service does not store full card numbers or card security codes.
+
+The Service may process webhook-derived billing lifecycle metadata
+(including trial conversion, renewal status, payment failures, and
+chargeback indicators) solely to manage lawful access control,
+subscription administration, fraud prevention, and accounting
+compliance.
 
 ------------------------------------------------------------------------
 

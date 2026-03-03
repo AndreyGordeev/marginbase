@@ -25,3 +25,13 @@ are governed exclusively by the policies of the respective platform.
 ## 4. Chargebacks
 
 Improper chargebacks may result in account suspension.
+
+Chargebacks and payment disputes are reviewed under provider and card
+network rules. If a dispute is accepted by the issuing bank/payment
+provider, any required adjustment will be applied accordingly.
+
+## 5. Payment Failure
+
+Failed renewal payments do not create an automatic refund entitlement.
+Access to paid features may be limited until payment is successfully
+completed or the subscription is cancelled.
