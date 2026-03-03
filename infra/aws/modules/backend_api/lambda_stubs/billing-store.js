@@ -8,6 +8,10 @@ const toEntitlementRecord = (userId, payload) => {
     userId,
     lastVerifiedAt: payload.lastVerifiedAt,
     entitlements: payload.entitlements,
+    status: payload.status,
+    source: payload.source,
+    currentPeriodEnd: payload.currentPeriodEnd ?? null,
+    trialEnd: payload.trialEnd ?? null,
     trial: payload.trial,
     subscriptions: payload.subscriptions ?? [],
     updatedAt: payload.updatedAt ?? payload.lastVerifiedAt

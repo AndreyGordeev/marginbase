@@ -5,6 +5,22 @@ const allowedPlatforms = new Set(['ios', 'android']);
 
 const nowIso = () => new Date().toISOString();
 
+const withDefaultStatus = (status) => {
+  if (status === 'active' || status === 'trialing' || status === 'past_due' || status === 'canceled') {
+    return status;
+  }
+
+  return 'active';
+};
+
+const withDefaultSource = (source) => {
+  if (source === 'stripe' || source === 'app_store' || source === 'google_play' || source === 'unknown') {
+    return source;
+  }
+
+  return 'stripe';
+};
+
 const productToEntitlements = (productId, existing) => {
   const base = existing ?? {
     bundle: false,
@@ -55,7 +71,68 @@ const verifyReceipt = ({ platform, receiptToken }) => {
   return receiptToken.startsWith(expectedPrefix);
 };
 
+const parseRouteKey = (event) => {
+  if (typeof event?.requestContext?.routeKey === 'string') {
+    return event.requestContext.routeKey;
+  }
+
+  const method = event?.requestContext?.http?.method;
+  const path = event?.requestContext?.http?.path;
+  if (typeof method === 'string' && typeof path === 'string') {
+    return `${method.toUpperCase()} ${path}`;
+  }
+
+  return '';
+};
+
+const handleCheckoutSession = async (event) => {
+  const body = parseJsonBody(event);
+  const planId = typeof body.planId === 'string' ? body.planId : '';
+  const userId = typeof body.userId === 'string' ? body.userId : '';
+  const email = typeof body.email === 'string' ? body.email : '';
+
+  if (!planId || !userId || !email) {
+    return response(400, {
+      code: 'INVALID_REQUEST',
+      message: 'planId, userId and email are required.'
+    });
+  }
+
+  return response(200, {
+    checkoutUrl: `https://checkout.stripe.com/c/pay/cs_test_${encodeURIComponent(planId)}_${encodeURIComponent(userId)}`
+  });
+};
+
+const handleStripeWebhook = async (event) => {
+  const signature = event?.headers?.['stripe-signature'] ?? event?.headers?.['Stripe-Signature'] ?? '';
+  if (!signature || !process.env.STRIPE_WEBHOOK_SECRET) {
+    return response(400, {
+      code: 'INVALID_SIGNATURE',
+      message: 'Missing Stripe signature or webhook secret configuration.'
+    });
+  }
+
+  const body = parseJsonBody(event);
+  const eventId = typeof body.id === 'string' ? body.id : `evt_${Date.now()}`;
+
+  return response(200, {
+    received: true,
+    processed: true,
+    eventId
+  });
+};
+
 exports.handler = async (event) => {
+  const routeKey = parseRouteKey(event);
+
+  if (routeKey === 'POST /billing/checkout/session') {
+    return handleCheckoutSession(event);
+  }
+
+  if (routeKey === 'POST /billing/webhook/stripe') {
+    return handleStripeWebhook(event);
+  }
+
   const body = parseJsonBody(event);
 
   const userId = typeof body.userId === 'string' && body.userId ? body.userId : '';
@@ -85,6 +162,10 @@ exports.handler = async (event) => {
   const record = toEntitlementRecord(userId, {
     lastVerifiedAt: verifiedAt,
     entitlements,
+    status: 'active',
+    source: withDefaultSource(platform === 'ios' ? 'app_store' : 'google_play'),
+    currentPeriodEnd: expiresAt,
+    trialEnd: null,
     trial: {
       active: false,
       expiresAt
@@ -107,6 +188,10 @@ exports.handler = async (event) => {
     userId,
     lastVerifiedAt: verifiedAt,
     entitlements,
+    status: withDefaultStatus('active'),
+    source: withDefaultSource(platform === 'ios' ? 'app_store' : 'google_play'),
+    currentPeriodEnd: expiresAt,
+    trialEnd: null,
     subscription: {
       platform,
       productId,

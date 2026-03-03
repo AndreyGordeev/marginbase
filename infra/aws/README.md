@@ -8,8 +8,11 @@ This folder contains Terraform modules to provision the Step 10 dev environment 
 - API layer: HTTP API Gateway with routes:
   - `POST /auth/verify`
   - `GET /entitlements`
+   - `POST /billing/verify`
+   - `POST /billing/checkout/session`
+   - `POST /billing/webhook/stripe`
   - `POST /telemetry/batch`
-- Compute: 3 Lambda stubs (`auth`, `entitlements`, `telemetry`)
+- Compute: 4 Lambda stubs (`auth`, `entitlements`, `billing`, `telemetry`)
 - Data: DynamoDB entitlements table + S3 telemetry raw bucket with lifecycle retention
 - Observability: CloudWatch log groups with configurable retention
 
@@ -47,5 +50,6 @@ This folder contains Terraform modules to provision the Step 10 dev environment 
 ## Notes
 
 - Lambda handlers are deployment stubs under `modules/backend_api/lambda_stubs`.
+- Stripe integration uses Terraform variables `stripe_secret_key`, `stripe_webhook_secret`, and `stripe_mode`.
 - Telemetry payload persistence is designed for time-partitioned object keys in application layer.
 - Scenario financial values are not stored in AWS resources.

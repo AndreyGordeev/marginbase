@@ -41,6 +41,10 @@ exports.handler = async (event) => {
       userId: stored.userId,
       lastVerifiedAt: stored.lastVerifiedAt,
       entitlements: stored.entitlements,
+      status: stored.status ?? (stored.trial?.active ? 'trialing' : 'active'),
+      source: stored.source ?? 'unknown',
+      currentPeriodEnd: stored.currentPeriodEnd ?? stored.trial?.expiresAt ?? null,
+      trialEnd: stored.trialEnd ?? stored.trial?.expiresAt ?? null,
       trial: stored.trial
     });
   }
@@ -63,6 +67,10 @@ exports.handler = async (event) => {
       breakeven,
       cashflow
     },
+    status: trialActive ? 'trialing' : 'active',
+    source: 'unknown',
+    currentPeriodEnd: expiresAt,
+    trialEnd: trialActive ? expiresAt : null,
     trial: {
       active: trialActive,
       expiresAt
