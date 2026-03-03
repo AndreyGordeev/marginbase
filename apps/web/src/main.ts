@@ -69,6 +69,13 @@ const addBaseStyles = (): void => {
   body { margin: 0; font-family: Arial, sans-serif; background: #f5f6f8; color: #1f2937; }
   .page { padding: 20px; }
   .page-centered { min-height: 100vh; display: grid; place-items: center; }
+  .auth-card { width: min(620px, calc(100vw - 48px)); padding: 26px; display: grid; gap: 18px; }
+  .auth-copy { display: grid; gap: 10px; }
+  .auth-copy h2, .auth-copy p { margin: 0; }
+  .auth-copy h2 { font-size: 38px; line-height: 1.15; }
+  .auth-copy p { font-size: 32px; line-height: 1.2; color: #374151; }
+  .auth-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .auth-actions button { padding: 10px 14px; font-size: 15px; }
   .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
   .sidebar { background: #111827; color: #f9fafb; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
   .sidebar button { text-align: left; background: #1f2937; color: #f9fafb; border: 0; padding: 10px; border-radius: 8px; }
@@ -93,6 +100,7 @@ const addBaseStyles = (): void => {
   .locked-overlay { margin-top: 12px; padding: 12px; border: 1px dashed #f59e0b; border-radius: 8px; background: #fffbeb; }
   .status { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; }
   .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .ad-placeholder { margin-top: 12px; border: 1px dashed #d1d5db; border-radius: 10px; background: #f9fafb; color: #6b7280; text-align: center; padding: 14px; font-size: 14px; }
   .modal { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; background: #fff; }
   .modal:empty { display: none; }
   .space-y-6 { display: grid; gap: 24px; }
@@ -131,40 +139,66 @@ const renderLogin = (root: HTMLElement): void => {
   const page = document.createElement('div');
   page.className = 'page page-centered';
   const card = document.createElement('div');
-  card.className = 'card';
-  card.innerHTML = '<h2>SMB Finance Toolkit</h2><p>Financial clarity for small businesses.</p>';
-  card.appendChild(createActionButton('Continue with Google', () => goTo('/gate'), 'primary'));
-  card.appendChild(createActionButton('Privacy Policy', () => goTo('/legal/privacy')));
-  card.appendChild(createActionButton('Terms of Service', () => goTo('/legal/terms')));
+  card.className = 'card auth-card';
+
+  const copy = document.createElement('div');
+  copy.className = 'auth-copy';
+  copy.innerHTML = '<h2>SMB Finance Toolkit</h2><p>Financial clarity for small businesses.</p>';
+
+  const actions = document.createElement('div');
+  actions.className = 'auth-actions';
+  actions.appendChild(createActionButton('Continue with Google', () => goTo('/gate'), 'primary'));
+  actions.appendChild(createActionButton('Privacy Policy', () => goTo('/legal/privacy')));
+  actions.appendChild(createActionButton('Terms of Service', () => goTo('/legal/terms')));
+
+  card.appendChild(copy);
+  card.appendChild(actions);
   page.appendChild(card);
   root.replaceChildren(page);
 };
 
 const renderLegal = (root: HTMLElement, route: '/legal/privacy' | '/legal/terms'): void => {
   const page = document.createElement('div');
-  page.className = 'page';
+  page.className = 'page page-centered';
 
   const card = document.createElement('div');
-  card.className = 'card';
+  card.className = 'card auth-card';
+  const copy = document.createElement('div');
+  copy.className = 'auth-copy';
+
   if (route === '/legal/privacy') {
-    card.innerHTML = '<h2>Privacy Policy</h2><p>Only minimal identity and entitlement metadata is handled by backend services. Financial scenario values remain local-only.</p>';
+    copy.innerHTML = '<h2>Privacy Policy</h2><p>Only minimal identity and entitlement metadata is handled by backend services. Financial scenario values remain local-only.</p>';
   } else {
-    card.innerHTML = '<h2>Terms of Service</h2><p>Subscription access is governed by active entitlements. Calculations remain available offline through local engines.</p>';
+    copy.innerHTML = '<h2>Terms of Service</h2><p>Subscription access is governed by active entitlements. Calculations remain available offline through local engines.</p>';
   }
 
-  card.appendChild(createActionButton('Back to Login', () => goTo('/login')));
+  const actions = document.createElement('div');
+  actions.className = 'auth-actions';
+  actions.appendChild(createActionButton('Back to Login', () => goTo('/login')));
+
+  card.appendChild(copy);
+  card.appendChild(actions);
   page.appendChild(card);
   root.replaceChildren(page);
 };
 
 const renderGate = (root: HTMLElement, service: WebAppService): void => {
   const page = document.createElement('div');
-  page.className = 'page';
+  page.className = 'page page-centered';
   const card = document.createElement('div');
-  card.className = 'card';
-  card.innerHTML = '<h2>Access Status</h2><p>Unlock calculators to save and compare scenarios.</p>';
-  card.appendChild(createActionButton('Start Free Trial', () => service.activateTrial(), 'primary'));
-  card.appendChild(createActionButton('Continue to Dashboard', () => goTo('/dashboard')));
+  card.className = 'card auth-card';
+
+  const copy = document.createElement('div');
+  copy.className = 'auth-copy';
+  copy.innerHTML = '<h2>Access Status</h2><p>Unlock calculators to save and compare scenarios.</p>';
+
+  const actions = document.createElement('div');
+  actions.className = 'auth-actions';
+  actions.appendChild(createActionButton('Start Free Trial', () => service.activateTrial(), 'primary'));
+  actions.appendChild(createActionButton('Continue to Dashboard', () => goTo('/dashboard')));
+
+  card.appendChild(copy);
+  card.appendChild(actions);
   page.appendChild(card);
   root.replaceChildren(page);
 };
@@ -222,7 +256,7 @@ const renderDashboard = async (root: HTMLElement, service: WebAppService): Promi
   main.appendChild(recentCard);
   const ad = document.createElement('div');
   ad.className = 'card';
-  ad.textContent = 'Ad block placeholder';
+  ad.innerHTML = '<div class="ad-placeholder">Ad block placeholder</div>';
   main.appendChild(ad);
   shell.appendChild(main);
   root.replaceChildren(shell);
@@ -375,7 +409,10 @@ const renderWorkspace = async (
   );
 
   center.appendChild(form);
-  center.appendChild(document.createTextNode('Ad block placeholder'));
+  const ad = document.createElement('div');
+  ad.className = 'ad-placeholder';
+  ad.textContent = 'Ad block placeholder';
+  center.appendChild(ad);
 
   const results = document.createElement('section');
   results.className = 'card';
