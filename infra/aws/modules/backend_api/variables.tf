@@ -34,6 +34,18 @@ variable "google_client_ids" {
   type = string
 }
 
+variable "stripe_secret_key" {
+  type = string
+}
+
+variable "stripe_webhook_secret" {
+  type = string
+}
+
+variable "stripe_mode" {
+  type = string
+}
+
 variable "tags" {
   type = map(string)
 }

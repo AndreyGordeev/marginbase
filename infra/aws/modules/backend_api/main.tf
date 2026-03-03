@@ -188,6 +188,9 @@ resource "aws_lambda_function" "billing" {
     variables = {
       ENVIRONMENT             = var.environment
       ENTITLEMENTS_TABLE_NAME = var.entitlements_table_name
+      STRIPE_SECRET_KEY       = var.stripe_secret_key
+      STRIPE_WEBHOOK_SECRET   = var.stripe_webhook_secret
+      STRIPE_MODE             = var.stripe_mode
     }
   }
 
@@ -286,6 +289,18 @@ resource "aws_apigatewayv2_route" "telemetry_batch" {
 resource "aws_apigatewayv2_route" "billing_verify" {
   api_id    = aws_apigatewayv2_api.http.id
   route_key = "POST /billing/verify"
+  target    = "integrations/${aws_apigatewayv2_integration.billing.id}"
+}
+
+resource "aws_apigatewayv2_route" "billing_checkout_session" {
+  api_id    = aws_apigatewayv2_api.http.id
+  route_key = "POST /billing/checkout/session"
+  target    = "integrations/${aws_apigatewayv2_integration.billing.id}"
+}
+
+resource "aws_apigatewayv2_route" "billing_webhook_stripe" {
+  api_id    = aws_apigatewayv2_api.http.id
+  route_key = "POST /billing/webhook/stripe"
   target    = "integrations/${aws_apigatewayv2_integration.billing.id}"
 }
 

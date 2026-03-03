@@ -38,3 +38,28 @@ variable "google_client_ids" {
   description = "Comma-separated allowed Google OAuth client IDs for /auth/verify."
   default     = ""
 }
+
+variable "stripe_secret_key" {
+  type        = string
+  description = "Stripe secret key used by billing handlers."
+  default     = ""
+  sensitive   = true
+}
+
+variable "stripe_webhook_secret" {
+  type        = string
+  description = "Stripe webhook signing secret for /billing/webhook/stripe verification."
+  default     = ""
+  sensitive   = true
+}
+
+variable "stripe_mode" {
+  type        = string
+  description = "Stripe environment mode: test or live."
+  default     = "test"
+
+  validation {
+    condition     = contains(["test", "live"], var.stripe_mode)
+    error_message = "stripe_mode must be either 'test' or 'live'."
+  }
+}
