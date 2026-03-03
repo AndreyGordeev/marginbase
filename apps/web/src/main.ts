@@ -9,6 +9,7 @@ type RoutePath =
   | '/break-even'
   | '/cashflow'
   | '/subscription'
+  | '/data'
   | '/settings'
   | '/legal/privacy'
   | '/legal/terms';
@@ -21,6 +22,7 @@ const ROUTES: RoutePath[] = [
   '/break-even',
   '/cashflow',
   '/subscription',
+  '/data',
   '/settings',
   '/legal/privacy',
   '/legal/terms'
@@ -107,6 +109,7 @@ const renderSidebar = (active: RoutePath): HTMLElement => {
     { label: 'Break-even', route: '/break-even' },
     { label: 'Cashflow', route: '/cashflow' },
     { label: 'Subscription', route: '/subscription' },
+    { label: 'Data & Backup', route: '/data' },
     { label: 'Settings', route: '/settings' }
   ];
 
@@ -414,6 +417,23 @@ const renderSubscription = (root: HTMLElement, service: WebAppService): void => 
   root.replaceChildren(shell);
 };
 
+const renderDataBackup = (root: HTMLElement): void => {
+  const shell = document.createElement('div');
+  shell.className = 'shell';
+  shell.appendChild(renderSidebar('/data'));
+
+  const main = document.createElement('main');
+  main.className = 'main';
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = '<h2>Data & Backup</h2>';
+
+  main.appendChild(card);
+  shell.appendChild(main);
+  root.replaceChildren(shell);
+};
+
 const renderSettings = async (root: HTMLElement, service: WebAppService): Promise<void> => {
   const shell = document.createElement('div');
   shell.className = 'shell';
@@ -529,6 +549,11 @@ const render = async (): Promise<void> => {
 
   if (route === '/subscription') {
     renderSubscription(root, service);
+    return;
+  }
+
+  if (route === '/data') {
+    renderDataBackup(root);
     return;
   }
 
