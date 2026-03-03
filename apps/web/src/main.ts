@@ -9,6 +9,7 @@ type RoutePath =
   | '/break-even'
   | '/cashflow'
   | '/subscription'
+  | '/data'
   | '/settings'
   | '/legal/privacy'
   | '/legal/terms';
@@ -21,6 +22,7 @@ const ROUTES: RoutePath[] = [
   '/break-even',
   '/cashflow',
   '/subscription',
+  '/data',
   '/settings',
   '/legal/privacy',
   '/legal/terms'
@@ -93,6 +95,7 @@ const addBaseStyles = (): void => {
   .status { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; }
   .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
   .modal { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; background: #fff; }
+  .space-y-6 { display: grid; gap: 24px; }
   `;
 
   document.head.appendChild(style);
@@ -107,6 +110,7 @@ const renderSidebar = (active: RoutePath): HTMLElement => {
     { label: 'Break-even', route: '/break-even' },
     { label: 'Cashflow', route: '/cashflow' },
     { label: 'Subscription', route: '/subscription' },
+    { label: 'Data & Backup', route: '/data' },
     { label: 'Settings', route: '/settings' }
   ];
 
@@ -414,16 +418,19 @@ const renderSubscription = (root: HTMLElement, service: WebAppService): void => 
   root.replaceChildren(shell);
 };
 
-const renderSettings = async (root: HTMLElement, service: WebAppService): Promise<void> => {
+const renderDataBackup = async (root: HTMLElement, service: WebAppService): Promise<void> => {
   const shell = document.createElement('div');
   shell.className = 'shell';
-  shell.appendChild(renderSidebar('/settings'));
+  shell.appendChild(renderSidebar('/data'));
+
   const main = document.createElement('main');
   main.className = 'main';
 
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.innerHTML = '<h2>Settings</h2><p>Data Management</p>';
+  const title = document.createElement('h2');
+  title.textContent = 'Data & Backup';
+
+  const sections = document.createElement('div');
+  sections.className = 'space-y-6';
 
   const exportButton = createActionButton('Export all scenarios (JSON)', async () => {
     const payload = await service.exportScenariosJson();
@@ -436,14 +443,6 @@ const renderSettings = async (root: HTMLElement, service: WebAppService): Promis
     URL.revokeObjectURL(url);
     window.alert('Export completed.');
   }, 'primary');
-
-  const deleteAccountButton = createActionButton('Delete account data', async () => {
-    const deleted = await service.deleteAccount('local_web_user');
-    if (deleted) {
-      window.alert('Account data deleted.');
-      goTo('/login');
-    }
-  });
 
   const importInput = document.createElement('textarea');
   importInput.placeholder = 'Paste import JSON here';
@@ -483,14 +482,48 @@ const renderSettings = async (root: HTMLElement, service: WebAppService): Promis
     await render();
   }, 'primary');
 
-  card.appendChild(exportButton);
+  const exportCard = document.createElement('section');
+  exportCard.className = 'card';
+  exportCard.innerHTML = '<h3>Export</h3><p>Export all local scenarios to a JSON file.</p>';
+  exportCard.appendChild(exportButton);
+
+  const importCard = document.createElement('section');
+  importCard.className = 'card';
+  importCard.innerHTML = '<h3>Import</h3><p>Import scenarios from JSON. This replaces all existing scenarios.</p>';
+  importCard.appendChild(importInput);
+  importCard.appendChild(previewButton);
+  importCard.appendChild(confirmButton);
+  importCard.appendChild(importSummary);
+
+  sections.appendChild(exportCard);
+  sections.appendChild(importCard);
+
+  main.appendChild(title);
+  main.appendChild(sections);
+  shell.appendChild(main);
+  root.replaceChildren(shell);
+};
+
+const renderSettings = async (root: HTMLElement, service: WebAppService): Promise<void> => {
+  const shell = document.createElement('div');
+  shell.className = 'shell';
+  shell.appendChild(renderSidebar('/settings'));
+  const main = document.createElement('main');
+  main.className = 'main';
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = '<h2>Settings</h2><p>Account actions and future configuration options.</p>';
+
+  const deleteAccountButton = createActionButton('Delete account data', async () => {
+    const deleted = await service.deleteAccount('local_web_user');
+    if (deleted) {
+      window.alert('Account data deleted.');
+      goTo('/login');
+    }
+  });
+
   card.appendChild(deleteAccountButton);
-  card.appendChild(createActionButton('Privacy', () => goTo('/legal/privacy')));
-  card.appendChild(createActionButton('Terms', () => goTo('/legal/terms')));
-  card.appendChild(importInput);
-  card.appendChild(previewButton);
-  card.appendChild(confirmButton);
-  card.appendChild(importSummary);
   main.appendChild(card);
   shell.appendChild(main);
   root.replaceChildren(shell);
@@ -529,6 +562,11 @@ const render = async (): Promise<void> => {
 
   if (route === '/subscription') {
     renderSubscription(root, service);
+    return;
+  }
+
+  if (route === '/data') {
+    await renderDataBackup(root, service);
     return;
   }
 
