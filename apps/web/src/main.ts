@@ -689,8 +689,8 @@ const addBaseStyles = (): void => {
   .login-subheading { margin: 0; color: #374151; font-size: 18px; line-height: 1.35; }
   .login-values { margin: -4px 0 0; padding-left: 20px; display: grid; gap: 8px; }
   .login-values li { color: #1f2937; }
-  .login-auth { display: grid; gap: 10px; }
-  .login-auth button { width: fit-content; min-width: 200px; min-height: 46px; padding: 0 18px; font-size: 16px; font-weight: 600; line-height: 1.2; border-radius: 10px; }
+  .login-auth { display: grid; gap: 10px; justify-items: start; }
+  .login-auth button { width: auto; min-width: 176px; height: 42px; padding: 0 14px; font-size: 14px; font-weight: 600; line-height: 1; border-radius: 10px; }
   .login-trust { display: grid; gap: 6px; color: #4b5563; font-size: 13px; line-height: 1.35; }
   .login-legal { border-top: 1px solid #e5e7eb; padding-top: 12px; display: flex; gap: 8px; align-items: center; color: #6b7280; font-size: 13px; }
   .login-legal-sep { color: #9ca3af; }
