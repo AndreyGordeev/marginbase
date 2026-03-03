@@ -684,14 +684,14 @@ const addBaseStyles = (): void => {
   .login-wrap { width: min(1120px, 100%); display: grid; gap: 12px; }
   .login-shell { width: 100%; display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 18px; align-items: stretch; }
   .login-panel, .login-preview { box-shadow: 0 10px 24px rgba(17, 24, 39, 0.08); }
-  .login-panel { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 24px; }
-  .login-heading { margin: 0; font-size: 34px; line-height: 1.15; }
-  .login-subheading { margin: 0; color: #374151; font-size: 18px; line-height: 1.35; }
-  .login-values { margin: 0; padding-left: 20px; display: grid; gap: 2px; }
-  .login-values li { color: #1f2937; line-height: 1.25; margin: 0; }
-  .login-auth { display: grid; gap: 8px; justify-items: start; margin-top: 0; }
+  .login-panel { display: flex; flex-direction: column; align-items: flex-start; gap: 0; padding: 24px; }
+  .login-heading { margin: 0 0 10px; font-size: 34px; line-height: 1.15; }
+  .login-subheading { margin: 0 0 16px; color: #374151; font-size: 18px; line-height: 1.35; }
+  .login-values { margin: 0 0 18px; padding-left: 20px; display: grid; gap: 6px; }
+  .login-values li { color: #1f2937; line-height: 1.28; margin: 0; }
+  .login-auth { display: grid; gap: 8px; justify-items: start; margin: 0 0 16px; }
   .login-auth button { width: auto; min-width: 176px; height: 42px; padding: 0 14px; font-size: 14px; font-weight: 600; line-height: 1; border-radius: 10px; }
-  .login-trust { display: grid; gap: 4px; color: #4b5563; font-size: 13px; line-height: 1.3; }
+  .login-trust { display: grid; gap: 6px; color: #4b5563; font-size: 13px; line-height: 1.35; }
   .login-legal { border-top: 1px solid #e5e7eb; padding-top: 12px; display: flex; gap: 8px; align-items: center; color: #6b7280; font-size: 13px; }
   .login-legal-sep { color: #9ca3af; }
   .link-muted { background: transparent; border: 0; padding: 0; margin: 0; color: #6b7280; font-size: 13px; text-decoration: none; }
