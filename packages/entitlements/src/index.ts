@@ -5,11 +5,19 @@ export interface EntitlementSet {
   cashflow: boolean;
 }
 
+export type EntitlementStatus = 'active' | 'trialing' | 'past_due' | 'canceled';
+
+export type EntitlementSource = 'stripe' | 'app_store' | 'google_play' | 'unknown';
+
 export type ModuleId = 'profit' | 'breakeven' | 'cashflow';
 
 export interface EntitlementCache {
   entitlementSet: EntitlementSet;
   lastVerifiedAt: string;
+  status?: EntitlementStatus;
+  source?: EntitlementSource;
+  currentPeriodEnd?: string;
+  trialEnd?: string;
 }
 
 export interface EntitlementPolicyConfig {

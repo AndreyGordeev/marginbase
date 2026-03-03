@@ -21,6 +21,10 @@ describe('MarginbaseApiClient', () => {
           breakeven: true,
           cashflow: true
         },
+        status: 'trialing',
+        source: 'stripe',
+        currentPeriodEnd: '2026-04-02T10:00:00.000Z',
+        trialEnd: '2026-04-01T10:00:00.000Z',
         trial: {
           active: false,
           expiresAt: '2026-03-16T10:00:00.000Z'
@@ -34,6 +38,8 @@ describe('MarginbaseApiClient', () => {
     const result = await client.refreshEntitlements('google-token');
 
     expect(result.entitlements.bundle).toBe(true);
+    expect(result.status).toBe('trialing');
+    expect(result.source).toBe('stripe');
     expect(fetchMock).toHaveBeenCalledWith(
       'https://api.marginbase.test/entitlements',
       expect.objectContaining({ method: 'GET' })
