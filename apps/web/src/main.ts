@@ -77,15 +77,21 @@ const addBaseStyles = (): void => {
   style.textContent = `
   body { margin: 0; font-family: Arial, sans-serif; background: #f5f6f8; color: #1f2937; }
   .page { padding: 20px; }
+  .page-centered { min-height: 100vh; display: grid; place-items: center; }
   .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
   .sidebar { background: #111827; color: #f9fafb; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
   .sidebar button { text-align: left; background: #1f2937; color: #f9fafb; border: 0; padding: 10px; border-radius: 8px; }
   .main { padding: 24px; display: grid; gap: 16px; }
   .card { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 16px; }
-  .workspace { display: grid; grid-template-columns: 260px 1fr 320px; gap: 16px; }
-  .scenario-list { display: grid; gap: 8px; }
-  .scenario-item { display: flex; justify-content: space-between; gap: 8px; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; }
+  .workspace { display: grid; grid-template-columns: 260px 1fr 320px; gap: 16px; align-items: start; }
+  .scenario-list { display: flex; flex-direction: column; gap: 8px; }
+  .scenario-create { align-self: flex-start; padding: 8px 12px; }
+  .scenario-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; }
+  .scenario-item span { flex: 1; min-width: 0; }
+  .scenario-item button { padding: 6px 10px; }
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .form-grid label { display: grid; gap: 6px; }
+  .form-submit { grid-column: 1 / -1; justify-self: end; min-width: 180px; }
   input, select, textarea { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; }
   button { cursor: pointer; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 10px; background: #fff; }
   .primary { background: #2563eb; color: #fff; border-color: #2563eb; }
@@ -129,7 +135,7 @@ const renderSidebar = (active: RoutePath): HTMLElement => {
 
 const renderLogin = (root: HTMLElement): void => {
   const page = document.createElement('div');
-  page.className = 'page';
+  page.className = 'page page-centered';
   const card = document.createElement('div');
   card.className = 'card';
   card.innerHTML = '<h2>SMB Finance Toolkit</h2><p>Financial clarity for small businesses.</p>';
@@ -243,8 +249,14 @@ const renderWorkspace = async (
     '/break-even': 'breakeven',
     '/cashflow': 'cashflow'
   };
+  const moduleTitleMap: Record<ModuleId, string> = {
+    profit: 'Profit',
+    breakeven: 'Break-even',
+    cashflow: 'Cashflow'
+  };
 
   const moduleId = moduleMap[route];
+  const moduleTitle = moduleTitleMap[moduleId];
   const allowed = service.canOpenModule(moduleId);
   const scenarios = await service.listScenarios(moduleId);
   const selectedScenario = scenarios[0] ?? null;
@@ -260,11 +272,11 @@ const renderWorkspace = async (
 
   const listPanel = document.createElement('section');
   listPanel.className = 'card scenario-list';
-  listPanel.innerHTML = `<h3>${moduleId} scenarios</h3>`;
+  listPanel.innerHTML = `<h3>${moduleTitle} Scenarios</h3>`;
   listPanel.appendChild(createActionButton('+ New Scenario', async () => {
     await service.createDefaultScenario(moduleId);
     await render();
-  }, 'primary'));
+  }, 'primary scenario-create'));
 
   if (scenarios.length === 0) {
     listPanel.appendChild(emptyState('No scenarios yet', 'Create your first scenario to start analyzing.'));
@@ -283,7 +295,7 @@ const renderWorkspace = async (
 
   const center = document.createElement('section');
   center.className = 'card';
-  center.innerHTML = `<h3>${moduleId} editor</h3>`;
+  center.innerHTML = `<h3>${moduleTitle} Editor</h3>`;
 
   const form = document.createElement('form');
   form.className = 'form-grid';
@@ -365,7 +377,7 @@ const renderWorkspace = async (
       }
 
       await render();
-    }, 'primary')
+    }, 'primary form-submit')
   );
 
   center.appendChild(form);
