@@ -117,6 +117,29 @@ describe('MarginbaseApiClient', () => {
     expect(result.entitlements.bundle).toBe(true);
   });
 
+  it('creates stripe checkout session and returns checkout url', async () => {
+    const fetchMock = vi.fn(async () => {
+      return jsonResponse(200, {
+        checkoutUrl: 'https://checkout.stripe.com/c/pay/cs_test_123'
+      });
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = new MarginbaseApiClient({ baseUrl: 'https://api.marginbase.test' });
+    const result = await client.createCheckoutSession({
+      planId: 'bundle',
+      userId: 'u-2',
+      email: 'user@example.com'
+    });
+
+    expect(result.checkoutUrl).toContain('checkout.stripe.com');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.marginbase.test/billing/checkout/session',
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
+
   it('deletes account and returns deletion flags', async () => {
     vi.stubGlobal(
       'fetch',

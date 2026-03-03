@@ -6,6 +6,7 @@ Purpose: define a stable backend contract for clients and serverless services.
 - `POST /auth/verify`
 - `GET /entitlements`
 - `POST /telemetry/batch`
+- `POST /billing/checkout/session`
 - `POST /billing/verify`
 - `POST /account/delete`
 
@@ -30,5 +31,23 @@ Purpose: define a stable backend contract for clients and serverless services.
     "active": true,
     "expiresAt": "2026-03-10T00:00:00Z"
   }
+}
+```
+
+## `POST /billing/checkout/session`
+
+Request:
+```json
+{
+  "planId": "bundle",
+  "userId": "u_123",
+  "email": "owner@company.com"
+}
+```
+
+Response:
+```json
+{
+  "checkoutUrl": "https://checkout.stripe.com/c/pay/cs_test_123"
 }
 ```

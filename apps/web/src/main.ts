@@ -718,13 +718,13 @@ const addBaseStyles = (): void => {
     .login-shell { grid-template-columns: 1fr; }
     .login-wrap { gap: 10px; }
   }
-  .auth-card { width: min(620px, calc(100vw - 48px)); padding: 26px; display: grid; gap: 18px; }
-  .auth-copy { display: grid; gap: 10px; }
+  .auth-card { width: min(700px, calc(100vw - 48px)); padding: 22px; display: grid; gap: 12px; }
+  .auth-copy { display: grid; gap: 6px; max-width: 560px; }
   .auth-copy h2, .auth-copy p { margin: 0; }
-  .auth-copy h2 { font-size: 38px; line-height: 1.15; }
-  .auth-copy p { font-size: 32px; line-height: 1.2; color: #374151; }
-  .auth-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-  .auth-actions button { padding: 10px 14px; font-size: 15px; }
+  .auth-copy h2 { font-size: 28px; line-height: 1.2; }
+  .auth-copy p { font-size: 16px; line-height: 1.4; color: #374151; max-width: 460px; }
+  .auth-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .auth-actions button { min-height: 42px; padding: 0 14px; font-size: 14px; }
   .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
   .sidebar { background: #111827; color: #f9fafb; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
   .sidebar button { text-align: left; background: #1f2937; color: #f9fafb; border: 0; padding: 10px; border-radius: 8px; }
@@ -1006,7 +1006,23 @@ const renderGate = (root: HTMLElement, service: WebAppService): void => {
 
   const actions = document.createElement('div');
   actions.className = 'auth-actions';
-  actions.appendChild(createActionButton('Start Free Trial', () => service.activateTrial(), 'primary'));
+  actions.appendChild(createActionButton('Start Free Trial', async () => {
+    let checkoutUrl: string | null = null;
+
+    try {
+      checkoutUrl = await service.startCheckoutSession('bundle', 'local_web_user', 'local_web_user@marginbase.local');
+    } catch {
+      checkoutUrl = null;
+    }
+
+    if (checkoutUrl) {
+      window.location.href = checkoutUrl;
+      return;
+    }
+
+    service.activateTrial();
+    goTo('/dashboard');
+  }, 'primary'));
   actions.appendChild(createActionButton('Continue to Dashboard', () => goTo('/dashboard')));
 
   card.appendChild(copy);

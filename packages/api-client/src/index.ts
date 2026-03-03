@@ -70,6 +70,18 @@ export interface BillingVerifyResponse {
   };
 }
 
+export type BillingPlanId = 'profit' | 'breakeven' | 'cashflow' | 'bundle';
+
+export interface BillingCheckoutSessionRequest {
+  planId: BillingPlanId;
+  userId: string;
+  email: string;
+}
+
+export interface BillingCheckoutSessionResponse {
+  checkoutUrl: string;
+}
+
 export interface AccountDeleteRequest {
   userId: string;
 }
@@ -168,6 +180,16 @@ export class MarginbaseApiClient {
     });
 
     return parseJson<BillingVerifyResponse>(response);
+  }
+
+  public async createCheckoutSession(request: BillingCheckoutSessionRequest): Promise<BillingCheckoutSessionResponse> {
+    const response = await fetch(`${this.baseUrl}/billing/checkout/session`, {
+      method: 'POST',
+      headers: buildHeaders(),
+      body: JSON.stringify(request)
+    });
+
+    return parseJson<BillingCheckoutSessionResponse>(response);
   }
 
   public async deleteAccount(request: AccountDeleteRequest): Promise<AccountDeleteResponse> {

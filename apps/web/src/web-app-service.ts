@@ -1,4 +1,5 @@
 import {
+  type BillingPlanId,
   MarginbaseApiClient,
   type EntitlementsResponse
 } from '@marginbase/api-client';
@@ -28,6 +29,8 @@ import {
 } from '@marginbase/storage';
 
 type ModuleId = EntitlementModuleId;
+
+type WebApiClient = Pick<MarginbaseApiClient, 'refreshEntitlements' | 'deleteAccount'> & Partial<Pick<MarginbaseApiClient, 'createCheckoutSession'>>;
 
 const toPlainJson = (value: unknown): unknown => {
   if (Array.isArray(value)) {
@@ -118,12 +121,12 @@ export class WebAppService {
   private entitlementCache: EntitlementCache;
   private lastRefreshAt: string | null;
   private vaultEnabled: boolean;
-  private readonly apiClient: Pick<MarginbaseApiClient, 'refreshEntitlements' | 'deleteAccount'>;
+  private readonly apiClient: WebApiClient;
 
   public constructor(
     scenarioRepository: ScenarioRepository,
-    apiClient: Pick<MarginbaseApiClient, 'refreshEntitlements' | 'deleteAccount'> = new MarginbaseApiClient({
-      baseUrl: process.env.MARGINBASE_API_BASE_URL ?? 'https://api.marginbase.local'
+    apiClient: WebApiClient = new MarginbaseApiClient({
+      baseUrl: 'https://api.marginbase.local'
     })
   ) {
     this.baseScenarioRepository = scenarioRepository;
@@ -158,6 +161,20 @@ export class WebAppService {
       lastVerifiedAt: nowIso()
     };
     saveEntitlementCache(this.entitlementCache);
+  }
+
+  public async startCheckoutSession(planId: BillingPlanId, userId: string, email: string): Promise<string | null> {
+    if (!this.apiClient.createCheckoutSession) {
+      return null;
+    }
+
+    const response = await this.apiClient.createCheckoutSession({
+      planId,
+      userId,
+      email
+    });
+
+    return response.checkoutUrl;
   }
 
   public canOpenModule(moduleId: ModuleId): boolean {
