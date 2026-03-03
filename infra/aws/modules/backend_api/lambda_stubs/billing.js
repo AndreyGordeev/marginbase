@@ -1,5 +1,5 @@
 const { parseJsonBody, response } = require('./common');
-const { getRecord, putRecord, toEntitlementRecord } = require('./billing-store');
+const { getRecord, putRecord, toEntitlementRecord, getWebhookEvent, putWebhookEvent } = require('./billing-store');
 
 const allowedPlatforms = new Set(['ios', 'android']);
 
@@ -62,6 +62,26 @@ const productToEntitlements = (productId, existing) => {
   return base;
 };
 
+const planToProductId = (planId) => {
+  if (planId === 'profit') {
+    return 'profit_monthly';
+  }
+
+  if (planId === 'breakeven') {
+    return 'breakeven_monthly';
+  }
+
+  if (planId === 'cashflow') {
+    return 'cashflow_monthly';
+  }
+
+  if (planId === 'bundle') {
+    return 'bundle_monthly';
+  }
+
+  return '';
+};
+
 const verifyReceipt = ({ platform, receiptToken }) => {
   if (typeof receiptToken !== 'string' || receiptToken.length < 10) {
     return false;
@@ -114,6 +134,100 @@ const handleStripeWebhook = async (event) => {
 
   const body = parseJsonBody(event);
   const eventId = typeof body.id === 'string' ? body.id : `evt_${Date.now()}`;
+  const eventType = typeof body.type === 'string' ? body.type : 'unknown';
+  const payloadObject = typeof body.data?.object === 'object' && body.data?.object !== null ? body.data.object : {};
+
+  const existingEvent = await getWebhookEvent(eventId);
+  if (existingEvent) {
+    return response(200, {
+      received: true,
+      processed: false,
+      idempotent: true,
+      eventId
+    });
+  }
+
+  const metadata = typeof payloadObject.metadata === 'object' && payloadObject.metadata !== null ? payloadObject.metadata : {};
+  const userId =
+    (typeof metadata.userId === 'string' && metadata.userId) ||
+    (typeof body.userId === 'string' && body.userId) ||
+    (typeof payloadObject.client_reference_id === 'string' && payloadObject.client_reference_id) ||
+    '';
+
+  const existing = userId ? await getRecord(userId) : null;
+
+  if (userId) {
+    let nextStatus = withDefaultStatus(existing?.status);
+    let nextEntitlements = existing?.entitlements ?? {
+      bundle: false,
+      profit: true,
+      breakeven: false,
+      cashflow: false
+    };
+    let nextCurrentPeriodEnd = existing?.currentPeriodEnd ?? null;
+    let nextTrialEnd = existing?.trialEnd ?? null;
+
+    const objectStatus = withDefaultStatus(payloadObject.status);
+    const metadataPlanId = typeof metadata.planId === 'string' ? metadata.planId : '';
+    const productId = planToProductId(metadataPlanId);
+    const periodEndFromStripe = Number(payloadObject.current_period_end);
+    if (Number.isFinite(periodEndFromStripe) && periodEndFromStripe > 0) {
+      nextCurrentPeriodEnd = new Date(periodEndFromStripe * 1000).toISOString();
+    }
+
+    if (eventType === 'checkout.session.completed') {
+      nextStatus = objectStatus === 'trialing' ? 'trialing' : 'active';
+      if (productId) {
+        nextEntitlements = productToEntitlements(productId, nextEntitlements);
+      }
+      nextTrialEnd = nextStatus === 'trialing' ? nextCurrentPeriodEnd : null;
+    }
+
+    if (eventType === 'customer.subscription.updated' || eventType === 'invoice.paid') {
+      nextStatus = objectStatus;
+      nextTrialEnd = nextStatus === 'trialing' ? nextCurrentPeriodEnd : null;
+    }
+
+    if (eventType === 'invoice.payment_failed') {
+      nextStatus = 'past_due';
+    }
+
+    if (eventType === 'customer.subscription.deleted') {
+      nextStatus = 'canceled';
+      nextTrialEnd = null;
+      nextEntitlements = {
+        bundle: false,
+        profit: true,
+        breakeven: false,
+        cashflow: false
+      };
+    }
+
+    const updatedAt = nowIso();
+    const nextRecord = toEntitlementRecord(userId, {
+      lastVerifiedAt: updatedAt,
+      entitlements: nextEntitlements,
+      status: nextStatus,
+      source: 'stripe',
+      currentPeriodEnd: nextCurrentPeriodEnd,
+      trialEnd: nextTrialEnd,
+      trial: {
+        active: nextStatus === 'trialing',
+        expiresAt: nextTrialEnd ?? nextCurrentPeriodEnd
+      },
+      subscriptions: existing?.subscriptions ?? [],
+      updatedAt
+    });
+
+    await putRecord(nextRecord);
+  }
+
+  await putWebhookEvent({
+    eventId,
+    eventType,
+    userId,
+    processedAt: nowIso()
+  });
 
   return response(200, {
     received: true,
