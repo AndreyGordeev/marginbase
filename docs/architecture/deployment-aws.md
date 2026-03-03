@@ -435,6 +435,7 @@ sequenceDiagram
 - Confirm entitlement lifecycle transitions (`trialing` → `active` → `past_due` / `canceled`).
 - Confirm no tokens/secrets/full payloads are logged.
 - Execute the full checklist in `docs/testing/stripe-test-mode-e2e.md` and attach evidence artifacts.
+- Complete sign-off package using `docs/testing/stripe-production-readiness-evidence.md`.
 
 ### 9.5 Failure and rollback notes
 
