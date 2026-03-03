@@ -92,6 +92,7 @@ const addBaseStyles = (): void => {
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .form-grid label { display: grid; gap: 6px; }
   .form-submit { grid-column: 1 / -1; justify-self: end; min-width: 180px; }
+  .button-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   input, select, textarea { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; }
   button { cursor: pointer; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 10px; background: #fff; }
   .primary { background: #2563eb; color: #fff; border-color: #2563eb; }
@@ -420,11 +421,16 @@ const renderSubscription = (root: HTMLElement, service: WebAppService): void => 
   const card = document.createElement('div');
   card.className = 'card';
   card.innerHTML = '<h2>Subscription</h2><p>Monthly plans (Price TBD)</p>';
-  card.appendChild(createActionButton('Activate Bundle (Local Mock)', () => {
+
+  const actions = document.createElement('div');
+  actions.className = 'button-row';
+  actions.appendChild(createActionButton('Activate Bundle (Local Mock)', () => {
     service.activateBundle();
     goTo('/dashboard');
   }, 'primary'));
-  card.appendChild(createActionButton('Refresh subscription status', () => goTo('/subscription')));
+  actions.appendChild(createActionButton('Refresh Subscription Status', () => goTo('/subscription')));
+
+  card.appendChild(actions);
   main.appendChild(card);
   shell.appendChild(main);
   root.replaceChildren(shell);
