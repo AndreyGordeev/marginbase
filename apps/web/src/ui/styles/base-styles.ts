@@ -62,12 +62,14 @@ export const addBaseStyles = (): void => {
   .card { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 16px; }
   .workspace { display: grid; grid-template-columns: 260px 1fr 320px; gap: 16px; align-items: start; }
   .scenario-list { display: flex; flex-direction: column; gap: 8px; }
+  .scenario-list h3 { margin: 0; }
   .scenario-create { align-self: flex-start; padding: 8px 12px; }
   .scenario-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; }
-  .scenario-item span { flex: 1; min-width: 0; }
-  .scenario-item button { padding: 6px 10px; }
+  .scenario-item span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .scenario-item button { padding: 6px 10px; flex-shrink: 0; }
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .form-grid label { display: grid; gap: 6px; }
+  .form-inline-error { grid-column: 1 / -1; margin: 0; overflow-wrap: anywhere; }
   .form-submit { grid-column: 1 / -1; justify-self: end; min-width: 180px; }
   .button-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .inline-error { border: 1px solid #fdba74; border-radius: 8px; background: #fff7ed; color: #9a3412; padding: 10px; }
@@ -76,7 +78,8 @@ export const addBaseStyles = (): void => {
   .primary { background: #2563eb; color: #fff; border-color: #2563eb; }
   .warning-banner { background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; padding: 10px; border-radius: 8px; }
   .empty-state, .system-error-card { background: #fff; border: 1px solid #e5e7eb; padding: 20px; border-radius: 12px; text-align: center; }
-  .locked-overlay { margin-top: 12px; padding: 12px; border: 1px dashed #f59e0b; border-radius: 8px; background: #fffbeb; }
+  .locked-overlay { margin-top: 12px; padding: 12px; border: 1px dashed #f59e0b; border-radius: 8px; background: #fffbeb; display: grid; gap: 10px; align-items: start; }
+  .locked-overlay strong { display: block; color: #111827; }
   .status { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; }
   .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
   .ad-placeholder { margin-top: 12px; border: 1px dashed #d1d5db; border-radius: 10px; background: #f9fafb; color: #6b7280; text-align: center; padding: 14px; font-size: 14px; }

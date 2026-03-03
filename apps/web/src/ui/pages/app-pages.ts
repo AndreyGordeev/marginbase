@@ -43,10 +43,39 @@ type WorkspaceDeps = CommonDeps & {
 
 const MAX_SCENARIO_NAME_LENGTH = 120;
 const FORM_ERROR_VISIBLE_MS = 5000;
+const MAX_SAFE_INTEGER_TEXT = Number.MAX_SAFE_INTEGER.toLocaleString('en-US');
 
-const parseNumber = (value: string, fallback: number): number => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
+const VALIDATION_FIELD_LABELS: Record<string, string> = {
+  scenarioName: 'Scenario name',
+  unitPriceMinor: 'Unit price',
+  quantity: 'Quantity',
+  variableCostPerUnitMinor: 'Variable cost per unit',
+  fixedCostsMinor: 'Fixed costs',
+  targetProfitMinor: 'Target profit',
+  plannedQuantity: 'Planned quantity',
+  startingCashMinor: 'Starting cash',
+  baseMonthlyRevenueMinor: 'Base revenue',
+  fixedMonthlyCostsMinor: 'Fixed monthly costs',
+  variableMonthlyCostsMinor: 'Variable monthly costs',
+  forecastMonths: 'Months',
+  monthlyGrowthRate: 'Growth rate',
+  netProfitMinor: 'Net profit',
+  totalCostMinor: 'Total cost'
+};
+
+const parseRequiredNumber = (value: string, fieldLabel: string): number => {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    throw new Error(`${fieldLabel} is required.`);
+  }
+
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`${fieldLabel} must be a valid number.`);
+  }
+
+  return parsed;
 };
 
 const normalizeScenarioName = (value: string): string => {
@@ -61,6 +90,23 @@ const normalizeScenarioName = (value: string): string => {
   }
 
   return normalized;
+};
+
+const toUserFriendlyValidationMessage = (message: string): string => {
+  let formattedMessage = message;
+
+  for (const [fieldName, label] of Object.entries(VALIDATION_FIELD_LABELS)) {
+    const fieldPattern = new RegExp(`\\b${fieldName}\\b`, 'g');
+    formattedMessage = formattedMessage.replace(fieldPattern, label);
+  }
+
+  formattedMessage = formattedMessage
+    .replace(/must be a safe integer greater than or equal to 0\.?/gi, `must be a non-negative whole number (max ${MAX_SAFE_INTEGER_TEXT}).`)
+    .replace(/must be a safe integer in minor units\.?/gi, `must be a whole number in minor units (max ${MAX_SAFE_INTEGER_TEXT}).`)
+    .replace(/must be an integer greater than or equal to 0\.?/gi, 'must be a non-negative whole number.')
+    .replace(/must be an integer in minor units\.?/gi, 'must be a whole number in minor units.');
+
+  return formattedMessage;
 };
 
 export const renderSidebar = (
@@ -278,8 +324,9 @@ export const renderWorkspacePage = async (
   };
 
   const formError = document.createElement('div');
-  formError.className = 'inline-error';
+  formError.className = 'inline-error form-inline-error';
   formError.hidden = true;
+  formError.setAttribute('aria-live', 'polite');
   let formErrorTimer: ReturnType<typeof setTimeout> | undefined;
 
   const clearFormError = (): void => {
@@ -342,6 +389,8 @@ export const renderWorkspacePage = async (
     `;
   }
 
+  form.insertAdjacentElement('afterbegin', formError);
+
   form.appendChild(
     createActionButton('Culculate Scenario', async () => {
       clearFormError();
@@ -354,10 +403,10 @@ export const renderWorkspacePage = async (
           await service.saveProfitScenario({
             scenarioId: selectedScenario?.scenarioId,
             scenarioName,
-            unitPriceMinor: parseNumber(String(data.get('unitPriceMinor') ?? '0'), 0),
-            quantity: parseNumber(String(data.get('quantity') ?? '0'), 0),
-            variableCostPerUnitMinor: parseNumber(String(data.get('variableCostPerUnitMinor') ?? '0'), 0),
-            fixedCostsMinor: parseNumber(String(data.get('fixedCostsMinor') ?? '0'), 0)
+            unitPriceMinor: parseRequiredNumber(String(data.get('unitPriceMinor') ?? ''), 'Unit price'),
+            quantity: parseRequiredNumber(String(data.get('quantity') ?? ''), 'Quantity'),
+            variableCostPerUnitMinor: parseRequiredNumber(String(data.get('variableCostPerUnitMinor') ?? ''), 'Variable cost per unit'),
+            fixedCostsMinor: parseRequiredNumber(String(data.get('fixedCostsMinor') ?? ''), 'Fixed costs')
           });
         }
 
@@ -365,11 +414,11 @@ export const renderWorkspacePage = async (
           await service.saveBreakEvenScenario({
             scenarioId: selectedScenario?.scenarioId,
             scenarioName,
-            unitPriceMinor: parseNumber(String(data.get('unitPriceMinor') ?? '0'), 0),
-            variableCostPerUnitMinor: parseNumber(String(data.get('variableCostPerUnitMinor') ?? '0'), 0),
-            fixedCostsMinor: parseNumber(String(data.get('fixedCostsMinor') ?? '0'), 0),
-            targetProfitMinor: parseNumber(String(data.get('targetProfitMinor') ?? '0'), 0),
-            plannedQuantity: parseNumber(String(data.get('plannedQuantity') ?? '0'), 0)
+            unitPriceMinor: parseRequiredNumber(String(data.get('unitPriceMinor') ?? ''), 'Unit price'),
+            variableCostPerUnitMinor: parseRequiredNumber(String(data.get('variableCostPerUnitMinor') ?? ''), 'Variable cost per unit'),
+            fixedCostsMinor: parseRequiredNumber(String(data.get('fixedCostsMinor') ?? ''), 'Fixed costs'),
+            targetProfitMinor: parseRequiredNumber(String(data.get('targetProfitMinor') ?? ''), 'Target profit'),
+            plannedQuantity: parseRequiredNumber(String(data.get('plannedQuantity') ?? ''), 'Planned quantity')
           });
         }
 
@@ -377,23 +426,23 @@ export const renderWorkspacePage = async (
           await service.saveCashflowScenario({
             scenarioId: selectedScenario?.scenarioId,
             scenarioName,
-            startingCashMinor: parseNumber(String(data.get('startingCashMinor') ?? '0'), 0),
-            baseMonthlyRevenueMinor: parseNumber(String(data.get('baseMonthlyRevenueMinor') ?? '0'), 0),
-            fixedMonthlyCostsMinor: parseNumber(String(data.get('fixedMonthlyCostsMinor') ?? '0'), 0),
-            variableMonthlyCostsMinor: parseNumber(String(data.get('variableMonthlyCostsMinor') ?? '0'), 0),
-            forecastMonths: parseNumber(String(data.get('forecastMonths') ?? '1'), 1),
-            monthlyGrowthRate: parseNumber(String(data.get('monthlyGrowthRate') ?? '0'), 0)
+            startingCashMinor: parseRequiredNumber(String(data.get('startingCashMinor') ?? ''), 'Starting cash'),
+            baseMonthlyRevenueMinor: parseRequiredNumber(String(data.get('baseMonthlyRevenueMinor') ?? ''), 'Base revenue'),
+            fixedMonthlyCostsMinor: parseRequiredNumber(String(data.get('fixedMonthlyCostsMinor') ?? ''), 'Fixed monthly costs'),
+            variableMonthlyCostsMinor: parseRequiredNumber(String(data.get('variableMonthlyCostsMinor') ?? ''), 'Variable monthly costs'),
+            forecastMonths: parseRequiredNumber(String(data.get('forecastMonths') ?? ''), 'Months'),
+            monthlyGrowthRate: parseRequiredNumber(String(data.get('monthlyGrowthRate') ?? ''), 'Growth rate')
           });
         }
 
         await render();
       } catch (error) {
-        showFormError(error instanceof Error ? error.message : 'Validation failed. Please review your inputs.');
+        const message = error instanceof Error ? toUserFriendlyValidationMessage(error.message) : 'Validation failed. Please review your inputs.';
+        showFormError(message);
       }
     }, 'primary form-submit')
   );
 
-  center.appendChild(formError);
   center.appendChild(form);
   const ad = document.createElement('div');
   ad.className = 'ad-placeholder';
@@ -439,9 +488,17 @@ export const renderWorkspacePage = async (
   if (!allowed) {
     const overlay = document.createElement('div');
     overlay.className = 'locked-overlay';
-    overlay.innerHTML = '<strong>This module requires an active subscription.</strong>';
-    overlay.appendChild(createActionButton('Go to Subscription', () => goTo('/subscription'), 'primary'));
-    overlay.appendChild(createActionButton('Back to Dashboard', () => goTo('/dashboard')));
+
+    const message = document.createElement('strong');
+    message.textContent = 'This module requires an active subscription.';
+
+    const actions = document.createElement('div');
+    actions.className = 'button-row';
+    actions.appendChild(createActionButton('Go to Subscription', () => goTo('/subscription'), 'primary'));
+    actions.appendChild(createActionButton('Back to Dashboard', () => goTo('/dashboard')));
+
+    overlay.appendChild(message);
+    overlay.appendChild(actions);
     results.appendChild(overlay);
   }
 
