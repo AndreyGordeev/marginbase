@@ -96,6 +96,24 @@ Cancellation can be performed through:
 For subscriptions purchased via Apple App Store or Google Play, billing
 and cancellation are governed by the respective platform's terms.
 
+### 4.3 Subscription Lifecycle, Payment Failure, and Chargebacks
+
+For web subscriptions processed via Stripe, the subscription lifecycle
+may include statuses such as trialing, active, past_due, and canceled,
+depending on payment and cancellation state.
+
+If payment fails (for example, card decline or expired payment method),
+subscription status may change to past_due and access to paid modules
+may be restricted until payment is successfully resolved.
+
+Users remain responsible for valid payment methods and timely update of
+billing details.
+
+Chargebacks and payment disputes are handled under Stripe and issuer
+network rules. Where a chargeback is found improper or abusive, we may
+suspend or terminate access to paid features, subject to mandatory
+consumer protections.
+
 ------------------------------------------------------------------------
 
 ## 5. Consumer Rights (EU & Poland)

@@ -38,3 +38,19 @@ periods unless required by law.
 After cancellation:
 - Access remains active until the end of the current billing period.
 - No further charges will occur.
+
+## 4. Payment Failure
+
+If a renewal payment fails, subscription status may be marked as
+past_due and paid access may be limited until payment is resolved.
+
+You are responsible for maintaining valid payment details with the
+relevant provider (Stripe, Apple, or Google).
+
+## 5. Chargebacks and Payment Disputes
+
+Chargebacks and payment disputes are handled according to the payment
+provider and card network procedures.
+
+Where a dispute is resolved against the user or is deemed abusive, paid
+access may be suspended, subject to mandatory consumer rights.

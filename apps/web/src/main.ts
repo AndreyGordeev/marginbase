@@ -145,6 +145,16 @@ Cancellation can be performed through:
 
 For subscriptions purchased via Apple App Store or Google Play, billing and cancellation are governed by the respective platform's terms.
 
+### 4.3 Subscription Lifecycle, Payment Failure, and Chargebacks
+
+For web subscriptions processed via Stripe, the subscription lifecycle may include statuses such as trialing, active, past_due, and canceled, depending on payment and cancellation state.
+
+If payment fails (for example, card decline or expired payment method), subscription status may change to past_due and access to paid modules may be restricted until payment is successfully resolved.
+
+Users remain responsible for valid payment methods and timely update of billing details.
+
+Chargebacks and payment disputes are handled under Stripe and issuer network rules. Where a chargeback is found improper or abusive, we may suspend or terminate access to paid features, subject to mandatory consumer protections.
+
 ------------------------------------------------------------------------
 
 ## 5. Consumer Rights (EU & Poland)
@@ -319,6 +329,8 @@ Depending on usage, the following categories of personal data may be processed:
 - Subscription status
 - Entitlement metadata
 - Billing identifiers (processed via third-party payment providers)
+- Stripe customer / subscription / invoice identifiers (web only)
+- Payment event metadata (e.g., payment success/failure, cancellation, chargeback/dispute status)
 
 ### 2.3 Technical & Security Data
 
@@ -368,6 +380,10 @@ Payments may be processed by:
 - Google Play Store
 
 When subscribing via Apple or Google platforms, billing data is processed directly by the respective platform under their own privacy policies.
+
+For Stripe web subscriptions, payment card data is processed by Stripe as independent payment processor under Stripe's PCI-compliant systems. The Service does not store full card numbers or card security codes.
+
+The Service may process webhook-derived billing lifecycle metadata (including trial conversion, renewal status, payment failures, and chargeback indicators) solely to manage lawful access control, subscription administration, fraud prevention, and accounting compliance.
 
 ------------------------------------------------------------------------
 
@@ -515,6 +531,18 @@ Cancellation prevents future charges but does not refund past billing periods un
 After cancellation:
 - Access remains active until the end of the current billing period.
 - No further charges will occur.
+
+## 4. Payment Failure
+
+If a renewal payment fails, subscription status may be marked as past_due and paid access may be limited until payment is resolved.
+
+You are responsible for maintaining valid payment details with the relevant provider (Stripe, Apple, or Google).
+
+## 5. Chargebacks and Payment Disputes
+
+Chargebacks and payment disputes are handled according to the payment provider and card network procedures.
+
+Where a dispute is resolved against the user or is deemed abusive, paid access may be suspended, subject to mandatory consumer rights.
 `,
   '/refund': `# Refund Policy
 
@@ -537,6 +565,12 @@ Refunds for subscriptions purchased via Apple App Store or Google Play are gover
 ## 4. Chargebacks
 
 Improper chargebacks may result in account suspension.
+
+Chargebacks and payment disputes are reviewed under provider and card network rules. If a dispute is accepted by the issuing bank/payment provider, any required adjustment will be applied accordingly.
+
+## 5. Payment Failure
+
+Failed renewal payments do not create an automatic refund entitlement. Access to paid features may be limited until payment is successfully completed or the subscription is cancelled.
 `,
   '/cookies': `# Cookie Policy
 
@@ -1297,7 +1331,7 @@ const renderSubscription = (root: HTMLElement, service: WebAppService): void => 
   disclosureLinks.className = 'button-row';
   const termsLink = document.createElement('button');
   termsLink.className = 'link-muted';
-  termsLink.textContent = 'Terms';
+  termsLink.textContent = 'Terms of Service';
   termsLink.onclick = () => {
     setLegalBackTarget('/');
     goTo('/terms');
@@ -1305,7 +1339,7 @@ const renderSubscription = (root: HTMLElement, service: WebAppService): void => 
 
   const cancellationLink = document.createElement('button');
   cancellationLink.className = 'link-muted';
-  cancellationLink.textContent = 'Cancellation';
+  cancellationLink.textContent = 'Cancellation Policy';
   cancellationLink.onclick = () => {
     setLegalBackTarget('/');
     goTo('/cancellation');
