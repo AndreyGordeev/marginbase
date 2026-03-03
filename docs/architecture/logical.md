@@ -242,6 +242,8 @@ State --> Crash
 **Endpoints (suggested):**
 - `POST /auth/verify`
 - `GET /entitlements`
+- `POST /billing/checkout/session`
+- `POST /billing/webhook/stripe`
 - `POST /telemetry/batch`
 
 ---

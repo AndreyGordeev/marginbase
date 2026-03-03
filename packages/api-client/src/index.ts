@@ -21,10 +21,18 @@ export interface EntitlementSet {
   cashflow: boolean;
 }
 
+export type EntitlementStatus = 'active' | 'trialing' | 'past_due' | 'canceled';
+
+export type EntitlementSource = 'stripe' | 'app_store' | 'google_play' | 'unknown';
+
 export interface EntitlementsResponse {
   userId: string;
   lastVerifiedAt: string;
   entitlements: EntitlementSet;
+  status: EntitlementStatus;
+  source: EntitlementSource;
+  currentPeriodEnd: string | null;
+  trialEnd: string | null;
   trial: {
     active: boolean;
     expiresAt: string;
