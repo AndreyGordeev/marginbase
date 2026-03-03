@@ -95,6 +95,7 @@ const addBaseStyles = (): void => {
   .status { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; }
   .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
   .modal { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; background: #fff; }
+  .space-y-6 { display: grid; gap: 24px; }
   `;
 
   document.head.appendChild(style);
@@ -425,9 +426,11 @@ const renderDataBackup = async (root: HTMLElement, service: WebAppService): Prom
   const main = document.createElement('main');
   main.className = 'main';
 
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.innerHTML = '<h2>Data & Backup</h2><p>Data Management</p>';
+  const title = document.createElement('h2');
+  title.textContent = 'Data & Backup';
+
+  const sections = document.createElement('div');
+  sections.className = 'space-y-6';
 
   const exportButton = createActionButton('Export all scenarios (JSON)', async () => {
     const payload = await service.exportScenariosJson();
@@ -479,13 +482,24 @@ const renderDataBackup = async (root: HTMLElement, service: WebAppService): Prom
     await render();
   }, 'primary');
 
-  card.appendChild(exportButton);
-  card.appendChild(importInput);
-  card.appendChild(previewButton);
-  card.appendChild(confirmButton);
-  card.appendChild(importSummary);
+  const exportCard = document.createElement('section');
+  exportCard.className = 'card';
+  exportCard.innerHTML = '<h3>Export</h3><p>Export all local scenarios to a JSON file.</p>';
+  exportCard.appendChild(exportButton);
 
-  main.appendChild(card);
+  const importCard = document.createElement('section');
+  importCard.className = 'card';
+  importCard.innerHTML = '<h3>Import</h3><p>Import scenarios from JSON. This replaces all existing scenarios.</p>';
+  importCard.appendChild(importInput);
+  importCard.appendChild(previewButton);
+  importCard.appendChild(confirmButton);
+  importCard.appendChild(importSummary);
+
+  sections.appendChild(exportCard);
+  sections.appendChild(importCard);
+
+  main.appendChild(title);
+  main.appendChild(sections);
   shell.appendChild(main);
   root.replaceChildren(shell);
 };
