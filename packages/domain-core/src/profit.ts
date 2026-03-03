@@ -49,7 +49,6 @@ export const calculateProfit = (input: ProfitInput): ProfitResult => {
 
   let revenueTotalMinor: Decimal;
   let variableCostTotalMinor: Decimal;
-  let markupPct: Decimal | null = null;
 
   if (input.mode === 'unit') {
     const unitPriceMinor = assertNonNegativeMinorUnits(input.unitPriceMinor, 'unitPriceMinor');
@@ -62,12 +61,6 @@ export const calculateProfit = (input: ProfitInput): ProfitResult => {
 
     revenueTotalMinor = new Decimal(unitPriceMinor).mul(quantity);
     variableCostTotalMinor = new Decimal(variableCostPerUnitMinor).mul(quantity).plus(additionalVariableCostsMinor);
-
-    if (variableCostPerUnitMinor > 0) {
-      markupPct = new Decimal(unitPriceMinor).minus(variableCostPerUnitMinor).div(variableCostPerUnitMinor);
-    } else {
-      warnings.add('V_ZERO');
-    }
   } else {
     const totalRevenueMinor = assertNonNegativeMinorUnits(input.totalRevenueMinor, 'totalRevenueMinor');
     const additionalVariableCostsMinor = assertNonNegativeMinorUnits(
@@ -93,9 +86,16 @@ export const calculateProfit = (input: ProfitInput): ProfitResult => {
   const netProfitMinor = grossProfitMinor.minus(fixedCostsMinor);
   const totalCostMinor = variableCostTotalMinor.plus(fixedCostsMinor);
   const contributionMarginMinor = grossProfitMinor;
+  let markupPct: Decimal | null = null;
 
   let contributionMarginPct: Decimal | null = null;
   let netProfitPct: Decimal | null = null;
+
+  if (totalCostMinor.gt(0)) {
+    markupPct = netProfitMinor.div(totalCostMinor);
+  } else {
+    warnings.add('V_ZERO');
+  }
 
   if (revenueTotalMinor.gt(0)) {
     contributionMarginPct = contributionMarginMinor.div(revenueTotalMinor);
