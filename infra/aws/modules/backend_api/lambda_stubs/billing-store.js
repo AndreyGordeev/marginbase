@@ -2,6 +2,8 @@ const memoryStore = globalThis.__entitlementMemoryStore ?? new Map();
 globalThis.__entitlementMemoryStore = memoryStore;
 const memoryUserStore = globalThis.__userProfileMemoryStore ?? new Map();
 globalThis.__userProfileMemoryStore = memoryUserStore;
+const memoryWebhookEventStore = globalThis.__billingWebhookEventMemoryStore ?? new Map();
+globalThis.__billingWebhookEventMemoryStore = memoryWebhookEventStore;
 
 const toEntitlementRecord = (userId, payload) => {
   return {
@@ -92,6 +94,29 @@ const deleteUserProfile = async (userId) => {
   return memoryUserStore.delete(userId);
 };
 
+const getWebhookEvent = async (eventId) => {
+  if (typeof globalThis.__webhookEventGet === 'function') {
+    return globalThis.__webhookEventGet({
+      tableName: getTableName(),
+      eventId
+    });
+  }
+
+  return memoryWebhookEventStore.get(eventId) ?? null;
+};
+
+const putWebhookEvent = async (eventRecord) => {
+  if (typeof globalThis.__webhookEventPut === 'function') {
+    await globalThis.__webhookEventPut({
+      tableName: getTableName(),
+      eventRecord
+    });
+    return;
+  }
+
+  memoryWebhookEventStore.set(eventRecord.eventId, eventRecord);
+};
+
 exports.getRecord = getRecord;
 exports.putRecord = putRecord;
 exports.toEntitlementRecord = toEntitlementRecord;
@@ -99,3 +124,5 @@ exports.getUserProfile = getUserProfile;
 exports.putUserProfile = putUserProfile;
 exports.deleteEntitlements = deleteEntitlements;
 exports.deleteUserProfile = deleteUserProfile;
+exports.getWebhookEvent = getWebhookEvent;
+exports.putWebhookEvent = putWebhookEvent;

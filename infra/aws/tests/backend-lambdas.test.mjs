@@ -110,6 +110,117 @@ test('billing verify updates persisted entitlements and entitlements endpoint re
   delete globalThis.__ddbGet;
 });
 
+test('stripe webhook is idempotent and persists lifecycle status for entitlements', async () => {
+  const tableData = new Map();
+
+  process.env.ENTITLEMENTS_TABLE_NAME = 'entitlements-table';
+  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_123';
+
+  globalThis.__ddbPut = async ({ tableName, record }) => {
+    assert.equal(tableName, 'entitlements-table');
+    tableData.set(record.userId, record);
+  };
+
+  globalThis.__ddbGet = async ({ tableName, userId }) => {
+    assert.equal(tableName, 'entitlements-table');
+    return tableData.get(userId) ?? null;
+  };
+
+  const checkoutEvent = await billingHandler({
+    requestContext: {
+      routeKey: 'POST /billing/webhook/stripe'
+    },
+    headers: {
+      'stripe-signature': 't=1,v1=testsig'
+    },
+    body: JSON.stringify({
+      id: 'evt_checkout_1',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          status: 'trialing',
+          current_period_end: 1770000000,
+          metadata: {
+            userId: 'u_webhook_1',
+            planId: 'bundle'
+          }
+        }
+      }
+    })
+  });
+
+  assert.equal(checkoutEvent.statusCode, 200);
+  assert.equal(parseBody(checkoutEvent).processed, true);
+
+  const duplicateCheckoutEvent = await billingHandler({
+    requestContext: {
+      routeKey: 'POST /billing/webhook/stripe'
+    },
+    headers: {
+      'stripe-signature': 't=1,v1=testsig'
+    },
+    body: JSON.stringify({
+      id: 'evt_checkout_1',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          status: 'trialing',
+          current_period_end: 1770000000,
+          metadata: {
+            userId: 'u_webhook_1',
+            planId: 'bundle'
+          }
+        }
+      }
+    })
+  });
+
+  assert.equal(duplicateCheckoutEvent.statusCode, 200);
+  assert.equal(parseBody(duplicateCheckoutEvent).idempotent, true);
+  assert.equal(parseBody(duplicateCheckoutEvent).processed, false);
+
+  const paymentFailedEvent = await billingHandler({
+    requestContext: {
+      routeKey: 'POST /billing/webhook/stripe'
+    },
+    headers: {
+      'stripe-signature': 't=1,v1=testsig'
+    },
+    body: JSON.stringify({
+      id: 'evt_payment_failed_1',
+      type: 'invoice.payment_failed',
+      data: {
+        object: {
+          status: 'past_due',
+          current_period_end: 1770500000,
+          metadata: {
+            userId: 'u_webhook_1'
+          }
+        }
+      }
+    })
+  });
+
+  assert.equal(paymentFailedEvent.statusCode, 200);
+
+  const entitlementsResponse = await entitlementsHandler({
+    queryStringParameters: {
+      userId: 'u_webhook_1'
+    }
+  });
+
+  assert.equal(entitlementsResponse.statusCode, 200);
+  const entitlementsBody = parseBody(entitlementsResponse);
+  assert.equal(entitlementsBody.status, 'past_due');
+  assert.equal(entitlementsBody.source, 'stripe');
+  assert.equal(entitlementsBody.entitlements.bundle, true);
+  assert.equal(typeof entitlementsBody.currentPeriodEnd, 'string');
+
+  delete globalThis.__ddbPut;
+  delete globalThis.__ddbGet;
+  delete process.env.STRIPE_WEBHOOK_SECRET;
+});
+
 test('account delete removes entitlements and minimal user profile data', async () => {
   const entitlementMap = new Map([['u_delete_1', { userId: 'u_delete_1' }]]);
   const userMap = new Map([['u_delete_1', { userId: 'u_delete_1', email: 'user@example.com' }]]);
