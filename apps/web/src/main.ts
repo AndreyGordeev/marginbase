@@ -499,7 +499,7 @@ const renderSettings = async (root: HTMLElement, service: WebAppService): Promis
 
   const card = document.createElement('div');
   card.className = 'card';
-  card.innerHTML = '<h2>Settings</h2><p>Account & app settings</p>';
+  card.innerHTML = '<h2>Settings</h2><p>Account actions and future configuration options.</p>';
 
   const deleteAccountButton = createActionButton('Delete account data', async () => {
     const deleted = await service.deleteAccount('local_web_user');
@@ -510,8 +510,6 @@ const renderSettings = async (root: HTMLElement, service: WebAppService): Promis
   });
 
   card.appendChild(deleteAccountButton);
-  card.appendChild(createActionButton('Privacy', () => goTo('/legal/privacy')));
-  card.appendChild(createActionButton('Terms', () => goTo('/legal/terms')));
   main.appendChild(card);
   shell.appendChild(main);
   root.replaceChildren(shell);
