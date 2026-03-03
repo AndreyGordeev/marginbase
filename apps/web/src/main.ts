@@ -69,6 +69,36 @@ const addBaseStyles = (): void => {
   body { margin: 0; font-family: Arial, sans-serif; background: #f5f6f8; color: #1f2937; }
   .page { padding: 20px; }
   .page-centered { min-height: 100vh; display: grid; place-items: center; }
+  .page-login { min-height: 100vh; padding: 24px; display: grid; place-items: center; background: linear-gradient(180deg, #f8fafc 0%, #f3f4f6 100%); }
+  .login-shell { width: min(1120px, 100%); display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 18px; align-items: stretch; }
+  .login-panel, .login-preview { box-shadow: 0 10px 24px rgba(17, 24, 39, 0.08); }
+  .login-panel { display: grid; gap: 18px; padding: 24px; }
+  .login-heading { margin: 0; font-size: 34px; line-height: 1.15; }
+  .login-subheading { margin: 0; color: #374151; font-size: 18px; line-height: 1.35; }
+  .login-values { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+  .login-values li { color: #1f2937; }
+  .login-auth { display: grid; gap: 10px; }
+  .login-auth button { width: fit-content; min-width: 220px; }
+  .login-trust { display: grid; gap: 6px; color: #4b5563; font-size: 13px; line-height: 1.35; }
+  .login-footer { border-top: 1px solid #e5e7eb; padding-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .login-preview { padding: 20px; display: grid; gap: 12px; }
+  .preview-title { margin: 0; font-size: 18px; }
+  .preview-subtitle { margin: 0; color: #6b7280; font-size: 13px; }
+  .preview-surface { border: 1px solid #e5e7eb; border-radius: 10px; background: #f8fafc; padding: 12px; display: grid; gap: 10px; }
+  .preview-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .preview-kpi { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px; display: grid; gap: 4px; }
+  .preview-kpi-label { font-size: 11px; color: #6b7280; }
+  .preview-kpi-value { font-size: 14px; font-weight: 700; color: #111827; }
+  .preview-chart { height: 96px; border-radius: 8px; border: 1px solid #dbeafe; background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%); position: relative; overflow: hidden; }
+  .preview-chart::after { content: ''; position: absolute; inset: 18px 10px 12px 10px; border-left: 2px solid #93c5fd; border-bottom: 2px solid #93c5fd; border-radius: 0 0 0 6px; }
+  .preview-chart::before { content: ''; position: absolute; left: 26px; right: 14px; bottom: 24px; height: 2px; background: linear-gradient(90deg, #60a5fa 0%, #2563eb 40%, #1d4ed8 100%); transform: skewX(-26deg) translateY(-4px); }
+  .preview-calc { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; display: grid; gap: 8px; }
+  .preview-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .preview-field { border: 1px solid #e5e7eb; border-radius: 6px; background: #f9fafb; height: 28px; }
+  .preview-cta { height: 30px; border-radius: 6px; background: #2563eb; }
+  @media (max-width: 940px) {
+    .login-shell { grid-template-columns: 1fr; }
+  }
   .auth-card { width: min(620px, calc(100vw - 48px)); padding: 26px; display: grid; gap: 18px; }
   .auth-copy { display: grid; gap: 10px; }
   .auth-copy h2, .auth-copy p { margin: 0; }
@@ -101,6 +131,7 @@ const addBaseStyles = (): void => {
   .status { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; }
   .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
   .ad-placeholder { margin-top: 12px; border: 1px dashed #d1d5db; border-radius: 10px; background: #f9fafb; color: #6b7280; text-align: center; padding: 14px; font-size: 14px; }
+  .results-json { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; max-width: 100%; }
   .modal { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; background: #fff; }
   .modal:empty { display: none; }
   .space-y-6 { display: grid; gap: 24px; }
@@ -123,7 +154,7 @@ const renderSidebar = (active: RoutePath): HTMLElement => {
   ];
 
   const title = document.createElement('h3');
-  title.textContent = 'MarginBase';
+  title.textContent = 'Margin Base';
   sidebar.appendChild(title);
 
   for (const link of links) {
@@ -137,23 +168,68 @@ const renderSidebar = (active: RoutePath): HTMLElement => {
 
 const renderLogin = (root: HTMLElement): void => {
   const page = document.createElement('div');
-  page.className = 'page page-centered';
-  const card = document.createElement('div');
-  card.className = 'card auth-card';
+  page.className = 'page-login';
 
-  const copy = document.createElement('div');
-  copy.className = 'auth-copy';
-  copy.innerHTML = '<h2>SMB Finance Toolkit</h2><p>Financial clarity for small businesses.</p>';
+  const shell = document.createElement('div');
+  shell.className = 'login-shell';
 
-  const actions = document.createElement('div');
-  actions.className = 'auth-actions';
-  actions.appendChild(createActionButton('Continue with Google', () => goTo('/gate'), 'primary'));
-  actions.appendChild(createActionButton('Privacy Policy', () => goTo('/legal/privacy')));
-  actions.appendChild(createActionButton('Terms of Service', () => goTo('/legal/terms')));
+  const left = document.createElement('section');
+  left.className = 'card login-panel';
+  left.innerHTML = `
+    <h1 class="login-heading">SMB Finance Toolkit</h1>
+    <p class="login-subheading">Financial clarity for small businesses.</p>
+    <ul class="login-values">
+      <li>Profit & margin analysis in seconds</li>
+      <li>Break-even modeling for smarter pricing</li>
+      <li>Cashflow forecasting without spreadsheets</li>
+    </ul>
+  `;
 
-  card.appendChild(copy);
-  card.appendChild(actions);
-  page.appendChild(card);
+  const auth = document.createElement('div');
+  auth.className = 'login-auth';
+  auth.appendChild(createActionButton('Continue with Google', () => goTo('/gate'), 'primary'));
+
+  const trust = document.createElement('div');
+  trust.className = 'login-trust';
+  trust.innerHTML = `
+    <div>🔒 Offline-first. Your data stays on your device.</div>
+    <div>🇪🇺 EU-hosted infrastructure</div>
+    <div>No spreadsheets required</div>
+    <div>No credit card required</div>
+  `;
+
+  const footer = document.createElement('div');
+  footer.className = 'login-footer';
+  footer.appendChild(createActionButton('Privacy Policy', () => goTo('/legal/privacy')));
+  footer.appendChild(createActionButton('Terms of Service', () => goTo('/legal/terms')));
+
+  left.appendChild(auth);
+  left.appendChild(trust);
+  left.appendChild(footer);
+
+  const right = document.createElement('section');
+  right.className = 'card login-preview';
+  right.innerHTML = `
+    <h3 class="preview-title">Product Preview</h3>
+    <p class="preview-subtitle">Live calculations, structured insights, no spreadsheet chaos.</p>
+    <div class="preview-surface">
+      <div class="preview-kpis">
+        <div class="preview-kpi"><span class="preview-kpi-label">Margin</span><span class="preview-kpi-value">31.8%</span></div>
+        <div class="preview-kpi"><span class="preview-kpi-label">Break-even</span><span class="preview-kpi-value">174 u</span></div>
+        <div class="preview-kpi"><span class="preview-kpi-label">Cash Runway</span><span class="preview-kpi-value">5.4 mo</span></div>
+      </div>
+      <div class="preview-chart"></div>
+      <div class="preview-calc">
+        <div class="preview-row"><div class="preview-field"></div><div class="preview-field"></div></div>
+        <div class="preview-row"><div class="preview-field"></div><div class="preview-field"></div></div>
+        <div class="preview-cta"></div>
+      </div>
+    </div>
+  `;
+
+  shell.appendChild(left);
+  shell.appendChild(right);
+  page.appendChild(shell);
   root.replaceChildren(page);
 };
 
@@ -419,6 +495,7 @@ const renderWorkspace = async (
   results.innerHTML = '<h3>Results</h3>';
   if (selectedScenario?.calculatedData) {
     const pre = document.createElement('pre');
+    pre.className = 'results-json';
     pre.textContent = JSON.stringify(selectedScenario.calculatedData, null, 2);
     results.appendChild(pre);
   } else {
