@@ -38,6 +38,7 @@ Client Devices {
 External Providers {
   Google OAuth [icon: google]
   Crash Reporting (SDK) [icon: bug]
+  Stripe [icon: credit-card]
 
   Billing / Subscriptions {
     App Store Billing [icon: credit-card]
@@ -63,6 +64,7 @@ AWS (EU Region) {
   Compute {
     Auth Lambda [icon: aws-lambda]
     Entitlements Lambda [icon: aws-lambda]
+    Billing Lambda [icon: aws-lambda]
     Telemetry Lambda [icon: aws-lambda]
   }
 
@@ -103,8 +105,11 @@ Mobile App (Android) -> Google Play Billing
 %% Subscription verification / entitlements (backend -> store APIs)
 API Gateway (HTTP API) -> Entitlements Lambda
 Entitlements Lambda -> Entitlements (DynamoDB)
-Entitlements Lambda -> App Store Billing
-Entitlements Lambda -> Google Play Billing
+API Gateway (HTTP API) -> Billing Lambda
+Billing Lambda -> Entitlements (DynamoDB)
+Billing Lambda -> Stripe
+Billing Lambda -> App Store Billing
+Billing Lambda -> Google Play Billing
 
 %% Telemetry
 API Gateway (HTTP API) -> Telemetry Lambda
@@ -113,11 +118,13 @@ Telemetry Lambda -> Telemetry Storage (S3)
 %% Observability
 Auth Lambda -> CloudWatch
 Entitlements Lambda -> CloudWatch
+Billing Lambda -> CloudWatch
 Telemetry Lambda -> CloudWatch
 
 %% Secrets / keys
 Auth Lambda -> Secrets Manager
 Entitlements Lambda -> Secrets Manager
+Billing Lambda -> Secrets Manager
 Telemetry Lambda -> Secrets Manager
 Secrets Manager -> KMS
 Telemetry Storage (S3) -> KMS
@@ -186,6 +193,9 @@ Web App (SPA) -> Crash Reporting (SDK)
 **Suggested endpoints:**
 - `POST /auth/verify`
 - `GET /entitlements`
+- `POST /billing/verify`
+- `POST /billing/checkout/session`
+- `POST /billing/webhook/stripe`
 - `POST /telemetry/batch`
 
 **Rules:**
@@ -214,8 +224,17 @@ Web App (SPA) -> Crash Reporting (SDK)
 
 **Responsibilities:**
 - Read/write entitlement state in DynamoDB.
-- Verify iOS/Android receipts/subscriptions (server-side) with the stores.
 - Return stable `EntitlementSet` contract (cached by clients).
+
+### 4.6 Billing Lambda
+**Purpose:** Process billing authority flows (store verification + Stripe web checkout/webhooks).
+
+**Responsibilities:**
+- Verify iOS/Android receipts/subscriptions (server-side) with the stores.
+- Create Stripe Checkout Session via backend authority (`POST /billing/checkout/session`).
+- Verify Stripe webhook signature and process lifecycle events (`POST /billing/webhook/stripe`).
+- Enforce webhook idempotency and persist lifecycle fields in DynamoDB.
+- Update entitlement lifecycle: `status`, `source`, `currentPeriodEnd`, `trialEnd`.
 
 **Contract (example):**
 ```json
@@ -241,7 +260,7 @@ Web App (SPA) -> Crash Reporting (SDK)
 
 ---
 
-### 4.6 DynamoDB (Entitlements)
+### 4.7 DynamoDB (Entitlements)
 **Purpose:** Minimal PII persistence for entitlement status.
 
 **Stored data (minimize):**
@@ -257,7 +276,7 @@ Web App (SPA) -> Crash Reporting (SDK)
 
 ---
 
-### 4.7 Telemetry Lambda + Telemetry S3
+### 4.8 Telemetry Lambda + Telemetry S3
 **Purpose:** Accept a batch of allowlisted events and write raw payloads to S3 cheaply.
 
 **Must:**
@@ -273,12 +292,12 @@ Web App (SPA) -> Crash Reporting (SDK)
 
 ---
 
-### 4.8 Secrets Manager + KMS
+### 4.9 Secrets Manager + KMS
 **Purpose:** Central secret storage + encryption keys.
 
 **Secrets:**
 - Store verification credentials (if required).
-- Webhook secrets / signing keys (future web payments).
+- Stripe API secret key + webhook signing secret.
 - Any API keys for telemetry/crash vendor (if backend needs them).
 
 **KMS usage:**
@@ -287,7 +306,7 @@ Web App (SPA) -> Crash Reporting (SDK)
 
 ---
 
-### 4.9 CloudWatch
+### 4.10 CloudWatch
 **Purpose:** Minimal observability without cost blow-ups.
 
 **Must:**
@@ -345,7 +364,86 @@ infra/
 
 ---
 
-## 8. “Do / Don’t” Summary for Copilot
+## 8. Stripe Web Billing Sequence (Mermaid)
+
+```mermaid
+sequenceDiagram
+   participant U as User Browser
+   participant W as Web App
+   participant A as API Gateway
+   participant B as Billing Lambda
+   participant S as Stripe
+   participant D as DynamoDB Entitlements
+   participant E as Entitlements Lambda
+
+   U->>W: Click "Start Free Trial"
+   W->>A: POST /billing/checkout/session (planId, userId, email)
+   A->>B: Forward request
+   B->>S: Create Checkout Session (metadata userId/planId)
+   S-->>B: checkoutUrl
+   B-->>W: checkoutUrl
+   W->>S: Redirect to checkoutUrl
+
+   S-->>A: POST /billing/webhook/stripe (signed event)
+   A->>B: Forward webhook
+   B->>B: Verify signature + idempotency check
+   B->>D: Persist lifecycle and entitlements
+
+   U->>W: Return from Stripe success URL
+   W->>A: GET /entitlements
+   A->>E: Forward request
+   E->>D: Read entitlement record
+   E-->>W: EntitlementSet (status/source/period)
+```
+
+---
+
+## 9. Stripe Deployment Runbook (Dev/Prod)
+
+### 9.1 Required environment variables
+
+- `stripe_secret_key`: Stripe API secret key (`sk_test_...` for dev, `sk_live_...` for prod).
+- `stripe_webhook_secret`: endpoint signing secret (`whsec_...`) from Stripe Dashboard.
+- `stripe_mode`: strict mode selector (`test` or `live`).
+
+### 9.2 Terraform rollout steps
+
+1. Copy `infra/aws/terraform.tfvars.example` to environment-specific `terraform.tfvars`.
+2. Set Stripe values for target environment; do not commit secrets.
+3. Run `terraform validate` and `terraform plan`.
+4. Apply with controlled approval (`terraform apply`).
+5. Confirm API Gateway has both routes:
+  - `POST /billing/checkout/session`
+  - `POST /billing/webhook/stripe`
+
+### 9.3 Stripe Dashboard setup
+
+1. Configure product/price catalog for `profit`, `breakeven`, `cashflow`, `bundle`.
+2. Set webhook endpoint URL to `${api_base_url}/billing/webhook/stripe`.
+3. Subscribe to events:
+  - `checkout.session.completed`
+  - `customer.subscription.updated`
+  - `customer.subscription.deleted`
+  - `invoice.paid`
+  - `invoice.payment_failed`
+4. Copy endpoint signing secret into `stripe_webhook_secret`.
+
+### 9.4 Validation checklist
+
+- Run Stripe test mode checkout and verify redirect URL generation.
+- Replay the same webhook event ID and confirm idempotent no-op behavior.
+- Confirm entitlement lifecycle transitions (`trialing` → `active` → `past_due` / `canceled`).
+- Confirm no tokens/secrets/full payloads are logged.
+
+### 9.5 Failure and rollback notes
+
+- If webhook signature verification fails, keep previous entitlements and log minimal diagnostic metadata only.
+- If Stripe is degraded, clients continue under offline grace policy (72h) with cached entitlements.
+- Rollback path: revert Lambda version/infra plan and re-apply previous Terraform state.
+
+---
+
+## 10. “Do / Don’t” Summary for Copilot
 
 **DO**
 - Keep backend stateless and minimal.
