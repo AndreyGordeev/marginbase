@@ -1,5 +1,6 @@
 import type { ModuleId } from '@marginbase/domain-core';
 import { WebAppService, type BreakEvenInputState, type CashflowInputState, type ProfitInputState } from './web-app-service';
+import { formatMoneyFromMinor, formatPct } from './ui/format/formatters';
 
 type RoutePath =
   | '/'
@@ -785,6 +786,26 @@ const addBaseStyles = (): void => {
   .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
   .ad-placeholder { margin-top: 12px; border: 1px dashed #d1d5db; border-radius: 10px; background: #f9fafb; color: #6b7280; text-align: center; padding: 14px; font-size: 14px; }
   .results-json { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; max-width: 100%; }
+  .results-panel { display: grid; gap: 14px; }
+  .results-summary { border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; background: #f9fafb; display: grid; gap: 8px; }
+  .results-summary-label { color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .results-summary-value { font-size: 34px; font-weight: 700; line-height: 1; }
+  .results-summary-status { font-size: 14px; font-weight: 600; }
+  .results-secondary-lines { display: grid; gap: 6px; }
+  .results-secondary-lines div { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
+  .results-secondary-lines span { color: #4b5563; }
+  .results-secondary-lines strong { color: #111827; }
+  .results-metrics-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .results-metric-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px; background: #fff; display: grid; gap: 6px; }
+  .results-metric-label { color: #6b7280; font-size: 12px; }
+  .results-metric-value { font-size: 22px; font-weight: 600; }
+  .metric-positive { color: #166534; }
+  .metric-negative { color: #991b1b; }
+  .metric-neutral { color: #1f2937; }
+  .results-warnings { border: 1px solid #fdba74; border-radius: 10px; background: #fff7ed; padding: 10px; }
+  .results-warnings h4 { margin: 0 0 8px; font-size: 14px; color: #9a3412; }
+  .results-warning-list { margin: 0; padding-left: 18px; color: #9a3412; display: grid; gap: 4px; }
+  .results-debug-toggle { display: flex; align-items: center; gap: 8px; color: #6b7280; font-size: 13px; margin-top: 8px; }
   .modal { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; background: #fff; }
   .modal:empty { display: none; }
   .space-y-6 { display: grid; gap: 24px; }
@@ -1129,6 +1150,182 @@ const parseNumber = (value: string, fallback: number): number => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const DEBUG_RESULTS_ENABLED = (() => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const isLocalRuntime = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const explicitFlag = window.localStorage.getItem('VITE_SHOW_DEBUG_RESULTS') === 'true';
+  return isLocalRuntime || explicitFlag;
+})();
+let showDebugJson = false;
+
+const toFiniteNumber = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+};
+
+const resolveCurrencyCode = (inputData?: Record<string, unknown>): string => {
+  const currency = inputData?.currencyCode;
+  if (typeof currency === 'string' && /^[A-Z]{3}$/.test(currency)) {
+    return currency;
+  }
+
+  return 'EUR';
+};
+
+const toStatusLabel = (netProfitMinor: number): string => {
+  if (netProfitMinor > 0) {
+    return 'Profitable';
+  }
+
+  if (netProfitMinor < 0) {
+    return 'Operating at a loss';
+  }
+
+  return 'Break-even';
+};
+
+const toPolarityClass = (numericValue: number): 'metric-positive' | 'metric-negative' | 'metric-neutral' => {
+  if (numericValue > 0) {
+    return 'metric-positive';
+  }
+
+  if (numericValue < 0) {
+    return 'metric-negative';
+  }
+
+  return 'metric-neutral';
+};
+
+const toProfitWarningLabel = (warningCode: string): string => {
+  if (warningCode === 'R_ZERO') {
+    return 'Revenue is zero, so percentage metrics are unavailable.';
+  }
+
+  if (warningCode === 'V_ZERO') {
+    return 'Variable cost per unit is zero, so markup percentage is unavailable.';
+  }
+
+  if (warningCode === 'INSUFFICIENT_DATA_TVC') {
+    return 'Insufficient variable cost data was provided for a complete cost breakdown.';
+  }
+
+  return warningCode;
+};
+
+const createWarningsList = (warnings: string[]): HTMLElement | null => {
+  if (warnings.length === 0) {
+    return null;
+  }
+
+  const section = document.createElement('section');
+  section.className = 'results-warnings';
+
+  const heading = document.createElement('h4');
+  heading.textContent = 'Warnings';
+  section.appendChild(heading);
+
+  const list = document.createElement('ul');
+  list.className = 'results-warning-list';
+
+  for (const warning of warnings) {
+    const item = document.createElement('li');
+    item.textContent = warning;
+    list.appendChild(item);
+  }
+
+  section.appendChild(list);
+  return section;
+};
+
+const renderProfitResults = (resultData: Record<string, unknown>, currencyCode: string): HTMLElement => {
+  const container = document.createElement('div');
+  container.className = 'results-panel';
+
+  const netProfitMinor = toFiniteNumber(resultData.netProfitMinor) ?? 0;
+  const revenueMinor = toFiniteNumber(resultData.revenueTotalMinor) ?? 0;
+  const totalCostMinor = toFiniteNumber(resultData.totalCostMinor) ?? 0;
+  const grossProfitMinor = toFiniteNumber(resultData.grossProfitMinor) ?? 0;
+
+  const summary = document.createElement('section');
+  summary.className = 'results-summary';
+
+  const summaryLabel = document.createElement('div');
+  summaryLabel.className = 'results-summary-label';
+  summaryLabel.textContent = 'Net Profit';
+
+  const summaryValue = document.createElement('div');
+  summaryValue.className = `results-summary-value ${toPolarityClass(netProfitMinor)}`;
+  summaryValue.textContent = formatMoneyFromMinor(netProfitMinor, currencyCode);
+
+  const status = document.createElement('div');
+  status.className = `results-summary-status ${toPolarityClass(netProfitMinor)}`;
+  status.textContent = toStatusLabel(netProfitMinor);
+
+  const lines = document.createElement('div');
+  lines.className = 'results-secondary-lines';
+  lines.innerHTML = `
+    <div><span>Revenue</span><strong>${formatMoneyFromMinor(revenueMinor, currencyCode)}</strong></div>
+    <div><span>Total Cost</span><strong>${formatMoneyFromMinor(totalCostMinor, currencyCode)}</strong></div>
+    <div><span>Gross Profit</span><strong>${formatMoneyFromMinor(grossProfitMinor, currencyCode)}</strong></div>
+  `;
+
+  summary.appendChild(summaryLabel);
+  summary.appendChild(summaryValue);
+  summary.appendChild(status);
+  summary.appendChild(lines);
+  container.appendChild(summary);
+
+  const metrics = document.createElement('section');
+  metrics.className = 'results-metrics-grid';
+
+  const metricsConfig = [
+    { label: 'Contribution Margin %', value: toFiniteNumber(resultData.contributionMarginPct) ?? 0 },
+    { label: 'Net Profit Margin %', value: toFiniteNumber(resultData.netProfitPct) ?? 0 },
+    { label: 'Markup %', value: toFiniteNumber(resultData.markupPct) ?? 0 }
+  ];
+
+  for (const metric of metricsConfig) {
+    const card = document.createElement('article');
+    card.className = 'results-metric-card';
+
+    const label = document.createElement('div');
+    label.className = 'results-metric-label';
+    label.textContent = metric.label;
+
+    const value = document.createElement('div');
+    value.className = `results-metric-value ${toPolarityClass(metric.value)}`;
+    value.textContent = formatPct(metric.value, 2);
+
+    card.appendChild(label);
+    card.appendChild(value);
+    metrics.appendChild(card);
+  }
+
+  container.appendChild(metrics);
+
+  const warningCodes = Array.isArray(resultData.warnings)
+    ? resultData.warnings.filter((warning): warning is string => typeof warning === 'string')
+    : [];
+
+  const warnings = createWarningsList(warningCodes.map(toProfitWarningLabel));
+  if (warnings) {
+    container.appendChild(warnings);
+  }
+
+  return container;
+};
+
 const renderWorkspace = async (
   root: HTMLElement,
   service: WebAppService,
@@ -1227,7 +1424,7 @@ const renderWorkspace = async (
   }
 
   form.appendChild(
-    createActionButton('Save Scenario', async () => {
+    createActionButton('Culculate Scenario', async () => {
       const data = new FormData(form);
 
       if (moduleId === 'profit') {
@@ -1280,12 +1477,41 @@ const renderWorkspace = async (
   results.className = 'card';
   results.innerHTML = '<h3>Results</h3>';
   if (selectedScenario?.calculatedData) {
-    const pre = document.createElement('pre');
-    pre.className = 'results-json';
-    pre.textContent = JSON.stringify(selectedScenario.calculatedData, null, 2);
-    results.appendChild(pre);
+    if (moduleId === 'profit') {
+      const currencyCode = resolveCurrencyCode(selectedScenario.inputData);
+      results.appendChild(renderProfitResults(selectedScenario.calculatedData, currencyCode));
+    } else {
+      results.appendChild(emptyState('Results saved', 'Detailed summary for this module is coming soon.'));
+    }
+
+    if (DEBUG_RESULTS_ENABLED) {
+      const toggleRow = document.createElement('label');
+      toggleRow.className = 'results-debug-toggle';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = showDebugJson;
+      checkbox.onchange = async () => {
+        showDebugJson = checkbox.checked;
+        await render();
+      };
+
+      const text = document.createElement('span');
+      text.textContent = 'Show debug JSON';
+
+      toggleRow.appendChild(checkbox);
+      toggleRow.appendChild(text);
+      results.appendChild(toggleRow);
+
+      if (showDebugJson) {
+        const pre = document.createElement('pre');
+        pre.className = 'results-json';
+        pre.textContent = JSON.stringify(selectedScenario.calculatedData, null, 2);
+        results.appendChild(pre);
+      }
+    }
   } else {
-    results.appendChild(emptyState('No results yet', 'Save scenario to calculate outputs.'));
+    results.appendChild(emptyState('No results yet', 'Calculate scenario to view formatted outputs.'));
   }
 
   if (!allowed) {
