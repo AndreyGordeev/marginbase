@@ -2,6 +2,7 @@ import type { ModuleId } from '@marginbase/domain-core';
 import { WebAppService, type BreakEvenInputState, type CashflowInputState, type ProfitInputState } from './web-app-service';
 
 type RoutePath =
+  | '/'
   | '/login'
   | '/gate'
   | '/dashboard'
@@ -11,10 +12,18 @@ type RoutePath =
   | '/subscription'
   | '/data'
   | '/settings'
+  | '/terms'
+  | '/privacy'
+  | '/legal'
+  | '/cancellation'
+  | '/refund'
+  | '/cookies'
+  | '/legal-center'
   | '/legal/privacy'
   | '/legal/terms';
 
 const ROUTES: RoutePath[] = [
+  '/',
   '/login',
   '/gate',
   '/dashboard',
@@ -24,17 +33,234 @@ const ROUTES: RoutePath[] = [
   '/subscription',
   '/data',
   '/settings',
+  '/terms',
+  '/privacy',
+  '/legal',
+  '/cancellation',
+  '/refund',
+  '/cookies',
+  '/legal-center',
   '/legal/privacy',
   '/legal/terms'
 ];
 
 const getRoute = (): RoutePath => {
   const hash = window.location.hash.replace('#', '') as RoutePath;
-  return ROUTES.includes(hash) ? hash : '/login';
+  if (ROUTES.includes(hash)) {
+    return hash;
+  }
+
+  const path = window.location.pathname as RoutePath;
+  return ROUTES.includes(path) ? path : '/login';
 };
 
 const goTo = (route: RoutePath): void => {
   window.location.hash = route;
+};
+
+type LegalRoute = '/terms' | '/privacy' | '/legal' | '/cancellation' | '/refund' | '/cookies';
+
+const LEGAL_DOCS: Record<LegalRoute, string> = {
+  '/terms': `# Terms of Service
+
+**Effective Date:** 2026-03-03
+
+These Terms of Service govern access to and use of SMB Finance Toolkit.
+
+## Service Provider
+
+Andrii Gordieiev (Sole Trader, JDG), Kraków, Poland.
+NIP: 6793258209 • VAT ID: PL6793258209
+Contact: andrii.gordieiev@gmail.com
+
+## Key Points
+
+- The Service provides financial modeling tools (profit, break-even, cashflow).
+- Outputs are informational and are not financial, tax, accounting, or legal advice.
+- A free trial may require payment details and may convert to paid subscription if not canceled.
+- Subscriptions renew automatically unless canceled before renewal.
+- Consumer rights under EU/Polish law apply where mandatory.
+- Liability is limited to the maximum extent permitted by law.
+
+## Governing Law
+
+These Terms are governed by Polish law, without prejudice to mandatory consumer rights under EU law.
+`,
+  '/privacy': `# Privacy Policy
+
+**Effective Date:** 2026-03-03
+
+This Privacy Policy explains how personal data is processed in connection with SMB Finance Toolkit.
+
+## Data Controller
+
+Andrii Gordieiev (Sole Trader, JDG), Kraków, Poland.
+NIP: 6793258209 • VAT ID: PL6793258209
+Email: andrii.gordieiev@gmail.com
+
+## Categories of Data
+
+- Account and identity data (email, account identifiers)
+- Subscription and billing metadata
+- Technical/security data (IP, device/browser metadata)
+
+Financial modeling inputs and outputs remain local on the user's device unless explicitly exported.
+
+## Legal Bases (GDPR Art. 6)
+
+- Contract performance
+- Legal obligation
+- Legitimate interests
+- Consent where required
+
+## Rights
+
+Users may request access, rectification, erasure, restriction, objection, and portability, and may lodge a complaint with a supervisory authority.
+`,
+  '/legal': `# Legal Notice
+
+**Effective Date:** 2026-03-03
+
+## Provider Information
+
+Andrii Gordieiev
+Sole Trader (Jednoosobowa Działalność Gospodarcza)
+Address: Przyjaźni Polsko-Węgierskiej 6A/102, 30-644 Kraków, Poland
+NIP: 6793258209
+VAT ID: PL6793258209
+Contact: andrii.gordieiev@gmail.com
+
+## Scope
+
+This notice provides legal identification and contact information for SMB Finance Toolkit.
+`,
+  '/cancellation': `# Cancellation & Withdrawal Policy
+
+**Effective Date:** 2026-03-03
+
+## Subscription Cancellation
+
+- You can cancel auto-renewal before the end of the current billing period.
+- Web subscriptions can be canceled in the account dashboard.
+- App Store / Google Play subscriptions must be canceled through the respective platform.
+
+## EU Consumer Withdrawal
+
+- Consumers may have a 14-day withdrawal right for digital services.
+- If service delivery begins immediately with express consent and acknowledgment, this right may be reduced or lost as permitted by law.
+
+Mandatory consumer protections under EU and Polish law remain unaffected.
+`,
+  '/refund': `# Refund Policy
+
+**Effective Date:** 2026-03-03
+
+## General Policy
+
+- Charges are generally non-refundable unless required by applicable law.
+- Refund eligibility may depend on billing platform rules (Stripe, Apple App Store, Google Play).
+
+## Platform Purchases
+
+- Purchases via Apple or Google are governed by each platform's refund policy.
+
+## Contact
+
+For billing inquiries, contact: andrii.gordieiev@gmail.com
+`,
+  '/cookies': `# Cookie Policy
+
+**Effective Date:** 2026-03-03
+
+## Current Usage
+
+- Essential cookies may be used for authentication and security.
+- Non-essential cookies or analytics are not enabled by default.
+
+## Future Changes
+
+If non-essential cookies are introduced, consent will be obtained where required by law.
+`
+};
+
+const setLegalBackTarget = (target: '/login' | '/'): void => {
+  window.sessionStorage.setItem('legal-back-target', target);
+};
+
+const resolveLegalBackTarget = (): RoutePath => {
+  const value = window.sessionStorage.getItem('legal-back-target');
+  window.sessionStorage.removeItem('legal-back-target');
+  return value === '/login' ? '/login' : '/';
+};
+
+const renderMarkdownSafe = (markdown: string): HTMLElement => {
+  const article = document.createElement('article');
+  article.className = 'legal-markdown';
+
+  let list: HTMLUListElement | null = null;
+  const lines = markdown.split('\n');
+
+  const closeList = (): void => {
+    if (list) {
+      article.appendChild(list);
+      list = null;
+    }
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+
+    if (!line) {
+      closeList();
+      continue;
+    }
+
+    if (line === '---' || line === '------------------------------------------------------------------------') {
+      closeList();
+      article.appendChild(document.createElement('hr'));
+      continue;
+    }
+
+    if (line.startsWith('- ')) {
+      if (!list) {
+        list = document.createElement('ul');
+      }
+      const li = document.createElement('li');
+      li.textContent = line.slice(2);
+      list.appendChild(li);
+      continue;
+    }
+
+    closeList();
+
+    if (line.startsWith('### ')) {
+      const h3 = document.createElement('h3');
+      h3.textContent = line.slice(4);
+      article.appendChild(h3);
+      continue;
+    }
+
+    if (line.startsWith('## ')) {
+      const h2 = document.createElement('h2');
+      h2.textContent = line.slice(3);
+      article.appendChild(h2);
+      continue;
+    }
+
+    if (line.startsWith('# ')) {
+      const h1 = document.createElement('h1');
+      h1.textContent = line.slice(2);
+      article.appendChild(h1);
+      continue;
+    }
+
+    const paragraph = document.createElement('p');
+    paragraph.textContent = line.replace(/\*\*/g, '');
+    article.appendChild(paragraph);
+  }
+
+  closeList();
+  return article;
 };
 
 const createActionButton = (label: string, onClick: () => void, className = ''): HTMLButtonElement => {
@@ -143,6 +369,20 @@ const addBaseStyles = (): void => {
   .modal { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; background: #fff; }
   .modal:empty { display: none; }
   .space-y-6 { display: grid; gap: 24px; }
+  .legal-page { padding: 12px 20px 28px; }
+  .legal-container { max-width: 900px; margin: 0 auto; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 18px 20px; }
+  .legal-back { display: inline-block; margin-bottom: 10px; color: #4b5563; text-decoration: none; font-size: 13px; }
+  .legal-back:hover { text-decoration: underline; }
+  .legal-markdown { max-width: 760px; line-height: 1.6; }
+  .legal-markdown h1 { margin: 0 0 10px; font-size: 30px; }
+  .legal-markdown h2 { margin: 18px 0 8px; font-size: 20px; }
+  .legal-markdown h3 { margin: 12px 0 6px; font-size: 16px; }
+  .legal-markdown p { margin: 8px 0; }
+  .legal-markdown ul { margin: 8px 0 8px 18px; padding: 0; }
+  .legal-markdown hr { border: 0; border-top: 1px solid #e5e7eb; margin: 14px 0; }
+  .legal-links { margin: 6px 0 0 18px; display: grid; gap: 6px; }
+  .legal-links a { color: #374151; text-decoration: none; }
+  .legal-links a:hover { text-decoration: underline; }
   `;
 
   document.head.appendChild(style);
@@ -254,20 +494,40 @@ const renderLogin = (root: HTMLElement): void => {
   const privacyLink = document.createElement('button');
   privacyLink.className = 'link-muted';
   privacyLink.textContent = 'Privacy Policy';
-  privacyLink.onclick = () => goTo('/legal/privacy');
+  privacyLink.onclick = () => {
+    setLegalBackTarget('/login');
+    goTo('/privacy');
+  };
 
   const termsLink = document.createElement('button');
   termsLink.className = 'link-muted';
   termsLink.textContent = 'Terms of Service';
-  termsLink.onclick = () => goTo('/legal/terms');
+  termsLink.onclick = () => {
+    setLegalBackTarget('/login');
+    goTo('/terms');
+  };
 
-  const separator = document.createElement('span');
-  separator.className = 'login-legal-sep';
-  separator.textContent = '·';
+  const legalCenterLink = document.createElement('button');
+  legalCenterLink.className = 'link-muted';
+  legalCenterLink.textContent = 'Legal Center';
+  legalCenterLink.onclick = () => {
+    setLegalBackTarget('/login');
+    goTo('/legal-center');
+  };
+
+  const separatorLeft = document.createElement('span');
+  separatorLeft.className = 'login-legal-sep';
+  separatorLeft.textContent = '·';
+
+  const separatorRight = document.createElement('span');
+  separatorRight.className = 'login-legal-sep';
+  separatorRight.textContent = '·';
 
   legal.appendChild(privacyLink);
-  legal.appendChild(separator);
+  legal.appendChild(separatorLeft);
   legal.appendChild(termsLink);
+  legal.appendChild(separatorRight);
+  legal.appendChild(legalCenterLink);
 
   wrap.appendChild(shell);
   wrap.appendChild(legal);
@@ -275,28 +535,77 @@ const renderLogin = (root: HTMLElement): void => {
   root.replaceChildren(page);
 };
 
-const renderLegal = (root: HTMLElement, route: '/legal/privacy' | '/legal/terms'): void => {
+const renderLegalDocument = (root: HTMLElement, route: LegalRoute): void => {
   const page = document.createElement('div');
-  page.className = 'page page-centered';
+  page.className = 'legal-page';
 
-  const card = document.createElement('div');
-  card.className = 'card auth-card';
-  const copy = document.createElement('div');
-  copy.className = 'auth-copy';
+  const container = document.createElement('div');
+  container.className = 'legal-container';
 
-  if (route === '/legal/privacy') {
-    copy.innerHTML = '<h2>Privacy Policy</h2><p>Only minimal identity and entitlement metadata is handled by backend services. Financial scenario values remain local-only.</p>';
-  } else {
-    copy.innerHTML = '<h2>Terms of Service</h2><p>Subscription access is governed by active entitlements. Calculations remain available offline through local engines.</p>';
+  const back = document.createElement('a');
+  back.href = '#';
+  back.className = 'legal-back';
+  back.textContent = '← Back';
+  back.onclick = (event) => {
+    event.preventDefault();
+    goTo(resolveLegalBackTarget());
+  };
+
+  container.appendChild(back);
+  container.appendChild(renderMarkdownSafe(LEGAL_DOCS[route]));
+  page.appendChild(container);
+  root.replaceChildren(page);
+};
+
+const renderLegalCenter = (root: HTMLElement): void => {
+  const page = document.createElement('div');
+  page.className = 'legal-page';
+
+  const container = document.createElement('div');
+  container.className = 'legal-container';
+
+  const back = document.createElement('a');
+  back.href = '#';
+  back.className = 'legal-back';
+  back.textContent = '← Back';
+  back.onclick = (event) => {
+    event.preventDefault();
+    goTo(resolveLegalBackTarget());
+  };
+
+  const heading = document.createElement('h1');
+  heading.textContent = 'Legal documents';
+
+  const list = document.createElement('ul');
+  list.className = 'legal-links';
+
+  const entries: Array<{ label: string; route: LegalRoute }> = [
+    { label: 'Terms of Service', route: '/terms' },
+    { label: 'Privacy Policy', route: '/privacy' },
+    { label: 'Cancellation & Withdrawal', route: '/cancellation' },
+    { label: 'Refund Policy', route: '/refund' },
+    { label: 'Cookie Policy', route: '/cookies' },
+    { label: 'Legal Notice', route: '/legal' }
+  ];
+
+  for (const entry of entries) {
+    const item = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = '#';
+    link.textContent = entry.label;
+    link.onclick = (event) => {
+      event.preventDefault();
+      setLegalBackTarget('/');
+      goTo(entry.route);
+    };
+    item.appendChild(link);
+    list.appendChild(item);
   }
 
-  const actions = document.createElement('div');
-  actions.className = 'auth-actions';
-  actions.appendChild(createActionButton('Back to Login', () => goTo('/login')));
-
-  card.appendChild(copy);
-  card.appendChild(actions);
-  page.appendChild(card);
+  container.appendChild(back);
+  container.appendChild(heading);
+  container.appendChild(list);
+  page.appendChild(container);
   root.replaceChildren(page);
 };
 
@@ -579,7 +888,34 @@ const renderSubscription = (root: HTMLElement, service: WebAppService): void => 
   }, 'primary'));
   actions.appendChild(createActionButton('Refresh Subscription Status', () => goTo('/subscription')));
 
+  const disclosure = document.createElement('div');
+  disclosure.className = 'inline-error';
+  disclosure.innerHTML = '<p>Free trial requires a payment method.</p><p>After the trial, your subscription renews automatically unless cancelled.</p>';
+
+  const disclosureLinks = document.createElement('div');
+  disclosureLinks.className = 'button-row';
+  const termsLink = document.createElement('button');
+  termsLink.className = 'link-muted';
+  termsLink.textContent = 'Terms';
+  termsLink.onclick = () => {
+    setLegalBackTarget('/');
+    goTo('/terms');
+  };
+
+  const cancellationLink = document.createElement('button');
+  cancellationLink.className = 'link-muted';
+  cancellationLink.textContent = 'Cancellation';
+  cancellationLink.onclick = () => {
+    setLegalBackTarget('/');
+    goTo('/cancellation');
+  };
+
+  disclosureLinks.appendChild(termsLink);
+  disclosureLinks.appendChild(cancellationLink);
+
   card.appendChild(actions);
+  card.appendChild(disclosure);
+  card.appendChild(disclosureLinks);
   main.appendChild(card);
   shell.appendChild(main);
   root.replaceChildren(shell);
@@ -692,7 +1028,39 @@ const renderSettings = async (root: HTMLElement, service: WebAppService): Promis
   });
 
   card.appendChild(deleteAccountButton);
+
+  const legalCard = document.createElement('div');
+  legalCard.className = 'card';
+  legalCard.innerHTML = '<h3>Legal</h3>';
+
+  const legalLinks = document.createElement('ul');
+  legalLinks.className = 'legal-links';
+  const settingsEntries: Array<{ label: string; route: LegalRoute }> = [
+    { label: 'Terms of Service', route: '/terms' },
+    { label: 'Privacy Policy', route: '/privacy' },
+    { label: 'Cancellation & Withdrawal', route: '/cancellation' },
+    { label: 'Refund Policy', route: '/refund' },
+    { label: 'Legal Notice', route: '/legal' },
+    { label: 'Cookie Policy', route: '/cookies' }
+  ];
+
+  for (const entry of settingsEntries) {
+    const item = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = '#';
+    link.textContent = entry.label;
+    link.onclick = (event) => {
+      event.preventDefault();
+      setLegalBackTarget('/');
+      goTo(entry.route);
+    };
+    item.appendChild(link);
+    legalLinks.appendChild(item);
+  }
+
+  legalCard.appendChild(legalLinks);
   main.appendChild(card);
+  main.appendChild(legalCard);
   shell.appendChild(main);
   root.replaceChildren(shell);
 };
@@ -708,7 +1076,7 @@ const render = async (): Promise<void> => {
   addBaseStyles();
   const route = getRoute();
 
-  if (route === '/login') {
+  if (route === '/' || route === '/login') {
     renderLogin(root);
     return;
   }
@@ -743,8 +1111,36 @@ const render = async (): Promise<void> => {
     return;
   }
 
-  if (route === '/legal/privacy' || route === '/legal/terms') {
-    renderLegal(root, route);
+  if (route === '/legal-center') {
+    renderLegalCenter(root);
+    return;
+  }
+
+  const legalRouteMap: Record<RoutePath, LegalRoute | null> = {
+    '/': null,
+    '/login': null,
+    '/gate': null,
+    '/dashboard': null,
+    '/profit': null,
+    '/break-even': null,
+    '/cashflow': null,
+    '/subscription': null,
+    '/data': null,
+    '/settings': null,
+    '/terms': '/terms',
+    '/privacy': '/privacy',
+    '/legal': '/legal',
+    '/cancellation': '/cancellation',
+    '/refund': '/refund',
+    '/cookies': '/cookies',
+    '/legal-center': null,
+    '/legal/privacy': '/privacy',
+    '/legal/terms': '/terms'
+  };
+
+  const mappedLegalRoute = legalRouteMap[route];
+  if (mappedLegalRoute) {
+    renderLegalDocument(root, mappedLegalRoute);
   }
 };
 
@@ -760,7 +1156,10 @@ if (typeof document !== 'undefined' && typeof window !== 'undefined') {
   });
 
   if (!window.location.hash) {
-    goTo('/login');
+    const path = window.location.pathname as RoutePath;
+    if (!ROUTES.includes(path)) {
+      goTo('/login');
+    }
   }
 
   void render();
