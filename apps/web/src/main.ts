@@ -57,15 +57,6 @@ const emptyState = (title: string, description: string, actionText?: string, onA
   return container;
 };
 
-const systemErrorCard = (message: string, retry: () => void): HTMLElement => {
-  const card = document.createElement('div');
-  card.className = 'system-error-card';
-  card.innerHTML = `<h3>Something went wrong.</h3><p>${message}</p>`;
-  card.appendChild(createActionButton('Retry', retry));
-  card.appendChild(createActionButton('Go to Dashboard', () => goTo('/dashboard')));
-  return card;
-};
-
 const addBaseStyles = (): void => {
   const existing = document.getElementById('web-app-styles');
   if (existing) {
@@ -93,6 +84,7 @@ const addBaseStyles = (): void => {
   .form-grid label { display: grid; gap: 6px; }
   .form-submit { grid-column: 1 / -1; justify-self: end; min-width: 180px; }
   .button-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .inline-error { border: 1px solid #fdba74; border-radius: 8px; background: #fff7ed; color: #9a3412; padding: 10px; }
   input, select, textarea { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; }
   button { cursor: pointer; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 10px; background: #fff; }
   .primary { background: #2563eb; color: #fff; border-color: #2563eb; }
@@ -473,9 +465,7 @@ const renderDataBackup = async (root: HTMLElement, service: WebAppService): Prom
   const previewButton = createActionButton('Preview Import', () => {
     const preview = service.previewImport(importInput.value);
     if (!preview.ok) {
-      importSummary.replaceChildren(systemErrorCard(preview.errors[0]?.message ?? 'Import preview failed.', () => {
-        importSummary.textContent = '';
-      }));
+      importSummary.innerHTML = `<div class="inline-error"><strong>Preview failed.</strong> ${preview.errors[0]?.message ?? 'Import preview failed.'}</div>`;
       return;
     }
 
