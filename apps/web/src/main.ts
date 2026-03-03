@@ -47,6 +47,7 @@ const goTo = (route: RoutePath): void => {
 
 const createActionButton = (label: string, onClick: () => void, className = ''): HTMLButtonElement => {
   const button = document.createElement('button');
+  button.type = 'button';
   button.textContent = label;
   button.className = className;
   button.onclick = onClick;
