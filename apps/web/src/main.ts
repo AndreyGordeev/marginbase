@@ -2,6 +2,8 @@ import type { ModuleId } from '@marginbase/domain-core';
 import { WebAppService, type BreakEvenInputState, type CashflowInputState, type ProfitInputState } from './web-app-service';
 import { formatMoneyFromMinor, formatPct } from './ui/format/formatters';
 
+declare const __MB_SHOW_DEBUG_RESULTS__: boolean;
+
 type RoutePath =
   | '/'
   | '/login'
@@ -1150,15 +1152,7 @@ const parseNumber = (value: string, fallback: number): number => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-const DEBUG_RESULTS_ENABLED = (() => {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  const isLocalRuntime = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const explicitFlag = window.localStorage.getItem('VITE_SHOW_DEBUG_RESULTS') === 'true';
-  return isLocalRuntime || explicitFlag;
-})();
+const DEBUG_RESULTS_ENABLED = __MB_SHOW_DEBUG_RESULTS__;
 let showDebugJson = false;
 
 const toFiniteNumber = (value: unknown): number | null => {
