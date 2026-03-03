@@ -18,7 +18,7 @@ describe('calculateProfit', () => {
     expect(result.netProfitMinor.toString()).toBe('45000');
     expect(result.contributionMarginPct?.toString()).toBe('0.375');
     expect(result.netProfitPct?.toString()).toBe('0.225');
-    expect(result.markupPct?.toString()).toBe('0.66666666666666666667');
+    expect(result.markupPct?.toString()).toBe('0.29032258064516129032');
     expect(result.warnings).toEqual([]);
   });
 
@@ -33,7 +33,7 @@ describe('calculateProfit', () => {
     expect(result.revenueTotalMinor.toString()).toBe('100000');
     expect(result.variableCostTotalMinor.toString()).toBe('70000');
     expect(result.netProfitMinor.toString()).toBe('10000');
-    expect(result.markupPct).toBeNull();
+    expect(result.markupPct?.toString()).toBe('0.11111111111111111111');
   });
 
   it('emits warning for insufficient TVC data in revenue mode', () => {
@@ -58,7 +58,22 @@ describe('calculateProfit', () => {
 
     expect(result.contributionMarginPct).toBeNull();
     expect(result.netProfitPct).toBeNull();
+    expect(result.markupPct?.toString()).toBe('-1');
     expect(result.warnings).toContain('R_ZERO');
-    expect(result.warnings).toContain('V_ZERO');
+    expect(result.warnings).not.toContain('V_ZERO');
+  });
+
+  it('calculates markupPct as netProfit divided by totalCost with full precision', () => {
+    const result = calculateProfit({
+      mode: 'unit',
+      unitPriceMinor: 15,
+      quantity: 10,
+      variableCostPerUnitMinor: 700,
+      fixedCostsMinor: 1000
+    });
+
+    expect(result.netProfitMinor.toString()).toBe('-7850');
+    expect(result.totalCostMinor.toString()).toBe('8000');
+    expect(result.markupPct?.toString()).toBe('-0.98125');
   });
 });
