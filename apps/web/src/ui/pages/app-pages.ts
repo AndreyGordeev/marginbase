@@ -41,9 +41,25 @@ type WorkspaceDeps = CommonDeps & {
   setShowDebugJson: (value: boolean) => void;
 };
 
+const MAX_SCENARIO_NAME_LENGTH = 120;
+
 const parseNumber = (value: string, fallback: number): number => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const normalizeScenarioName = (value: string): string => {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    throw new Error('Scenario name is required.');
+  }
+
+  if (normalized.length > MAX_SCENARIO_NAME_LENGTH) {
+    throw new Error(`Scenario name must be ${MAX_SCENARIO_NAME_LENGTH} characters or fewer.`);
+  }
+
+  return normalized;
 };
 
 export const renderSidebar = (
@@ -257,6 +273,20 @@ export const renderWorkspacePage = async (
   const form = document.createElement('form');
   form.className = 'form-grid';
 
+  const formError = document.createElement('div');
+  formError.className = 'inline-error';
+  formError.hidden = true;
+
+  const clearFormError = (): void => {
+    formError.hidden = true;
+    formError.textContent = '';
+  };
+
+  const showFormError = (message: string): void => {
+    formError.hidden = false;
+    formError.textContent = message;
+  };
+
   if (moduleId === 'profit') {
     const state: ProfitInputState = service.getProfitInputState(selectedScenario?.inputData);
     form.innerHTML = `
@@ -295,48 +325,56 @@ export const renderWorkspacePage = async (
 
   form.appendChild(
     createActionButton('Culculate Scenario', async () => {
-      const data = new FormData(form);
+      clearFormError();
 
-      if (moduleId === 'profit') {
-        await service.saveProfitScenario({
-          scenarioId: selectedScenario?.scenarioId,
-          scenarioName: String(data.get('scenarioName') ?? ''),
-          unitPriceMinor: parseNumber(String(data.get('unitPriceMinor') ?? '0'), 0),
-          quantity: parseNumber(String(data.get('quantity') ?? '0'), 0),
-          variableCostPerUnitMinor: parseNumber(String(data.get('variableCostPerUnitMinor') ?? '0'), 0),
-          fixedCostsMinor: parseNumber(String(data.get('fixedCostsMinor') ?? '0'), 0)
-        });
+      try {
+        const data = new FormData(form);
+        const scenarioName = normalizeScenarioName(String(data.get('scenarioName') ?? ''));
+
+        if (moduleId === 'profit') {
+          await service.saveProfitScenario({
+            scenarioId: selectedScenario?.scenarioId,
+            scenarioName,
+            unitPriceMinor: parseNumber(String(data.get('unitPriceMinor') ?? '0'), 0),
+            quantity: parseNumber(String(data.get('quantity') ?? '0'), 0),
+            variableCostPerUnitMinor: parseNumber(String(data.get('variableCostPerUnitMinor') ?? '0'), 0),
+            fixedCostsMinor: parseNumber(String(data.get('fixedCostsMinor') ?? '0'), 0)
+          });
+        }
+
+        if (moduleId === 'breakeven') {
+          await service.saveBreakEvenScenario({
+            scenarioId: selectedScenario?.scenarioId,
+            scenarioName,
+            unitPriceMinor: parseNumber(String(data.get('unitPriceMinor') ?? '0'), 0),
+            variableCostPerUnitMinor: parseNumber(String(data.get('variableCostPerUnitMinor') ?? '0'), 0),
+            fixedCostsMinor: parseNumber(String(data.get('fixedCostsMinor') ?? '0'), 0),
+            targetProfitMinor: parseNumber(String(data.get('targetProfitMinor') ?? '0'), 0),
+            plannedQuantity: parseNumber(String(data.get('plannedQuantity') ?? '0'), 0)
+          });
+        }
+
+        if (moduleId === 'cashflow') {
+          await service.saveCashflowScenario({
+            scenarioId: selectedScenario?.scenarioId,
+            scenarioName,
+            startingCashMinor: parseNumber(String(data.get('startingCashMinor') ?? '0'), 0),
+            baseMonthlyRevenueMinor: parseNumber(String(data.get('baseMonthlyRevenueMinor') ?? '0'), 0),
+            fixedMonthlyCostsMinor: parseNumber(String(data.get('fixedMonthlyCostsMinor') ?? '0'), 0),
+            variableMonthlyCostsMinor: parseNumber(String(data.get('variableMonthlyCostsMinor') ?? '0'), 0),
+            forecastMonths: parseNumber(String(data.get('forecastMonths') ?? '1'), 1),
+            monthlyGrowthRate: parseNumber(String(data.get('monthlyGrowthRate') ?? '0'), 0)
+          });
+        }
+
+        await render();
+      } catch (error) {
+        showFormError(error instanceof Error ? error.message : 'Validation failed. Please review your inputs.');
       }
-
-      if (moduleId === 'breakeven') {
-        await service.saveBreakEvenScenario({
-          scenarioId: selectedScenario?.scenarioId,
-          scenarioName: String(data.get('scenarioName') ?? ''),
-          unitPriceMinor: parseNumber(String(data.get('unitPriceMinor') ?? '0'), 0),
-          variableCostPerUnitMinor: parseNumber(String(data.get('variableCostPerUnitMinor') ?? '0'), 0),
-          fixedCostsMinor: parseNumber(String(data.get('fixedCostsMinor') ?? '0'), 0),
-          targetProfitMinor: parseNumber(String(data.get('targetProfitMinor') ?? '0'), 0),
-          plannedQuantity: parseNumber(String(data.get('plannedQuantity') ?? '0'), 0)
-        });
-      }
-
-      if (moduleId === 'cashflow') {
-        await service.saveCashflowScenario({
-          scenarioId: selectedScenario?.scenarioId,
-          scenarioName: String(data.get('scenarioName') ?? ''),
-          startingCashMinor: parseNumber(String(data.get('startingCashMinor') ?? '0'), 0),
-          baseMonthlyRevenueMinor: parseNumber(String(data.get('baseMonthlyRevenueMinor') ?? '0'), 0),
-          fixedMonthlyCostsMinor: parseNumber(String(data.get('fixedMonthlyCostsMinor') ?? '0'), 0),
-          variableMonthlyCostsMinor: parseNumber(String(data.get('variableMonthlyCostsMinor') ?? '0'), 0),
-          forecastMonths: parseNumber(String(data.get('forecastMonths') ?? '1'), 1),
-          monthlyGrowthRate: parseNumber(String(data.get('monthlyGrowthRate') ?? '0'), 0)
-        });
-      }
-
-      await render();
     }, 'primary form-submit')
   );
 
+  center.appendChild(formError);
   center.appendChild(form);
   const ad = document.createElement('div');
   ad.className = 'ad-placeholder';
