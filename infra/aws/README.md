@@ -35,11 +35,17 @@ This folder contains Terraform modules to provision the Step 10 dev environment 
    - `terraform validate`
    - `terraform plan -out dev.tfplan`
 
-4. Apply:
+4. Configure Stripe for this environment:
+
+   - set `stripe_secret_key`, `stripe_webhook_secret`, `stripe_mode` in `terraform.tfvars`
+   - add Stripe webhook endpoint `${api_base_url}/billing/webhook/stripe`
+   - subscribe webhook events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`
+
+5. Apply:
 
    - `terraform apply dev.tfplan`
 
-5. Retrieve outputs:
+6. Retrieve outputs:
 
    - `terraform output`
 
