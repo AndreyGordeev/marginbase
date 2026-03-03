@@ -1284,9 +1284,9 @@ const renderProfitResults = (resultData: Record<string, unknown>, currencyCode: 
   metrics.className = 'results-metrics-grid';
 
   const metricsConfig = [
-    { label: 'Contribution Margin %', value: toFiniteNumber(resultData.contributionMarginPct) ?? 0 },
-    { label: 'Net Profit Margin %', value: toFiniteNumber(resultData.netProfitPct) ?? 0 },
-    { label: 'Markup %', value: toFiniteNumber(resultData.markupPct) ?? 0 }
+    { label: 'Contribution Margin %', value: toFiniteNumber(resultData.contributionMarginPct) },
+    { label: 'Net Profit Margin %', value: toFiniteNumber(resultData.netProfitPct) },
+    { label: 'Markup %', value: toFiniteNumber(resultData.markupPct) }
   ];
 
   for (const metric of metricsConfig) {
@@ -1298,8 +1298,8 @@ const renderProfitResults = (resultData: Record<string, unknown>, currencyCode: 
     label.textContent = metric.label;
 
     const value = document.createElement('div');
-    value.className = `results-metric-value ${toPolarityClass(metric.value)}`;
-    value.textContent = formatPct(metric.value, 2);
+    value.className = `results-metric-value ${toPolarityClass(metric.value ?? 0)}`;
+    value.textContent = metric.value === null ? '—' : formatPct(metric.value, 2);
 
     card.appendChild(label);
     card.appendChild(value);
