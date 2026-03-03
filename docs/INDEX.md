@@ -39,3 +39,6 @@
 
 ## Contracts
 - contracts/api.md
+
+## Testing
+- testing/stripe-test-mode-e2e.md

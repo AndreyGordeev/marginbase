@@ -434,6 +434,7 @@ sequenceDiagram
 - Replay the same webhook event ID and confirm idempotent no-op behavior.
 - Confirm entitlement lifecycle transitions (`trialing` → `active` → `past_due` / `canceled`).
 - Confirm no tokens/secrets/full payloads are logged.
+- Execute the full checklist in `docs/testing/stripe-test-mode-e2e.md` and attach evidence artifacts.
 
 ### 9.5 Failure and rollback notes
 

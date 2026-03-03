@@ -221,6 +221,115 @@ test('stripe webhook is idempotent and persists lifecycle status for entitlement
   delete process.env.STRIPE_WEBHOOK_SECRET;
 });
 
+test('stripe lifecycle transitions from trialing to active to canceled and revokes entitlements', async () => {
+  const tableData = new Map();
+
+  process.env.ENTITLEMENTS_TABLE_NAME = 'entitlements-table';
+  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_123';
+
+  globalThis.__ddbPut = async ({ tableName, record }) => {
+    assert.equal(tableName, 'entitlements-table');
+    tableData.set(record.userId, record);
+  };
+
+  globalThis.__ddbGet = async ({ tableName, userId }) => {
+    assert.equal(tableName, 'entitlements-table');
+    return tableData.get(userId) ?? null;
+  };
+
+  const trialStarted = await billingHandler({
+    requestContext: {
+      routeKey: 'POST /billing/webhook/stripe'
+    },
+    headers: {
+      'stripe-signature': 't=1,v1=testsig'
+    },
+    body: JSON.stringify({
+      id: 'evt_lifecycle_trial_1',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          status: 'trialing',
+          current_period_end: 1770000000,
+          metadata: {
+            userId: 'u_webhook_2',
+            planId: 'bundle'
+          }
+        }
+      }
+    })
+  });
+
+  assert.equal(trialStarted.statusCode, 200);
+
+  const renewalPaid = await billingHandler({
+    requestContext: {
+      routeKey: 'POST /billing/webhook/stripe'
+    },
+    headers: {
+      'stripe-signature': 't=1,v1=testsig'
+    },
+    body: JSON.stringify({
+      id: 'evt_lifecycle_paid_1',
+      type: 'invoice.paid',
+      data: {
+        object: {
+          status: 'active',
+          current_period_end: 1772600000,
+          metadata: {
+            userId: 'u_webhook_2'
+          }
+        }
+      }
+    })
+  });
+
+  assert.equal(renewalPaid.statusCode, 200);
+
+  const canceled = await billingHandler({
+    requestContext: {
+      routeKey: 'POST /billing/webhook/stripe'
+    },
+    headers: {
+      'stripe-signature': 't=1,v1=testsig'
+    },
+    body: JSON.stringify({
+      id: 'evt_lifecycle_canceled_1',
+      type: 'customer.subscription.deleted',
+      data: {
+        object: {
+          status: 'canceled',
+          current_period_end: 1772600000,
+          metadata: {
+            userId: 'u_webhook_2'
+          }
+        }
+      }
+    })
+  });
+
+  assert.equal(canceled.statusCode, 200);
+
+  const entitlementsResponse = await entitlementsHandler({
+    queryStringParameters: {
+      userId: 'u_webhook_2'
+    }
+  });
+
+  assert.equal(entitlementsResponse.statusCode, 200);
+  const entitlementsBody = parseBody(entitlementsResponse);
+  assert.equal(entitlementsBody.status, 'canceled');
+  assert.equal(entitlementsBody.source, 'stripe');
+  assert.equal(entitlementsBody.entitlements.bundle, false);
+  assert.equal(entitlementsBody.entitlements.profit, true);
+  assert.equal(entitlementsBody.entitlements.breakeven, false);
+  assert.equal(entitlementsBody.entitlements.cashflow, false);
+
+  delete globalThis.__ddbPut;
+  delete globalThis.__ddbGet;
+  delete process.env.STRIPE_WEBHOOK_SECRET;
+});
+
 test('account delete removes entitlements and minimal user profile data', async () => {
   const entitlementMap = new Map([['u_delete_1', { userId: 'u_delete_1' }]]);
   const userMap = new Map([['u_delete_1', { userId: 'u_delete_1', email: 'user@example.com' }]]);
