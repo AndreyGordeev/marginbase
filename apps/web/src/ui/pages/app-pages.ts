@@ -42,6 +42,7 @@ type WorkspaceDeps = CommonDeps & {
 };
 
 const MAX_SCENARIO_NAME_LENGTH = 120;
+const FORM_ERROR_VISIBLE_MS = 5000;
 
 const parseNumber = (value: string, fallback: number): number => {
   const parsed = Number(value);
@@ -272,19 +273,37 @@ export const renderWorkspacePage = async (
 
   const form = document.createElement('form');
   form.className = 'form-grid';
+  form.onsubmit = (event) => {
+    event.preventDefault();
+  };
 
   const formError = document.createElement('div');
   formError.className = 'inline-error';
   formError.hidden = true;
+  let formErrorTimer: ReturnType<typeof setTimeout> | undefined;
 
   const clearFormError = (): void => {
+    if (formErrorTimer) {
+      clearTimeout(formErrorTimer);
+      formErrorTimer = undefined;
+    }
     formError.hidden = true;
     formError.textContent = '';
   };
 
   const showFormError = (message: string): void => {
+    if (formErrorTimer) {
+      clearTimeout(formErrorTimer);
+    }
+
     formError.hidden = false;
     formError.textContent = message;
+
+    formErrorTimer = setTimeout(() => {
+      formError.hidden = true;
+      formError.textContent = '';
+      formErrorTimer = undefined;
+    }, FORM_ERROR_VISIBLE_MS);
   };
 
   if (moduleId === 'profit') {
