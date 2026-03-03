@@ -17,6 +17,8 @@
 
 ## Compliance
 - compliance/regulatory-baseline.md
+- compliance/privacy-policy-eu-compliant-draft.md
+- compliance/terms-of-service-eu-compliant-draft.md
 
 ## Decisions
 - decisions/adr.md
