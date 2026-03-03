@@ -81,7 +81,7 @@ const addBaseStyles = (): void => {
   .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
   .sidebar { background: #111827; color: #f9fafb; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
   .sidebar button { text-align: left; background: #1f2937; color: #f9fafb; border: 0; padding: 10px; border-radius: 8px; }
-  .main { padding: 24px; display: grid; gap: 16px; }
+  .main { padding: 24px; display: grid; gap: 16px; align-content: start; }
   .card { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 16px; }
   .workspace { display: grid; grid-template-columns: 260px 1fr 320px; gap: 16px; align-items: start; }
   .scenario-list { display: flex; flex-direction: column; gap: 8px; }
@@ -102,6 +102,7 @@ const addBaseStyles = (): void => {
   .status { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; }
   .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
   .modal { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; background: #fff; }
+  .modal:empty { display: none; }
   .space-y-6 { display: grid; gap: 24px; }
   `;
 
@@ -508,9 +509,12 @@ const renderDataBackup = async (root: HTMLElement, service: WebAppService): Prom
   const importCard = document.createElement('section');
   importCard.className = 'card';
   importCard.innerHTML = '<h3>Import</h3><p>Import scenarios from JSON. This replaces all existing scenarios.</p>';
+  const importActions = document.createElement('div');
+  importActions.className = 'button-row';
   importCard.appendChild(importInput);
-  importCard.appendChild(previewButton);
-  importCard.appendChild(confirmButton);
+  importActions.appendChild(previewButton);
+  importActions.appendChild(confirmButton);
+  importCard.appendChild(importActions);
   importCard.appendChild(importSummary);
 
   sections.appendChild(exportCard);
