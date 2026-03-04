@@ -7,6 +7,7 @@
   "login.value2": "Break-even modeling for smarter pricing",
   "login.value3": "Cashflow forecasting without spreadsheets",
   "login.continueWithGoogle": "Continue with Google",
+  "login.continueWithoutLogin": "Continue without login",
   "login.trust1": "🔒 Offline-first. Your data stays on your device.",
   "login.trust2": "🇪🇺 EU-hosted infrastructure",
   "login.trust3": "No spreadsheets required",
@@ -90,6 +91,7 @@
   "dashboard.recent": "Recent scenarios",
   "dashboard.noRecent": "No recent activity",
   "dashboard.noRecentDesc": "Your recent scenarios will appear here.",
+  "dashboard.createFirstScenario": "Create your first scenario",
   "dashboard.openProfit": "Open Profit Calculator",
   "workspace.module.profit": "Profit",
   "workspace.module.breakeven": "Break-even",
@@ -243,5 +245,10 @@
   "data.share.expires": "Expires",
   "data.share.revoke": "Revoke",
   "data.share.loadFailed": "Unable to load shared links.",
-  "lang.label": "Language"
+  "lang.label": "Language",
+  "demo.useServices": "Use demo values: Services",
+  "demo.useProduct": "Use demo values: Product",
+  "demo.helper": "Start with demo values, then adjust your numbers and calculate.",
+  "demo.services.scenarioName": "Services Demo",
+  "demo.product.scenarioName": "Product Demo"
 }

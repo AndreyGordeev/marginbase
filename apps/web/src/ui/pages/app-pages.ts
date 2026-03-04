@@ -49,6 +49,11 @@ const MAX_SCENARIO_NAME_LENGTH = 120;
 const FORM_ERROR_VISIBLE_MS = 5000;
 const MAX_SAFE_INTEGER_TEXT = Number.MAX_SAFE_INTEGER.toLocaleString('en-US');
 
+type DemoTemplate = {
+  scenarioName: string;
+  values: Record<string, string | number>;
+};
+
 const getValidationFieldLabels = (): Record<string, string> => ({
   scenarioName: translate('validation.scenarioName'),
   unitPriceMinor: translate('validation.unitPrice'),
@@ -319,7 +324,10 @@ export const renderDashboardPage = async (
   const allScenarios = await service.listAllScenarios();
 
   if (allScenarios.length === 0) {
-    recentCard.appendChild(emptyState(translate('dashboard.noRecent'), translate('dashboard.noRecentDesc'), translate('dashboard.openProfit'), () => goTo('/profit')));
+    recentCard.appendChild(emptyState(translate('dashboard.noRecent'), translate('dashboard.noRecentDesc'), translate('dashboard.createFirstScenario'), async () => {
+      await service.createDefaultScenario('profit');
+      goTo('/profit');
+    }));
   } else {
     const list = document.createElement('ul');
     for (const scenario of allScenarios.slice(0, 5)) {
@@ -435,6 +443,95 @@ export const renderWorkspacePage = async (
     event.preventDefault();
   };
 
+  const applyDemoTemplate = (template: DemoTemplate): void => {
+    const scenarioNameInput = form.elements.namedItem('scenarioName');
+    if (scenarioNameInput instanceof HTMLInputElement) {
+      scenarioNameInput.value = template.scenarioName;
+    }
+
+    for (const [fieldName, fieldValue] of Object.entries(template.values)) {
+      const input = form.elements.namedItem(fieldName);
+      if (input instanceof HTMLInputElement) {
+        input.value = String(fieldValue);
+      }
+    }
+  };
+
+  const getDemoTemplates = (): [DemoTemplate, DemoTemplate] => {
+    if (moduleId === 'profit') {
+      return [
+        {
+          scenarioName: translate('demo.services.scenarioName'),
+          values: {
+            unitPriceMinor: 15000,
+            quantity: 12,
+            variableCostPerUnitMinor: 4500,
+            fixedCostsMinor: 30000
+          }
+        },
+        {
+          scenarioName: translate('demo.product.scenarioName'),
+          values: {
+            unitPriceMinor: 4900,
+            quantity: 80,
+            variableCostPerUnitMinor: 2100,
+            fixedCostsMinor: 95000
+          }
+        }
+      ];
+    }
+
+    if (moduleId === 'breakeven') {
+      return [
+        {
+          scenarioName: translate('demo.services.scenarioName'),
+          values: {
+            unitPriceMinor: 18000,
+            variableCostPerUnitMinor: 6000,
+            fixedCostsMinor: 140000,
+            targetProfitMinor: 80000,
+            plannedQuantity: 20
+          }
+        },
+        {
+          scenarioName: translate('demo.product.scenarioName'),
+          values: {
+            unitPriceMinor: 5500,
+            variableCostPerUnitMinor: 2300,
+            fixedCostsMinor: 120000,
+            targetProfitMinor: 60000,
+            plannedQuantity: 150
+          }
+        }
+      ];
+    }
+
+    return [
+      {
+        scenarioName: translate('demo.services.scenarioName'),
+        values: {
+          startingCashMinor: 250000,
+          baseMonthlyRevenueMinor: 90000,
+          fixedMonthlyCostsMinor: 52000,
+          variableMonthlyCostsMinor: 12000,
+          forecastMonths: 12,
+          monthlyGrowthRate: 0.03
+        }
+      },
+      {
+        scenarioName: translate('demo.product.scenarioName'),
+        values: {
+          startingCashMinor: 120000,
+          baseMonthlyRevenueMinor: 65000,
+          fixedMonthlyCostsMinor: 43000,
+          variableMonthlyCostsMinor: 17000,
+          forecastMonths: 12,
+          monthlyGrowthRate: 0.015
+        }
+      }
+    ];
+  };
+
   const formError = document.createElement('div');
   formError.className = 'inline-error form-inline-error';
   formError.hidden = true;
@@ -502,6 +599,28 @@ export const renderWorkspacePage = async (
   }
 
   form.insertAdjacentElement('afterbegin', formError);
+
+  if (scenarios.length === 0) {
+    const [servicesDemo, productDemo] = getDemoTemplates();
+
+    const demoRow = document.createElement('div');
+    demoRow.className = 'button-row';
+    demoRow.appendChild(createActionButton(translate('demo.useServices'), () => {
+      clearFormError();
+      applyDemoTemplate(servicesDemo);
+    }));
+    demoRow.appendChild(createActionButton(translate('demo.useProduct'), () => {
+      clearFormError();
+      applyDemoTemplate(productDemo);
+    }));
+
+    const helper = document.createElement('p');
+    helper.className = 'inline-error';
+    helper.textContent = translate('demo.helper');
+
+    form.appendChild(helper);
+    form.appendChild(demoRow);
+  }
 
   form.appendChild(
     createActionButton(translate('workspace.calculateScenario'), async () => {
