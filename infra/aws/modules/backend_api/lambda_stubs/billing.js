@@ -1,3 +1,4 @@
+const crypto = require('node:crypto');
 const { parseJsonBody, response } = require('./common');
 const {
   getRecord,
@@ -288,6 +289,69 @@ const emitBillingStatusChanged = ({ userId, status, eventType }) => {
   });
 };
 
+const parseStripeSignatureHeader = (headerValue) => {
+  const parts = String(headerValue)
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  let timestamp = '';
+  const signatures = [];
+
+  for (const part of parts) {
+    const [key, value] = part.split('=');
+    if (key === 't' && value) {
+      timestamp = value;
+      continue;
+    }
+
+    if (key === 'v1' && value) {
+      signatures.push(value);
+    }
+  }
+
+  return {
+    timestamp,
+    signatures
+  };
+};
+
+const secureCompareHex = (leftHex, rightHex) => {
+  if (!leftHex || !rightHex) {
+    return false;
+  }
+
+  const left = Buffer.from(leftHex, 'utf8');
+  const right = Buffer.from(rightHex, 'utf8');
+
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(left, right);
+};
+
+const verifyStripeWebhookSignature = (event, webhookSecret) => {
+  const signatureHeader = event?.headers?.['stripe-signature'] ?? event?.headers?.['Stripe-Signature'] ?? '';
+  if (!signatureHeader || !webhookSecret) {
+    return false;
+  }
+
+  const { timestamp, signatures } = parseStripeSignatureHeader(signatureHeader);
+  if (!timestamp || signatures.length === 0) {
+    return false;
+  }
+
+  const rawBody = typeof event?.body === 'string' ? event.body : JSON.stringify(parseJsonBody(event));
+  const signedPayload = `${timestamp}.${rawBody}`;
+  const expectedSignature = crypto
+    .createHmac('sha256', webhookSecret)
+    .update(signedPayload)
+    .digest('hex');
+
+  return signatures.some((candidate) => secureCompareHex(candidate, expectedSignature));
+};
+
 const handleCheckoutSession = async (event) => {
   const body = parseJsonBody(event);
   const planId = typeof body.planId === 'string' ? body.planId : '';
@@ -399,8 +463,9 @@ const handlePortalSession = async (event) => {
 };
 
 const handleStripeWebhook = async (event) => {
-  const signature = event?.headers?.['stripe-signature'] ?? event?.headers?.['Stripe-Signature'] ?? '';
-  if (!signature || !process.env.STRIPE_WEBHOOK_SECRET) {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const isValidSignature = verifyStripeWebhookSignature(event, webhookSecret);
+  if (!isValidSignature) {
     logWebhookFailure({
       reason: 'invalid_signature_or_missing_secret'
     });

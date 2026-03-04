@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 
 import { handler as authHandler } from '../modules/backend_api/lambda_stubs/auth.js';
 import { handler as accountDeleteHandler } from '../modules/backend_api/lambda_stubs/account-delete.js';
@@ -12,6 +13,29 @@ import { handler as shareListHandler } from '../modules/backend_api/lambda_stubs
 import { handler as telemetryHandler } from '../modules/backend_api/lambda_stubs/telemetry.js';
 
 const parseBody = (response) => JSON.parse(response.body);
+
+const buildStripeSignature = (rawBody, webhookSecret, timestamp = '1700000000') => {
+  const digest = crypto
+    .createHmac('sha256', webhookSecret)
+    .update(`${timestamp}.${rawBody}`)
+    .digest('hex');
+
+  return `t=${timestamp},v1=${digest}`;
+};
+
+const buildStripeWebhookEvent = (payload, webhookSecret) => {
+  const rawBody = JSON.stringify(payload);
+
+  return {
+    requestContext: {
+      routeKey: 'POST /billing/webhook/stripe'
+    },
+    headers: {
+      'stripe-signature': buildStripeSignature(rawBody, webhookSecret)
+    },
+    body: rawBody
+  };
+};
 
 test('auth verify validates Google token and returns identity payload', async () => {
   process.env.GOOGLE_CLIENT_IDS = 'client-id-1';
@@ -272,80 +296,47 @@ test('stripe webhook is idempotent and persists lifecycle status for entitlement
     return tableData.get(userId) ?? null;
   };
 
-  const checkoutEvent = await billingHandler({
-    requestContext: {
-      routeKey: 'POST /billing/webhook/stripe'
-    },
-    headers: {
-      'stripe-signature': 't=1,v1=testsig'
-    },
-    body: JSON.stringify({
-      id: 'evt_checkout_1',
-      type: 'checkout.session.completed',
-      data: {
-        object: {
-          status: 'trialing',
-          current_period_end: 1770000000,
-          metadata: {
-            userId: 'u_webhook_1',
-            planId: 'bundle'
-          }
+  const checkoutPayload = {
+    id: 'evt_checkout_1',
+    type: 'checkout.session.completed',
+    data: {
+      object: {
+        status: 'trialing',
+        current_period_end: 1770000000,
+        metadata: {
+          userId: 'u_webhook_1',
+          planId: 'bundle'
         }
       }
-    })
-  });
+    }
+  };
+
+  const checkoutEvent = await billingHandler(buildStripeWebhookEvent(checkoutPayload, 'whsec_test_123'));
 
   assert.equal(checkoutEvent.statusCode, 200);
   assert.equal(parseBody(checkoutEvent).processed, true);
 
-  const duplicateCheckoutEvent = await billingHandler({
-    requestContext: {
-      routeKey: 'POST /billing/webhook/stripe'
-    },
-    headers: {
-      'stripe-signature': 't=1,v1=testsig'
-    },
-    body: JSON.stringify({
-      id: 'evt_checkout_1',
-      type: 'checkout.session.completed',
-      data: {
-        object: {
-          status: 'trialing',
-          current_period_end: 1770000000,
-          metadata: {
-            userId: 'u_webhook_1',
-            planId: 'bundle'
-          }
-        }
-      }
-    })
-  });
+  const duplicateCheckoutEvent = await billingHandler(buildStripeWebhookEvent(checkoutPayload, 'whsec_test_123'));
 
   assert.equal(duplicateCheckoutEvent.statusCode, 200);
   assert.equal(parseBody(duplicateCheckoutEvent).idempotent, true);
   assert.equal(parseBody(duplicateCheckoutEvent).processed, false);
 
-  const paymentFailedEvent = await billingHandler({
-    requestContext: {
-      routeKey: 'POST /billing/webhook/stripe'
-    },
-    headers: {
-      'stripe-signature': 't=1,v1=testsig'
-    },
-    body: JSON.stringify({
-      id: 'evt_payment_failed_1',
-      type: 'invoice.payment_failed',
-      data: {
-        object: {
-          status: 'past_due',
-          current_period_end: 1770500000,
-          metadata: {
-            userId: 'u_webhook_1'
-          }
+  const paymentFailedPayload = {
+    id: 'evt_payment_failed_1',
+    type: 'invoice.payment_failed',
+    data: {
+      object: {
+        status: 'past_due',
+        current_period_end: 1770500000,
+        metadata: {
+          userId: 'u_webhook_1'
         }
       }
-    })
-  });
+    }
+  };
+
+  const paymentFailedEvent = await billingHandler(buildStripeWebhookEvent(paymentFailedPayload, 'whsec_test_123'));
 
   assert.equal(paymentFailedEvent.statusCode, 200);
 
@@ -367,6 +358,33 @@ test('stripe webhook is idempotent and persists lifecycle status for entitlement
   delete process.env.STRIPE_WEBHOOK_SECRET;
 });
 
+test('stripe webhook rejects invalid signature', async () => {
+  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_123';
+
+  const response = await billingHandler({
+    requestContext: {
+      routeKey: 'POST /billing/webhook/stripe'
+    },
+    headers: {
+      'stripe-signature': 't=1700000000,v1=invalid'
+    },
+    body: JSON.stringify({
+      id: 'evt_invalid_sig_1',
+      type: 'invoice.paid',
+      data: {
+        object: {
+          status: 'active'
+        }
+      }
+    })
+  });
+
+  assert.equal(response.statusCode, 400);
+  assert.equal(parseBody(response).code, 'INVALID_SIGNATURE');
+
+  delete process.env.STRIPE_WEBHOOK_SECRET;
+});
+
 test('stripe lifecycle transitions from trialing to active to canceled and revokes entitlements', async () => {
   const tableData = new Map();
 
@@ -383,76 +401,58 @@ test('stripe lifecycle transitions from trialing to active to canceled and revok
     return tableData.get(userId) ?? null;
   };
 
-  const trialStarted = await billingHandler({
-    requestContext: {
-      routeKey: 'POST /billing/webhook/stripe'
-    },
-    headers: {
-      'stripe-signature': 't=1,v1=testsig'
-    },
-    body: JSON.stringify({
-      id: 'evt_lifecycle_trial_1',
-      type: 'checkout.session.completed',
-      data: {
-        object: {
-          status: 'trialing',
-          current_period_end: 1770000000,
-          metadata: {
-            userId: 'u_webhook_2',
-            planId: 'bundle'
-          }
+  const trialStartedPayload = {
+    id: 'evt_lifecycle_trial_1',
+    type: 'checkout.session.completed',
+    data: {
+      object: {
+        status: 'trialing',
+        current_period_end: 1770000000,
+        metadata: {
+          userId: 'u_webhook_2',
+          planId: 'bundle'
         }
       }
-    })
-  });
+    }
+  };
+
+  const trialStarted = await billingHandler(buildStripeWebhookEvent(trialStartedPayload, 'whsec_test_123'));
 
   assert.equal(trialStarted.statusCode, 200);
 
-  const renewalPaid = await billingHandler({
-    requestContext: {
-      routeKey: 'POST /billing/webhook/stripe'
-    },
-    headers: {
-      'stripe-signature': 't=1,v1=testsig'
-    },
-    body: JSON.stringify({
-      id: 'evt_lifecycle_paid_1',
-      type: 'invoice.paid',
-      data: {
-        object: {
-          status: 'active',
-          current_period_end: 1772600000,
-          metadata: {
-            userId: 'u_webhook_2'
-          }
+  const renewalPaidPayload = {
+    id: 'evt_lifecycle_paid_1',
+    type: 'invoice.paid',
+    data: {
+      object: {
+        status: 'active',
+        current_period_end: 1772600000,
+        metadata: {
+          userId: 'u_webhook_2'
         }
       }
-    })
-  });
+    }
+  };
+
+  const renewalPaid = await billingHandler(buildStripeWebhookEvent(renewalPaidPayload, 'whsec_test_123'));
 
   assert.equal(renewalPaid.statusCode, 200);
 
-  const canceled = await billingHandler({
-    requestContext: {
-      routeKey: 'POST /billing/webhook/stripe'
-    },
-    headers: {
-      'stripe-signature': 't=1,v1=testsig'
-    },
-    body: JSON.stringify({
-      id: 'evt_lifecycle_canceled_1',
-      type: 'customer.subscription.deleted',
-      data: {
-        object: {
-          status: 'canceled',
-          current_period_end: 1772600000,
-          metadata: {
-            userId: 'u_webhook_2'
-          }
+  const canceledPayload = {
+    id: 'evt_lifecycle_canceled_1',
+    type: 'customer.subscription.deleted',
+    data: {
+      object: {
+        status: 'canceled',
+        current_period_end: 1772600000,
+        metadata: {
+          userId: 'u_webhook_2'
         }
       }
-    })
-  });
+    }
+  };
+
+  const canceled = await billingHandler(buildStripeWebhookEvent(canceledPayload, 'whsec_test_123'));
 
   assert.equal(canceled.statusCode, 200);
 

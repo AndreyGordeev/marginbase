@@ -136,3 +136,10 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 - Subscription page now includes direct Stripe checkout action for upgrade flow (`POST /billing/checkout/session` via web service).
 - Added “Manage Subscription” action that opens Stripe Billing Portal (`POST /billing/portal-session`) for signed-in users.
 - Checkout and portal failures now surface user-facing messages and keep local fallback path (`Activate Bundle Local`) available for offline/demo flow.
+
+## Stripe webhook signature hardening — 2026-03-04
+
+### What changed
+- Billing webhook handler now verifies Stripe-style `Stripe-Signature` HMAC (`sha256`) against raw request body and configured webhook secret.
+- Invalid signatures are rejected with `INVALID_SIGNATURE` and counted in webhook failure observability path.
+- Backend lambda tests updated to generate valid signed webhook headers and include explicit invalid-signature rejection coverage.
