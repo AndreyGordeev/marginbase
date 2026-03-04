@@ -144,3 +144,10 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 - Invalid signatures are rejected with `INVALID_SIGNATURE` and counted in webhook failure observability path.
 - Webhook idempotency records now persist with explicit TTL metadata (`expiresAt`, 30 days) for replay-window control.
 - Backend lambda tests updated to generate valid signed webhook headers and include explicit invalid-signature rejection coverage.
+
+## Production-readiness tests follow-up: reporting coverage gate — 2026-03-04
+
+### What changed
+- Added `@marginbase/reporting` Vitest coverage thresholds and package-level `test:coverage` script.
+- Expanded reporting exporter unit tests to cover PDF export (including watermark option path) in addition to XLSX assertions.
+- Root `test:coverage` now runs both `@marginbase/domain-core` and `@marginbase/reporting` coverage gates.

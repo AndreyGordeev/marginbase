@@ -7,7 +7,7 @@
     "lint": "corepack pnpm -r run lint",
     "test": "corepack pnpm -r run test",
     "test:unit": "corepack pnpm -r --filter ./packages/* run test",
-    "test:coverage": "corepack pnpm --filter @marginbase/domain-core run test:coverage",
+    "test:coverage": "corepack pnpm --filter @marginbase/domain-core run test:coverage && corepack pnpm --filter @marginbase/reporting run test:coverage",
     "test:e2e": "playwright test",
     "typecheck": "corepack pnpm -r run typecheck",
     "boot:web": "corepack pnpm --filter @marginbase/web boot",
