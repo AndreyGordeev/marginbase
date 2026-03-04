@@ -682,6 +682,22 @@ export const renderSubscriptionPage = (
     goTo('/dashboard');
   }, 'primary'));
   actions.appendChild(createActionButton(translate('subscription.refreshStatus'), () => goTo('/subscription')));
+  actions.appendChild(createActionButton(translate('subscription.manageSubscription'), async () => {
+    try {
+      const returnUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
+      const portalUrl = await service.startBillingPortalSession(returnUrl);
+
+      if (portalUrl) {
+        window.location.href = portalUrl;
+        return;
+      }
+
+      window.alert(translate('subscription.manageUnavailable'));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : translate('subscription.manageUnavailable');
+      window.alert(message);
+    }
+  }));
 
   const disclosure = document.createElement('div');
   disclosure.className = 'inline-error';
@@ -927,6 +943,27 @@ export const renderSettingsPage = async (
   const card = document.createElement('div');
   card.className = 'card';
   card.innerHTML = `<h2>${translate('settings.title')}</h2><p>${translate('settings.subtitle')}</p>`;
+
+  const subscriptionActions = document.createElement('div');
+  subscriptionActions.className = 'button-row';
+  subscriptionActions.appendChild(createActionButton(translate('settings.manageSubscription'), async () => {
+    try {
+      const returnUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
+      const portalUrl = await service.startBillingPortalSession(returnUrl);
+
+      if (portalUrl) {
+        window.location.href = portalUrl;
+        return;
+      }
+
+      window.alert(translate('settings.manageUnavailable'));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : translate('settings.manageUnavailable');
+      window.alert(message);
+    }
+  }, 'primary'));
+
+  card.appendChild(subscriptionActions);
 
   const deleteAccountButton = createActionButton(translate('settings.deleteAccountData'), async () => {
     const deleted = await service.deleteAccount('local_web_user');

@@ -7,6 +7,7 @@ Purpose: define a stable backend contract for clients and serverless services.
 - `GET /entitlements`
 - `POST /telemetry/batch`
 - `POST /billing/checkout/session`
+- `POST /billing/portal/session`
 - `POST /billing/webhook/stripe`
 - `POST /billing/verify`
 - `POST /account/delete`
@@ -63,6 +64,23 @@ Response:
 ```json
 {
   "checkoutUrl": "https://checkout.stripe.com/c/pay/cs_test_123"
+}
+```
+
+## `POST /billing/portal/session`
+
+Request:
+```json
+{
+  "userId": "u_123",
+  "returnUrl": "https://app.marginbase.com/settings"
+}
+```
+
+Response:
+```json
+{
+  "portalUrl": "https://billing.stripe.com/p/session/test_123"
 }
 ```
 

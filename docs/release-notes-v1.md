@@ -99,3 +99,21 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 	- `docs/documentation-sync-policy.md`
 	- `PROJECT_CONTEXT.md` (`Documentation Sync (Mandatory)`)
 	- `.github/pull_request_template.md` documentation checklist
+
+---
+
+## Paywall UX Increment (2026-03-04)
+- Locked module access now routes to a single upgrade experience with clear CTA.
+- Checkout CTA uses Stripe checkout session when available; local trial fallback remains for non-prod/stub flows.
+
+---
+
+## Billing Portal Self-Serve Increment (2026-03-04)
+
+### PR-3 scope
+- Added Billing Portal session endpoint usage in web client flow (`POST /billing/portal/session`).
+- Added “Manage subscription” actions in Subscription and Settings pages.
+
+### Behavior notes
+- When Billing Portal URL is available, user is redirected to Stripe-hosted self-serve management.
+- If portal flow is unavailable in current environment, UI shows explicit fallback message without breaking app flow.
