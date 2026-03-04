@@ -9,6 +9,7 @@
 
 ## Current Delivery Status
 - ../PROJECT_CONTEXT.md (all current growth-scope items completed)
+- Canonical public routes: share `/s/:token#k=<shareKey>`, embed `/embed/:calculator`, localized embed `/embed/:lang/:calculator`
 
 ## Architecture
 - architecture/overview.md

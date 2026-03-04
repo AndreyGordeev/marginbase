@@ -19,8 +19,8 @@ Purpose: define a stable backend contract for clients and serverless services.
 - JSON only
 - Strict schema validation
 - Never include monetary scenario values in telemetry/auth/entitlements/billing endpoints
-- Explicit exception: sanitized share snapshots are allowed only on `/share/*` endpoints
-- Share snapshot plaintext must not be sent to backend; `/share/*` stores encrypted payload only
+- Explicit exception: share flow on `/share/*` is allowed only as encrypted snapshot payload generated client-side from sanitized data
+- Share snapshot plaintext must not be sent to backend; backend stores encrypted payload + expiry/owner metadata only
 - Errors must return stable codes
 
 ## Auth / Headers

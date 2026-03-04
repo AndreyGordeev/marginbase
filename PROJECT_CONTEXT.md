@@ -12,13 +12,13 @@ MarginBase is an offline-first finance toolkit for SMB with 3 calculators:
 
 Current scope also includes:
 - Local Business Report export (PDF + XLSX)
-- Shareable scenario links via sanitized snapshots (`/s/:token`)
-- Embeddable stateless calculators (`/embed/profit`, `/embed/breakeven`, `/embed/cashflow`)
+- Shareable scenario links via encrypted snapshots (`/s/:token#k=<shareKey>`)
+- Embeddable stateless calculators (`/embed/:calculator`, `/embed/:lang/:calculator`)
 
 ## Non-negotiable Principles
 1. **Offline-first:** create/edit/calc/export works fully offline.
 2. **Thin backend:** backend is only for auth verification, entitlements, and telemetry ingest.
-3. **No raw scenario values in cloud:** scenario numeric values are local-only by default; only explicit user-initiated **sanitized share snapshots** may be stored server-side (encrypted at rest + TTL).
+3. **No raw scenario values in cloud:** scenario numeric values are local-only by default; only explicit user-initiated share snapshots are allowed server-side, and only as encrypted payloads (TTL + owner metadata).
 4. **Shared domain-core:** all formulas + schema + migrations live in `packages/domain-core` as pure functions.
 5. **Numeric safety:** money uses minor units (e.g., cents) + explicit rounding; never float-math for money.
 6. **EU-first hosting:** AWS resources in an EU region.
@@ -42,7 +42,7 @@ Current scope also includes:
 
 ## Growth Features Status
 - Report export: implemented and tested (local-only)
-- Share links: implemented and tested (sanitize/migrate, create/get/list/revoke, owner checks)
+- Share links: implemented and tested (sanitize -> encrypt -> store, migrate/decrypt on read, create/get/list/revoke, owner checks)
 - Embeds: implemented and tested (query options, CTA prefill, embed CSP)
 - Optional embed analytics: implemented with allowlist-safe events
 
