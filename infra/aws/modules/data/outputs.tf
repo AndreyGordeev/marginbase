@@ -6,6 +6,14 @@ output "entitlements_table_arn" {
   value = aws_dynamodb_table.entitlements.arn
 }
 
+output "share_snapshots_table_name" {
+  value = aws_dynamodb_table.share_snapshots.name
+}
+
+output "share_snapshots_table_arn" {
+  value = aws_dynamodb_table.share_snapshots.arn
+}
+
 output "telemetry_bucket_name" {
   value = aws_s3_bucket.telemetry.bucket
 }

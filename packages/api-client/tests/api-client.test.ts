@@ -166,4 +166,103 @@ describe('MarginbaseApiClient', () => {
     expect(result.deletedEntitlements).toBe(true);
     expect(result.deletedUserProfile).toBe(true);
   });
+
+  it('creates share snapshot and returns token metadata', async () => {
+    const fetchMock = vi.fn(async () => {
+      return jsonResponse(200, {
+        token: 'share_token_123',
+        expiresAt: '2026-04-03T10:00:00.000Z'
+      });
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = new MarginbaseApiClient({ baseUrl: 'https://api.marginbase.test' });
+    const result = await client.createShareSnapshot({
+      snapshot: {
+        schemaVersion: 1,
+        module: 'profit',
+        inputData: { unitPriceMinor: 1000 }
+      },
+      expiresInDays: 30,
+      ownerUserId: 'local_web_user'
+    });
+
+    expect(result.token).toBe('share_token_123');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.marginbase.test/share/create',
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
+
+  it('gets share snapshot by token', async () => {
+    const fetchMock = vi.fn(async () => {
+      return jsonResponse(200, {
+        snapshot: {
+          schemaVersion: 1,
+          module: 'breakeven',
+          inputData: { unitPriceMinor: 1000, variableCostPerUnitMinor: 600 }
+        }
+      });
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = new MarginbaseApiClient({ baseUrl: 'https://api.marginbase.test' });
+    const result = await client.getShareSnapshot('abc123');
+
+    expect(result.snapshot.module).toBe('breakeven');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.marginbase.test/share/abc123',
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
+
+  it('deletes share snapshot by token', async () => {
+    const fetchMock = vi.fn(async () => {
+      return jsonResponse(200, {
+        revoked: true,
+        token: 'abc123'
+      });
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = new MarginbaseApiClient({ baseUrl: 'https://api.marginbase.test' });
+    const result = await client.deleteShareSnapshot('abc123');
+
+    expect(result.revoked).toBe(true);
+    expect(result.token).toBe('abc123');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.marginbase.test/share/abc123',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+  });
+
+  it('lists share snapshots for owner user id', async () => {
+    const fetchMock = vi.fn(async () => {
+      return jsonResponse(200, {
+        items: [
+          {
+            token: 'share_1',
+            module: 'profit',
+            createdAt: '2026-03-04T10:00:00.000Z',
+            expiresAt: '2026-04-03T10:00:00.000Z'
+          }
+        ]
+      });
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = new MarginbaseApiClient({ baseUrl: 'https://api.marginbase.test' });
+    const result = await client.listShareSnapshots('local_web_user');
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].token).toBe('share_1');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.marginbase.test/share/list?userId=local_web_user',
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
 });

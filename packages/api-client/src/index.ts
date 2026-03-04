@@ -101,6 +101,44 @@ export interface AccountDeleteResponse {
   deletedUserProfile: boolean;
 }
 
+export interface ShareSnapshotV1 {
+  schemaVersion: 1;
+  module: 'profit' | 'breakeven' | 'cashflow';
+  inputData: Record<string, unknown>;
+  currencyCode?: string;
+}
+
+export interface ShareCreateRequest {
+  snapshot: ShareSnapshotV1;
+  expiresInDays?: 7 | 30;
+  ownerUserId?: string;
+}
+
+export interface ShareCreateResponse {
+  token: string;
+  expiresAt: string;
+}
+
+export interface ShareGetResponse {
+  snapshot: ShareSnapshotV1;
+}
+
+export interface ShareDeleteResponse {
+  revoked: boolean;
+  token: string;
+}
+
+export interface ShareListItem {
+  token: string;
+  module: 'profit' | 'breakeven' | 'cashflow';
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface ShareListResponse {
+  items: ShareListItem[];
+}
+
 export interface ApiErrorBody {
   code: string;
   message: string;
@@ -208,5 +246,42 @@ export class MarginbaseApiClient {
     });
 
     return parseJson<AccountDeleteResponse>(response);
+  }
+
+  public async createShareSnapshot(request: ShareCreateRequest): Promise<ShareCreateResponse> {
+    const response = await fetch(`${this.baseUrl}/share/create`, {
+      method: 'POST',
+      headers: buildHeaders(),
+      body: JSON.stringify(request)
+    });
+
+    return parseJson<ShareCreateResponse>(response);
+  }
+
+  public async getShareSnapshot(token: string): Promise<ShareGetResponse> {
+    const response = await fetch(`${this.baseUrl}/share/${encodeURIComponent(token)}`, {
+      method: 'GET',
+      headers: buildHeaders()
+    });
+
+    return parseJson<ShareGetResponse>(response);
+  }
+
+  public async deleteShareSnapshot(token: string, idToken?: string): Promise<ShareDeleteResponse> {
+    const response = await fetch(`${this.baseUrl}/share/${encodeURIComponent(token)}`, {
+      method: 'DELETE',
+      headers: buildHeaders(idToken)
+    });
+
+    return parseJson<ShareDeleteResponse>(response);
+  }
+
+  public async listShareSnapshots(ownerUserId: string): Promise<ShareListResponse> {
+    const response = await fetch(`${this.baseUrl}/share/list?userId=${encodeURIComponent(ownerUserId)}`, {
+      method: 'GET',
+      headers: buildHeaders()
+    });
+
+    return parseJson<ShareListResponse>(response);
   }
 }

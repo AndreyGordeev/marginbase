@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => {
         '@marginbase/api-client': path.resolve(__dirname, '../../packages/api-client/src/index.ts'),
         '@marginbase/domain-core': path.resolve(__dirname, '../../packages/domain-core/src/index.ts'),
         '@marginbase/entitlements': path.resolve(__dirname, '../../packages/entitlements/src/index.ts'),
+        '@marginbase/reporting': path.resolve(__dirname, '../../packages/reporting/src/index.ts'),
         '@marginbase/storage': path.resolve(__dirname, '../../packages/storage/src/index.ts'),
         '@marginbase/telemetry': path.resolve(__dirname, '../../packages/telemetry/src/index.ts')
       }

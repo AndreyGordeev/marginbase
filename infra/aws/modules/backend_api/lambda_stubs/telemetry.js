@@ -7,6 +7,8 @@ const MAX_PAYLOAD_BYTES = 64 * 1024;
 const ALLOWED_EVENT_NAMES = new Set([
   'app_opened',
   'module_opened',
+  'embed_opened',
+  'embed_cta_clicked',
   'scenario_created',
   'scenario_deleted',
   'scenario_duplicated',

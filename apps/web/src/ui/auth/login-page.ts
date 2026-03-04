@@ -34,7 +34,14 @@ export const renderLoginPage = (root: HTMLElement, deps: LoginRenderDeps): void 
 
   const auth = document.createElement('div');
   auth.className = 'login-auth';
-  auth.appendChild(createActionButton('Continue with Google', () => goTo('/gate'), 'primary'));
+  auth.appendChild(createActionButton('Continue with Google', () => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('marginbase_signed_in', 'true');
+      localStorage.setItem('marginbase_signed_in_user_id', 'local_web_user');
+    }
+
+    goTo('/gate');
+  }, 'primary'));
 
   const trust = document.createElement('div');
   trust.className = 'login-trust';

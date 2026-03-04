@@ -21,6 +21,49 @@ resource "aws_dynamodb_table" "entitlements" {
   tags = var.tags
 }
 
+resource "aws_dynamodb_table" "share_snapshots" {
+  name         = "${var.project_name}-${var.environment}-share-snapshots"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "pk"
+
+  attribute {
+    name = "pk"
+    type = "S"
+  }
+
+  attribute {
+    name = "ownerUserIdHash"
+    type = "S"
+  }
+
+  attribute {
+    name = "createdAt"
+    type = "N"
+  }
+
+  global_secondary_index {
+    name            = "ownerUserIdHash-createdAt-index"
+    hash_key        = "ownerUserIdHash"
+    range_key       = "createdAt"
+    projection_type = "ALL"
+  }
+
+  ttl {
+    attribute_name = "expiresAt"
+    enabled        = true
+  }
+
+  server_side_encryption {
+    enabled = true
+  }
+
+  point_in_time_recovery {
+    enabled = true
+  }
+
+  tags = var.tags
+}
+
 resource "aws_s3_bucket" "telemetry" {
   bucket = "${var.project_name}-${var.environment}-${data.aws_caller_identity.current.account_id}-telemetry-raw"
   tags   = var.tags

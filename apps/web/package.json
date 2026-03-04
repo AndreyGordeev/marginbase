@@ -16,6 +16,7 @@
     "@marginbase/api-client": "workspace:*",
     "@marginbase/domain-core": "workspace:*",
     "@marginbase/entitlements": "workspace:*",
+    "@marginbase/reporting": "workspace:*",
     "@marginbase/storage": "workspace:*",
     "@marginbase/telemetry": "workspace:*"
   },

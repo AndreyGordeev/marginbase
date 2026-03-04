@@ -1,17 +1,27 @@
 import {
+  type ShareListItem,
+  type ShareCreateResponse,
   type BillingPlanId,
   MarginbaseApiClient,
   type EntitlementsResponse
 } from '@marginbase/api-client';
+import { createTelemetryEvent, type TelemetryEventName } from '@marginbase/telemetry';
 import {
   calculateBreakEven,
   calculateCashflow,
   calculateProfit,
   exportScenariosToJson,
   importScenariosReplaceAllFromJson,
+  migrateSnapshot,
+  sanitizeScenarioForShare,
+  type SharedSnapshotV1,
+  type BreakEvenInput,
+  type CashflowInput,
   type ImportReplaceAllResult,
+  type ProfitInput,
   type ScenarioV1
 } from '@marginbase/domain-core';
+import { buildReportModel, exportReportPdf, exportReportXlsx, type ReportModel } from '@marginbase/reporting';
 import {
   canUseModule,
   shouldRefreshEntitlements,
@@ -30,7 +40,11 @@ import {
 
 type ModuleId = EntitlementModuleId;
 
-type WebApiClient = Pick<MarginbaseApiClient, 'refreshEntitlements' | 'deleteAccount'> & Partial<Pick<MarginbaseApiClient, 'createCheckoutSession'>>;
+type WebApiClient = Pick<MarginbaseApiClient, 'refreshEntitlements' | 'deleteAccount'> &
+  Partial<Pick<MarginbaseApiClient, 'createCheckoutSession' | 'createShareSnapshot' | 'getShareSnapshot' | 'deleteShareSnapshot' | 'listShareSnapshots' | 'sendTelemetryBatch'>>;
+
+const SIGNED_IN_STORAGE_KEY = 'marginbase_signed_in';
+const SIGNED_IN_USER_ID_STORAGE_KEY = 'marginbase_signed_in_user_id';
 
 const toPlainJson = (value: unknown): unknown => {
   if (Array.isArray(value)) {
@@ -86,6 +100,116 @@ const saveEntitlementCache = (cache: EntitlementCache): void => {
   if (typeof localStorage !== 'undefined') {
     localStorage.setItem('marginbase_entitlements', JSON.stringify(cache));
   }
+};
+
+const toFiniteNumber = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+};
+
+const getLatestScenariosByModule = (scenarios: ScenarioV1[]): Partial<Record<ScenarioV1['module'], ScenarioV1>> => {
+  const latest: Partial<Record<ScenarioV1['module'], ScenarioV1>> = {};
+
+  for (const scenario of scenarios) {
+    const current = latest[scenario.module];
+    if (!current || new Date(scenario.updatedAt).getTime() > new Date(current.updatedAt).getTime()) {
+      latest[scenario.module] = scenario;
+    }
+  }
+
+  return latest;
+};
+
+const toProfitInput = (scenario?: ScenarioV1): ProfitInput | undefined => {
+  if (!scenario || scenario.module !== 'profit') {
+    return undefined;
+  }
+
+  const unitPriceMinor = toFiniteNumber(scenario.inputData.unitPriceMinor);
+  const quantity = toFiniteNumber(scenario.inputData.quantity);
+  const variableCostPerUnitMinor = toFiniteNumber(scenario.inputData.variableCostPerUnitMinor);
+  const fixedCostsMinor = toFiniteNumber(scenario.inputData.fixedCostsMinor);
+
+  if (
+    unitPriceMinor === null ||
+    quantity === null ||
+    variableCostPerUnitMinor === null ||
+    fixedCostsMinor === null
+  ) {
+    return undefined;
+  }
+
+  return {
+    mode: 'unit',
+    unitPriceMinor,
+    quantity,
+    variableCostPerUnitMinor,
+    fixedCostsMinor
+  };
+};
+
+const toBreakEvenInput = (scenario?: ScenarioV1): BreakEvenInput | undefined => {
+  if (!scenario || scenario.module !== 'breakeven') {
+    return undefined;
+  }
+
+  const unitPriceMinor = toFiniteNumber(scenario.inputData.unitPriceMinor);
+  const variableCostPerUnitMinor = toFiniteNumber(scenario.inputData.variableCostPerUnitMinor);
+  const fixedCostsMinor = toFiniteNumber(scenario.inputData.fixedCostsMinor);
+  const targetProfitMinor = toFiniteNumber(scenario.inputData.targetProfitMinor);
+  const plannedQuantity = toFiniteNumber(scenario.inputData.plannedQuantity);
+
+  if (unitPriceMinor === null || variableCostPerUnitMinor === null || fixedCostsMinor === null) {
+    return undefined;
+  }
+
+  return {
+    unitPriceMinor,
+    variableCostPerUnitMinor,
+    fixedCostsMinor,
+    targetProfitMinor: targetProfitMinor ?? undefined,
+    plannedQuantity: plannedQuantity ?? undefined
+  };
+};
+
+const toCashflowInput = (scenario?: ScenarioV1): CashflowInput | undefined => {
+  if (!scenario || scenario.module !== 'cashflow') {
+    return undefined;
+  }
+
+  const startingCashMinor = toFiniteNumber(scenario.inputData.startingCashMinor);
+  const baseMonthlyRevenueMinor = toFiniteNumber(scenario.inputData.baseMonthlyRevenueMinor);
+  const fixedMonthlyCostsMinor = toFiniteNumber(scenario.inputData.fixedMonthlyCostsMinor);
+  const variableMonthlyCostsMinor = toFiniteNumber(scenario.inputData.variableMonthlyCostsMinor);
+  const forecastMonths = toFiniteNumber(scenario.inputData.forecastMonths);
+  const monthlyGrowthRate = toFiniteNumber(scenario.inputData.monthlyGrowthRate);
+
+  if (
+    startingCashMinor === null ||
+    baseMonthlyRevenueMinor === null ||
+    fixedMonthlyCostsMinor === null ||
+    variableMonthlyCostsMinor === null ||
+    forecastMonths === null
+  ) {
+    return undefined;
+  }
+
+  return {
+    startingCashMinor,
+    baseMonthlyRevenueMinor,
+    fixedMonthlyCostsMinor,
+    variableMonthlyCostsMinor,
+    forecastMonths,
+    monthlyGrowthRate: monthlyGrowthRate ?? 0
+  };
 };
 
 export interface ProfitInputState {
@@ -179,6 +303,23 @@ export class WebAppService {
 
   public canOpenModule(moduleId: ModuleId): boolean {
     return canUseModule(moduleId, this.entitlementCache, new Date());
+  }
+
+  public isSignedIn(): boolean {
+    if (typeof localStorage === 'undefined') {
+      return false;
+    }
+
+    return localStorage.getItem(SIGNED_IN_STORAGE_KEY) === 'true';
+  }
+
+  public getSignedInUserId(): string | null {
+    if (typeof localStorage === 'undefined') {
+      return null;
+    }
+
+    const value = localStorage.getItem(SIGNED_IN_USER_ID_STORAGE_KEY);
+    return value && value.trim() ? value : null;
   }
 
   public async refreshEntitlementsIfNeeded(idToken: string): Promise<boolean> {
@@ -403,6 +544,256 @@ export class WebAppService {
   public async exportScenariosJson(): Promise<string> {
     const scenarios = await this.scenarioRepository.listScenarios();
     return exportScenariosToJson(scenarios, nowIso());
+  }
+
+  public async getBusinessReportModel(): Promise<ReportModel> {
+    const scenarios = await this.scenarioRepository.listScenarios();
+    const latestByModule = getLatestScenariosByModule(scenarios);
+
+    return buildReportModel({
+      generatedAtLocal: nowIso(),
+      currencyCode: 'EUR',
+      locale: 'en-US',
+      profitabilityInput: toProfitInput(latestByModule.profit),
+      breakEvenInput: toBreakEvenInput(latestByModule.breakeven),
+      cashflowInput: toCashflowInput(latestByModule.cashflow)
+    });
+  }
+
+  public async exportBusinessReportPdf(): Promise<Uint8Array> {
+    const report = await this.getBusinessReportModel();
+
+    return exportReportPdf(report);
+  }
+
+  public async exportBusinessReportXlsx(): Promise<Uint8Array> {
+    const report = await this.getBusinessReportModel();
+
+    return exportReportXlsx(report);
+  }
+
+  public async createShareSnapshotFromScenario(scenario: ScenarioV1, expiresInDays: 7 | 30 = 30): Promise<ShareCreateResponse> {
+    if (!this.apiClient.createShareSnapshot) {
+      throw new Error('Share API is not available in the current environment.');
+    }
+
+    const snapshot = sanitizeScenarioForShare(scenario);
+
+    return this.apiClient.createShareSnapshot({
+      snapshot,
+      expiresInDays,
+      ownerUserId: this.getSignedInUserId() ?? undefined
+    });
+  }
+
+  public async deleteShareSnapshot(token: string, idToken?: string): Promise<boolean> {
+    if (!this.apiClient.deleteShareSnapshot) {
+      throw new Error('Share API is not available in the current environment.');
+    }
+
+    const result = await this.apiClient.deleteShareSnapshot(token, idToken);
+    return result.revoked;
+  }
+
+  public async listMyShareSnapshots(): Promise<ShareListItem[]> {
+    if (!this.isSignedIn()) {
+      throw new Error('Sign in is required to view shared links.');
+    }
+
+    const userId = this.getSignedInUserId();
+    if (!userId) {
+      throw new Error('Signed in user ID is missing.');
+    }
+
+    if (!this.apiClient.listShareSnapshots) {
+      throw new Error('Share API is not available in the current environment.');
+    }
+
+    const result = await this.apiClient.listShareSnapshots(userId);
+    return result.items;
+  }
+
+  public async revokeMyShareSnapshot(token: string): Promise<boolean> {
+    if (!this.isSignedIn()) {
+      throw new Error('Sign in is required to revoke shared links.');
+    }
+
+    return this.deleteShareSnapshot(token);
+  }
+
+  public async trackEmbedOpened(moduleId: ModuleId, poweredBy: boolean): Promise<void> {
+    await this.emitTelemetryEvent('embed_opened', {
+      moduleId,
+      poweredBy
+    });
+  }
+
+  public async trackEmbedCtaClicked(moduleId: ModuleId): Promise<void> {
+    await this.emitTelemetryEvent('embed_cta_clicked', {
+      moduleId
+    });
+  }
+
+  public async importSharedScenario(token: string): Promise<ModuleId> {
+    if (!this.isSignedIn()) {
+      throw new Error('Sign in is required to import shared scenarios.');
+    }
+
+    const snapshot = await this.getSharedSnapshot(token);
+    await this.persistSharedSnapshot(snapshot, 'Imported Shared Scenario');
+    return snapshot.module;
+  }
+
+  public async saveSharedScenario(token: string): Promise<ModuleId> {
+    if (!this.isSignedIn()) {
+      throw new Error('Sign in is required to save shared scenarios.');
+    }
+
+    const snapshot = await this.getSharedSnapshot(token);
+
+    if (!this.canOpenModule(snapshot.module)) {
+      throw new Error('Active entitlement is required to save this shared scenario.');
+    }
+
+    await this.persistSharedSnapshot(snapshot, 'Saved Shared Scenario');
+    return snapshot.module;
+  }
+
+  public async getSharedScenarioView(token: string): Promise<{
+    module: ModuleId;
+    inputData: Record<string, unknown>;
+    calculatedData: Record<string, unknown>;
+  }> {
+    if (!this.apiClient.getShareSnapshot) {
+      throw new Error('Share API is not available in the current environment.');
+    }
+
+    const snapshot = await this.getSharedSnapshot(token);
+
+    if (snapshot.module === 'profit') {
+      const input = this.getProfitInputState(snapshot.inputData);
+      const calculatedData = calculateProfit({
+        mode: 'unit',
+        unitPriceMinor: input.unitPriceMinor,
+        quantity: input.quantity,
+        variableCostPerUnitMinor: input.variableCostPerUnitMinor,
+        fixedCostsMinor: input.fixedCostsMinor
+      });
+
+      return {
+        module: 'profit',
+        inputData: snapshot.inputData,
+        calculatedData: toPlainJson(calculatedData) as Record<string, unknown>
+      };
+    }
+
+    if (snapshot.module === 'breakeven') {
+      const input = this.getBreakEvenInputState(snapshot.inputData);
+      const calculatedData = calculateBreakEven({
+        unitPriceMinor: input.unitPriceMinor,
+        variableCostPerUnitMinor: input.variableCostPerUnitMinor,
+        fixedCostsMinor: input.fixedCostsMinor,
+        targetProfitMinor: input.targetProfitMinor,
+        plannedQuantity: input.plannedQuantity
+      });
+
+      return {
+        module: 'breakeven',
+        inputData: snapshot.inputData,
+        calculatedData: toPlainJson(calculatedData) as Record<string, unknown>
+      };
+    }
+
+    const input = this.getCashflowInputState(snapshot.inputData);
+    const calculatedData = calculateCashflow({
+      startingCashMinor: input.startingCashMinor,
+      baseMonthlyRevenueMinor: input.baseMonthlyRevenueMinor,
+      fixedMonthlyCostsMinor: input.fixedMonthlyCostsMinor,
+      variableMonthlyCostsMinor: input.variableMonthlyCostsMinor,
+      forecastMonths: input.forecastMonths,
+      monthlyGrowthRate: input.monthlyGrowthRate
+    });
+
+    return {
+      module: 'cashflow',
+      inputData: snapshot.inputData,
+      calculatedData: toPlainJson(calculatedData) as Record<string, unknown>
+    };
+  }
+
+  private async getSharedSnapshot(token: string): Promise<SharedSnapshotV1> {
+    if (!this.apiClient.getShareSnapshot) {
+      throw new Error('Share API is not available in the current environment.');
+    }
+
+    const response = await this.apiClient.getShareSnapshot(token);
+    return migrateSnapshot(response.snapshot);
+  }
+
+  private async persistSharedSnapshot(snapshot: SharedSnapshotV1, scenarioNamePrefix: string): Promise<void> {
+    const scenarioName = `${scenarioNamePrefix} (${snapshot.module})`;
+    const scenarioId = `shared_${snapshot.module}_${Date.now()}_${Math.floor(Math.random() * 1_000_000)}`;
+
+    if (snapshot.module === 'profit') {
+      const input = this.getProfitInputState(snapshot.inputData);
+      await this.saveProfitScenario({
+        scenarioId,
+        scenarioName,
+        unitPriceMinor: input.unitPriceMinor,
+        quantity: input.quantity,
+        variableCostPerUnitMinor: input.variableCostPerUnitMinor,
+        fixedCostsMinor: input.fixedCostsMinor
+      });
+      return;
+    }
+
+    if (snapshot.module === 'breakeven') {
+      const input = this.getBreakEvenInputState(snapshot.inputData);
+      await this.saveBreakEvenScenario({
+        scenarioId,
+        scenarioName,
+        unitPriceMinor: input.unitPriceMinor,
+        variableCostPerUnitMinor: input.variableCostPerUnitMinor,
+        fixedCostsMinor: input.fixedCostsMinor,
+        targetProfitMinor: input.targetProfitMinor,
+        plannedQuantity: input.plannedQuantity
+      });
+      return;
+    }
+
+    const input = this.getCashflowInputState(snapshot.inputData);
+    await this.saveCashflowScenario({
+      scenarioId,
+      scenarioName,
+      startingCashMinor: input.startingCashMinor,
+      baseMonthlyRevenueMinor: input.baseMonthlyRevenueMinor,
+      fixedMonthlyCostsMinor: input.fixedMonthlyCostsMinor,
+      variableMonthlyCostsMinor: input.variableMonthlyCostsMinor,
+      forecastMonths: input.forecastMonths,
+      monthlyGrowthRate: input.monthlyGrowthRate
+    });
+  }
+
+  private async emitTelemetryEvent(name: TelemetryEventName, attributes: Record<string, string | boolean>): Promise<void> {
+    if (!this.apiClient.sendTelemetryBatch) {
+      return;
+    }
+
+    try {
+      const event = createTelemetryEvent(name, attributes);
+      await this.apiClient.sendTelemetryBatch({
+        userId: this.getSignedInUserId() ?? 'anonymous',
+        events: [
+          {
+            name: event.name,
+            timestamp: event.occurredAt,
+            attributes: event.properties
+          }
+        ]
+      });
+    } catch {
+      return;
+    }
   }
 
   public previewImport(json: string): ImportReplaceAllResult {

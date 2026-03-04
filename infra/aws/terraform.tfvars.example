@@ -7,3 +7,11 @@ google_client_ids         = ""
 stripe_secret_key         = ""
 stripe_webhook_secret     = ""
 stripe_mode               = "test"
+api_cors_allowed_origins  = ["http://localhost:5173"]
+# Production example:
+# api_cors_allowed_origins = ["https://app.marginbase.com"]
+# share_create_rate_limit: 1..100, share_create_burst_limit: 1..500, and burst >= rate
+# share_create_burst_limit must also be <= 5 * share_create_rate_limit
+# In production, keep share_create_rate_limit >= 3 and share_create_burst_limit >= 6
+share_create_rate_limit   = 5
+share_create_burst_limit  = 10
