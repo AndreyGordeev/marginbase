@@ -109,6 +109,31 @@ let showDebugJson = false;
 
 const service = WebAppService.createDefault();
 
+const processBillingReturn = async (): Promise<void> => {
+  const params = new URLSearchParams(window.location.search);
+  const checkoutState = params.get('checkout');
+
+  if (checkoutState !== 'success') {
+    return;
+  }
+
+  if (service.isSignedIn()) {
+    const signedInUserId = service.getSignedInUserId();
+    const refreshToken = signedInUserId && signedInUserId.length > 0 ? signedInUserId : 'local_web_user';
+
+    try {
+      await service.forceRefreshEntitlements(refreshToken);
+    } catch {
+    }
+  }
+
+  params.delete('checkout');
+  const remainingQuery = params.toString();
+  const nextSearch = remainingQuery.length > 0 ? `?${remainingQuery}` : '';
+  const nextUrl = `${window.location.pathname}${nextSearch}${window.location.hash}`;
+  window.history.replaceState(null, '', nextUrl);
+};
+
 const render = async (): Promise<void> => {
   const root = document.getElementById('app');
   if (!root) {
@@ -254,6 +279,7 @@ if (typeof document !== 'undefined' && typeof window !== 'undefined') {
   const bootstrap = async (): Promise<void> => {
     await initializeI18nProvider();
     await ensureLanguagePrefixedPath();
+    await processBillingReturn();
     await service.ensureFirstRunDemoScenarios();
     await render();
   };

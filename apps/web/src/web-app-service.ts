@@ -263,6 +263,10 @@ export class WebAppService {
       return false;
     }
 
+    return this.forceRefreshEntitlements(idToken);
+  }
+
+  public async forceRefreshEntitlements(idToken: string): Promise<boolean> {
     const response = await this.apiClient.refreshEntitlements(idToken);
     this.applyEntitlementsResponse(response);
     this.lastRefreshAt = nowIso();

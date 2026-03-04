@@ -119,6 +119,43 @@ describe('WebAppService entitlements + vault', () => {
     expect(service.canOpenModule('cashflow')).toBe(true);
   });
 
+  it('forces entitlements refresh ignoring debounce gate', async () => {
+    installLocalStorage();
+
+    let refreshCalls = 0;
+    const service = createService({
+      refreshEntitlements: async () => {
+        refreshCalls += 1;
+        return {
+          userId: 'user_1',
+          lastVerifiedAt: '2026-03-02T10:00:00.000Z',
+          entitlements: {
+            bundle: true,
+            profit: true,
+            breakeven: true,
+            cashflow: true
+          },
+          trial: {
+            active: false,
+            expiresAt: '2026-04-01T10:00:00.000Z'
+          },
+          status: 'active',
+          source: 'stripe',
+          currentPeriodEnd: null,
+          trialEnd: null
+        };
+      }
+    });
+
+    const firstRefresh = await service.refreshEntitlementsIfNeeded('id-token');
+    const forcedRefresh = await service.forceRefreshEntitlements('id-token');
+
+    expect(firstRefresh).toBe(true);
+    expect(forcedRefresh).toBe(true);
+    expect(refreshCalls).toBe(2);
+    expect(service.canOpenModule('cashflow')).toBe(true);
+  });
+
   it('supports account deletion and resets local entitlement cache', async () => {
     installLocalStorage();
 
