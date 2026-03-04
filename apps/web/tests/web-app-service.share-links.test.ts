@@ -118,6 +118,74 @@ describe('WebAppService share links', () => {
     });
   });
 
+  it('fails to open encrypted shared snapshot when key is missing in location hash', async () => {
+    const service = createService({
+      getShareSnapshot: async () => {
+        return {
+          encryptedSnapshot: {
+            schemaVersion: 1,
+            algorithm: 'A256GCM',
+            ivBase64Url: 'invalid',
+            ciphertextBase64Url: 'invalid'
+          }
+        };
+      }
+    });
+
+    const originalWindow = (globalThis as { window?: unknown }).window;
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      writable: true,
+      value: {
+        location: {
+          hash: ''
+        }
+      }
+    });
+
+    await expect(service.getSharedScenarioView('token_missing_key')).rejects.toThrow(/key is missing/i);
+
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      writable: true,
+      value: originalWindow
+    });
+  });
+
+  it('fails to decrypt encrypted shared snapshot when key is invalid', async () => {
+    const service = createService({
+      getShareSnapshot: async () => {
+        return {
+          encryptedSnapshot: {
+            schemaVersion: 1,
+            algorithm: 'A256GCM',
+            ivBase64Url: 'invalid',
+            ciphertextBase64Url: 'invalid'
+          }
+        };
+      }
+    });
+
+    const originalWindow = (globalThis as { window?: unknown }).window;
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      writable: true,
+      value: {
+        location: {
+          hash: '#k=not-a-valid-key'
+        }
+      }
+    });
+
+    await expect(service.getSharedScenarioView('token_invalid_key')).rejects.toThrow();
+
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      writable: true,
+      value: originalWindow
+    });
+  });
+
   it('requires sign-in to import shared scenarios', async () => {
     installLocalStorage();
 
