@@ -33,7 +33,7 @@
   "gate.startTrial": "Start Free Trial",
   "gate.continueDashboard": "Continue to Dashboard",
   "shared.title": "Shared Scenario",
-  "shared.subtitle": "Loaded from a sanitized share snapshot.",
+  "shared.subtitle": "Loaded from an encrypted, sanitized share snapshot.",
   "shared.importScenario": "Import this scenario",
   "shared.saveScenario": "Save to My Scenarios",
   "shared.openInApp": "Open in MarginBase",

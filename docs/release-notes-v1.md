@@ -112,3 +112,16 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 ### UX and policy alignment
 - Data & Backup now surfaces the free export watermark note in-context.
 - Export remains available for all users to preserve data portability.
+
+---
+
+## PR-6: Encrypted Share Links (2026-03-04)
+
+### What changed
+- Share snapshot creation now sends only encrypted payloads to `/share/create`.
+- Shared-scenario retrieval supports encrypted payload decrypt on client side.
+- Share URLs now include decryption key in URL fragment (`#k=`) while token remains in `/s/:token`.
+
+### Privacy and architecture outcomes
+- Backend stores only encrypted blob + token metadata + expiry; no plaintext snapshot values.
+- Existing plaintext snapshot response remains read-compatible during migration.

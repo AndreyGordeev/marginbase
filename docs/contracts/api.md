@@ -20,6 +20,7 @@ Purpose: define a stable backend contract for clients and serverless services.
 - Strict schema validation
 - Never include monetary scenario values in telemetry/auth/entitlements/billing endpoints
 - Explicit exception: sanitized share snapshots are allowed only on `/share/*` endpoints
+- Share snapshot plaintext must not be sent to backend; `/share/*` stores encrypted payload only
 - Errors must return stable codes
 
 ## Auth / Headers
@@ -73,13 +74,11 @@ Response:
 Request:
 ```json
 {
-  "snapshot": {
+  "encryptedSnapshot": {
     "schemaVersion": 1,
-    "module": "profit",
-    "inputData": {
-      "scenarioName": "Q2 plan"
-    },
-    "currencyCode": "EUR"
+    "algorithm": "A256GCM",
+    "ivBase64Url": "m2s6KQ4YkR2H9d8X",
+    "ciphertextBase64Url": "n4L..."
   },
   "expiresInDays": 7,
   "ownerUserId": "u_123"
@@ -99,14 +98,18 @@ Response:
 Response:
 ```json
 {
-  "snapshot": {
+  "encryptedSnapshot": {
     "schemaVersion": 1,
-    "module": "profit",
-    "inputData": {},
-    "currencyCode": "EUR"
+    "algorithm": "A256GCM",
+    "ivBase64Url": "m2s6KQ4YkR2H9d8X",
+    "ciphertextBase64Url": "n4L..."
   }
 }
 ```
+
+Client decryption key transport:
+- The decryption key is carried in URL fragment only, for example `/s/<token>#k=<base64url-key>`.
+- URL fragment is not sent to backend, so backend stores only encrypted blob + expiry metadata.
 
 ### `DELETE /share/:token`
 

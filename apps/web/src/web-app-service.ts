@@ -1,4 +1,5 @@
 import {
+  type EncryptedShareSnapshotV1,
   type ShareListItem,
   type ShareCreateResponse,
   type BillingPlanId,
@@ -22,6 +23,7 @@ import {
   type ScenarioV1
 } from '@marginbase/domain-core';
 import { buildReportModel, exportReportPdf, exportReportXlsx, type ReportModel } from '@marginbase/reporting';
+import { decryptShareSnapshot, encryptShareSnapshot, generateShareKey } from './features/share/share-crypto';
 import {
   canUseModule,
   shouldRefreshEntitlements,
@@ -238,6 +240,10 @@ export interface CashflowInputState {
   variableMonthlyCostsMinor: number;
   forecastMonths: number;
   monthlyGrowthRate: number;
+}
+
+export interface ShareCreateLocalResult extends ShareCreateResponse {
+  shareKey: string;
 }
 
 export class WebAppService {
@@ -587,18 +593,25 @@ export class WebAppService {
     return exportReportXlsx(report, { watermarkText });
   }
 
-  public async createShareSnapshotFromScenario(scenario: ScenarioV1, expiresInDays: 7 | 30 = 30): Promise<ShareCreateResponse> {
+  public async createShareSnapshotFromScenario(scenario: ScenarioV1, expiresInDays: 7 | 30 = 30): Promise<ShareCreateLocalResult> {
     if (!this.apiClient.createShareSnapshot) {
       throw new Error('Share API is not available in the current environment.');
     }
 
     const snapshot = sanitizeScenarioForShare(scenario);
+    const shareKey = generateShareKey();
+    const encryptedSnapshot = await encryptShareSnapshot(snapshot, shareKey);
 
-    return this.apiClient.createShareSnapshot({
-      snapshot,
+    const created = await this.apiClient.createShareSnapshot({
+      encryptedSnapshot,
       expiresInDays,
       ownerUserId: this.getSignedInUserId() ?? undefined
     });
+
+    return {
+      ...created,
+      shareKey
+    };
   }
 
   public async deleteShareSnapshot(token: string, idToken?: string): Promise<boolean> {
@@ -742,7 +755,22 @@ export class WebAppService {
     }
 
     const response = await this.apiClient.getShareSnapshot(token);
-    return migrateSnapshot(response.snapshot);
+
+    if (response.snapshot) {
+      return migrateSnapshot(response.snapshot);
+    }
+
+    if (!response.encryptedSnapshot) {
+      throw new Error('Shared snapshot payload is missing.');
+    }
+
+    const shareKey = this.getShareKeyFromLocation();
+    if (!shareKey) {
+      throw new Error('Share link key is missing. Please use the full original link.');
+    }
+
+    const decrypted = await decryptShareSnapshot(response.encryptedSnapshot as EncryptedShareSnapshotV1, shareKey);
+    return migrateSnapshot(decrypted);
   }
 
   private async persistSharedSnapshot(snapshot: SharedSnapshotV1, scenarioNamePrefix: string): Promise<void> {
@@ -855,5 +883,30 @@ export class WebAppService {
 
   private hasPaidEntitlement(): boolean {
     return this.entitlementCache.entitlementSet.bundle || this.entitlementCache.entitlementSet.breakeven || this.entitlementCache.entitlementSet.cashflow;
+  }
+
+  private getShareKeyFromLocation(): string | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    const raw = window.location.hash.replace('#', '').trim();
+    if (!raw) {
+      return null;
+    }
+
+    const normalized = raw.startsWith('?') ? raw.slice(1) : raw;
+    const params = new URLSearchParams(normalized);
+    const fromParams = params.get('k');
+    if (fromParams && fromParams.trim()) {
+      return fromParams;
+    }
+
+    if (normalized.startsWith('k=')) {
+      const direct = normalized.slice(2).trim();
+      return direct || null;
+    }
+
+    return null;
   }
 }
