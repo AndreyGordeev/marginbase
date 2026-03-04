@@ -14,6 +14,7 @@ This folder contains Terraform modules to provision the Step 10 dev environment 
    - `DELETE /share/{token}`
    - `POST /billing/verify`
    - `POST /billing/checkout/session`
+   - `POST /billing/checkout-session` (alias)
    - `POST /billing/portal-session`
    - `POST /billing/webhook/stripe`
   - `POST /telemetry/batch`

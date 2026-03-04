@@ -7,6 +7,7 @@ Purpose: define a stable backend contract for clients and serverless services.
 - `GET /entitlements`
 - `POST /telemetry/batch`
 - `POST /billing/checkout/session`
+- `POST /billing/checkout-session` (alias)
 - `POST /billing/portal-session`
 - `POST /billing/webhook/stripe`
 - `POST /billing/verify`
@@ -51,6 +52,8 @@ Purpose: define a stable backend contract for clients and serverless services.
 ```
 
 ## `POST /billing/checkout/session`
+
+Compatibility alias: `POST /billing/checkout-session` maps to the same handler and request/response schema.
 
 Request:
 ```json

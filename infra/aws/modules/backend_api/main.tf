@@ -522,6 +522,12 @@ resource "aws_apigatewayv2_route" "billing_checkout_session" {
   target    = "integrations/${aws_apigatewayv2_integration.billing.id}"
 }
 
+resource "aws_apigatewayv2_route" "billing_checkout_session_alias" {
+  api_id    = aws_apigatewayv2_api.http.id
+  route_key = "POST /billing/checkout-session"
+  target    = "integrations/${aws_apigatewayv2_integration.billing.id}"
+}
+
 resource "aws_apigatewayv2_route" "billing_portal_session" {
   api_id    = aws_apigatewayv2_api.http.id
   route_key = "POST /billing/portal-session"
