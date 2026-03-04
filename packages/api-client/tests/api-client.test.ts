@@ -179,10 +179,11 @@ describe('MarginbaseApiClient', () => {
 
     const client = new MarginbaseApiClient({ baseUrl: 'https://api.marginbase.test' });
     const result = await client.createShareSnapshot({
-      snapshot: {
+      encryptedSnapshot: {
         schemaVersion: 1,
-        module: 'profit',
-        inputData: { unitPriceMinor: 1000 }
+        algorithm: 'A256GCM',
+        ivBase64Url: 'iv_test',
+        ciphertextBase64Url: 'cipher_test'
       },
       expiresInDays: 30,
       ownerUserId: 'local_web_user'
@@ -198,10 +199,11 @@ describe('MarginbaseApiClient', () => {
   it('gets share snapshot by token', async () => {
     const fetchMock = vi.fn(async () => {
       return jsonResponse(200, {
-        snapshot: {
+        encryptedSnapshot: {
           schemaVersion: 1,
-          module: 'breakeven',
-          inputData: { unitPriceMinor: 1000, variableCostPerUnitMinor: 600 }
+          algorithm: 'A256GCM',
+          ivBase64Url: 'iv_test',
+          ciphertextBase64Url: 'cipher_test'
         }
       });
     });
@@ -211,7 +213,7 @@ describe('MarginbaseApiClient', () => {
     const client = new MarginbaseApiClient({ baseUrl: 'https://api.marginbase.test' });
     const result = await client.getShareSnapshot('abc123');
 
-    expect(result.snapshot.module).toBe('breakeven');
+    expect(result.encryptedSnapshot?.algorithm).toBe('A256GCM');
     expect(fetchMock).toHaveBeenCalledWith(
       'https://api.marginbase.test/share/abc123',
       expect.objectContaining({ method: 'GET' })

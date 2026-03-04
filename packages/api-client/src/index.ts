@@ -108,8 +108,15 @@ export interface ShareSnapshotV1 {
   currencyCode?: string;
 }
 
+export interface EncryptedShareSnapshotV1 {
+  schemaVersion: 1;
+  algorithm: 'A256GCM';
+  ivBase64Url: string;
+  ciphertextBase64Url: string;
+}
+
 export interface ShareCreateRequest {
-  snapshot: ShareSnapshotV1;
+  encryptedSnapshot: EncryptedShareSnapshotV1;
   expiresInDays?: 7 | 30;
   ownerUserId?: string;
 }
@@ -120,7 +127,8 @@ export interface ShareCreateResponse {
 }
 
 export interface ShareGetResponse {
-  snapshot: ShareSnapshotV1;
+  encryptedSnapshot?: EncryptedShareSnapshotV1;
+  snapshot?: ShareSnapshotV1;
 }
 
 export interface ShareDeleteResponse {

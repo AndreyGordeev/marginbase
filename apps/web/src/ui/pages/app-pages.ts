@@ -576,7 +576,7 @@ export const renderWorkspacePage = async (
 
     try {
       const share = await service.createShareSnapshotFromScenario(selectedScenario, 30);
-      const shareUrl = `${window.location.origin}/s/${encodeURIComponent(share.token)}`;
+      const shareUrl = `${window.location.origin}/s/${encodeURIComponent(share.token)}#k=${encodeURIComponent(share.shareKey)}`;
 
       const dialog = renderShareScenarioDialog({
         shareUrl,

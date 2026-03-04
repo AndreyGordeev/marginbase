@@ -404,11 +404,12 @@ describe('WebAppService', () => {
     expect(String.fromCharCode(xlsxBytes[0], xlsxBytes[1])).toBe('PK');
   });
 
-  it('creates share snapshot from sanitized scenario data', async () => {
-    const createShareSnapshot = vi.fn(async ({ snapshot }: { snapshot: { schemaVersion: number; module: string; inputData: Record<string, unknown> } }) => {
-      expect(snapshot.schemaVersion).toBe(1);
-      expect(snapshot.module).toBe('profit');
-      expect('scenarioName' in snapshot).toBe(false);
+  it('creates encrypted share snapshot payload for backend storage', async () => {
+    const createShareSnapshot = vi.fn(async ({ encryptedSnapshot }: { encryptedSnapshot: { schemaVersion: number; algorithm: string; ivBase64Url: string; ciphertextBase64Url: string } }) => {
+      expect(encryptedSnapshot.schemaVersion).toBe(1);
+      expect(encryptedSnapshot.algorithm).toBe('A256GCM');
+      expect(encryptedSnapshot.ivBase64Url.length).toBeGreaterThan(10);
+      expect(encryptedSnapshot.ciphertextBase64Url.length).toBeGreaterThan(10);
       return {
         token: 'share_123',
         expiresAt: '2026-04-03T10:00:00.000Z'
@@ -440,6 +441,7 @@ describe('WebAppService', () => {
     const result = await service.createShareSnapshotFromScenario(scenario);
 
     expect(result.token).toBe('share_123');
+    expect(result.shareKey.length).toBeGreaterThan(20);
     expect(createShareSnapshot).toHaveBeenCalledTimes(1);
   });
 
@@ -475,6 +477,83 @@ describe('WebAppService', () => {
 
     expect(shared.module).toBe('breakeven');
     expect(shared.calculatedData.breakEvenQuantity).toBeDefined();
+  });
+
+  it('decrypts encrypted shared snapshot using link key from location hash', async () => {
+    const repository = new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection());
+    let encryptedPayload: {
+      schemaVersion: number;
+      algorithm: 'A256GCM';
+      ivBase64Url: string;
+      ciphertextBase64Url: string;
+    } | null = null;
+    let linkKey = '';
+
+    const creatorService = new WebAppService(repository, {
+      refreshEntitlements: async () => {
+        throw new Error('not used');
+      },
+      deleteAccount: async () => {
+        throw new Error('not used');
+      },
+      createShareSnapshot: async ({ encryptedSnapshot }) => {
+        encryptedPayload = encryptedSnapshot;
+        return {
+          token: 'enc_token_1',
+          expiresAt: '2026-04-03T10:00:00.000Z'
+        };
+      }
+    });
+
+    await creatorService.saveProfitScenario({
+      scenarioName: 'Encrypted share',
+      unitPriceMinor: 1000,
+      quantity: 12,
+      variableCostPerUnitMinor: 500,
+      fixedCostsMinor: 400
+    });
+
+    const sourceScenario = (await creatorService.listScenarios('profit'))[0];
+    const created = await creatorService.createShareSnapshotFromScenario(sourceScenario);
+    linkKey = created.shareKey;
+
+    const originalWindow = (globalThis as { window?: unknown }).window;
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      writable: true,
+      value: {
+        location: {
+          hash: `#k=${linkKey}`
+        }
+      }
+    });
+
+    const readerService = new WebAppService(
+      new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection()),
+      {
+        refreshEntitlements: async () => {
+          throw new Error('not used');
+        },
+        deleteAccount: async () => {
+          throw new Error('not used');
+        },
+        getShareSnapshot: async () => {
+          return {
+            encryptedSnapshot: encryptedPayload ?? undefined
+          };
+        }
+      }
+    );
+
+    const shared = await readerService.getSharedScenarioView('enc_token_1');
+    expect(shared.module).toBe('profit');
+    expect(shared.inputData.unitPriceMinor).toBe(1000);
+
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      writable: true,
+      value: originalWindow
+    });
   });
 
   it('requires sign-in to import shared scenarios', async () => {

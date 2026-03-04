@@ -99,3 +99,16 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 	- `docs/documentation-sync-policy.md`
 	- `PROJECT_CONTEXT.md` (`Documentation Sync (Mandatory)`)
 	- `.github/pull_request_template.md` documentation checklist
+
+---
+
+## PR-6: Encrypted Share Links (2026-03-04)
+
+### What changed
+- Share snapshot creation now sends only encrypted payloads to `/share/create`.
+- Shared-scenario retrieval supports encrypted payload decrypt on client side.
+- Share URLs now include decryption key in URL fragment (`#k=`) while token remains in `/s/:token`.
+
+### Privacy and architecture outcomes
+- Backend stores only encrypted blob + token metadata + expiry; no plaintext snapshot values.
+- Existing plaintext snapshot response remains read-compatible during migration.
