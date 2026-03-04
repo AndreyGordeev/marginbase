@@ -171,3 +171,11 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 ### What changed
 - Added dedicated offline critical-path E2E: `apps/web/tests/e2e/offline.spec.ts`.
 - New check validates: scenario saved online -> browser offline mode -> dashboard/workspace navigation -> recalculation still works from local data.
+
+## NO MANUAL testing follow-up: privacy payload assertions — 2026-03-04
+
+### What changed
+- Added reusable forbidden key scanner and canonical forbidden key list in `scripts/privacy-forbidden-keys.ts`.
+- Added Playwright network privacy E2E: `apps/web/tests/e2e/privacy.spec.ts`.
+- Added API client contract assertion that request bodies remain free of forbidden financial key names.
+- Telemetry privacy tests now reuse the same forbidden-key source.

@@ -1,19 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { LocalTelemetryQueue, createTelemetryEvent } from '../src';
+import { PRIVACY_FORBIDDEN_NETWORK_KEYS } from '../../../scripts/privacy-forbidden-keys';
 
 describe('telemetry privacy and validation guards', () => {
   it('rejects suspicious monetary-looking keys in event properties', () => {
     const queue = new LocalTelemetryQueue();
-    const forbiddenKeys = [
-      'amountMinor',
-      'RevenueTotal',
-      'variable_cost_minor',
-      'unitPriceMinor',
-      'moneyValue',
-      'grossProfitMinor',
-      'contributionMarginPct',
-      'cashBuffer'
-    ];
+    const forbiddenKeys = PRIVACY_FORBIDDEN_NETWORK_KEYS.map((token) => `${token}Field`);
 
     for (const key of forbiddenKeys) {
       const event = createTelemetryEvent('module_opened', { moduleId: 'profit' });

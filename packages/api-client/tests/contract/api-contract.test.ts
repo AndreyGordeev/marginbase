@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ApiClientError, MarginbaseApiClient } from '../../src';
+import { findForbiddenKeyPaths } from '../../../../scripts/privacy-forbidden-keys';
 
 const jsonResponse = (status: number, body: unknown): Response => {
   return {
@@ -291,5 +292,69 @@ describe('api contracts', () => {
     expect(body.encryptedSnapshot).toBeDefined();
     expect(body.snapshot).toBeUndefined();
     expect(body.inputData).toBeUndefined();
+  });
+
+  it('keeps request bodies free of forbidden financial key names', async () => {
+    const capturedBodies: Array<Record<string, unknown>> = [];
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      const body = init?.body;
+      if (typeof body === 'string' && body.trim().startsWith('{')) {
+        capturedBodies.push(JSON.parse(body) as Record<string, unknown>);
+      }
+
+      return jsonResponse(200, {
+        checkoutUrl: 'https://checkout.stripe.com/c/pay/cs_test_123',
+        portalUrl: 'https://billing.stripe.com/p/session/test_123',
+        accepted: true,
+        count: 1,
+        objectKey: 'telemetry/obj_1.json',
+        token: 'share_1',
+        expiresAt: '2026-03-11T10:00:00.000Z'
+      });
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = new MarginbaseApiClient({ baseUrl: 'https://api.marginbase.test' });
+
+    await client.createCheckoutSession({
+      planId: 'bundle',
+      userId: 'u_1',
+      email: 'user@example.com'
+    });
+
+    await client.createBillingPortalSession({
+      userId: 'u_1',
+      returnUrl: 'https://marginbase.com/account'
+    });
+
+    await client.sendTelemetryBatch({
+      userId: 'u_1',
+      events: [
+        {
+          name: 'module_opened',
+          timestamp: '2026-03-04T10:00:00.000Z',
+          attributes: { moduleId: 'profit' }
+        }
+      ]
+    });
+
+    await client.createShareSnapshot({
+      encryptedSnapshot: {
+        schemaVersion: 1,
+        algorithm: 'A256GCM',
+        ivBase64Url: 'iv',
+        ciphertextBase64Url: 'cipher'
+      },
+      ownerUserId: 'u_1',
+      expiresInDays: 7
+    });
+
+    expect(capturedBodies.length).toBeGreaterThan(0);
+
+    for (const body of capturedBodies) {
+      const forbiddenPaths = findForbiddenKeyPaths(body);
+      expect(forbiddenPaths).toEqual([]);
+    }
   });
 });
