@@ -60,6 +60,39 @@ describe('WebAppService reports + telemetry', () => {
     });
   });
 
+  it('emits required funnel telemetry events', async () => {
+    const sendTelemetryBatch = vi.fn(async () => {
+      return {
+        accepted: true,
+        count: 1,
+        objectKey: '2026/03/04/anonymous/test.json'
+      };
+    });
+
+    const service = createService({ sendTelemetryBatch });
+    service.setTelemetryConsentState('enabled');
+
+    await service.trackAppOpened();
+    await service.trackModuleOpened('profit');
+    await service.trackPaywallShown('profit');
+    await service.trackUpgradeClicked();
+    await service.trackCheckoutRedirected();
+    await service.trackPurchaseConfirmed(true);
+    await service.trackExportClicked('pdf');
+
+    const emittedEventNames = sendTelemetryBatch.mock.calls.map((call) => call[0].events[0].name);
+
+    expect(emittedEventNames).toEqual([
+      'app_opened',
+      'module_opened',
+      'paywall_shown',
+      'upgrade_clicked',
+      'checkout_redirected',
+      'purchase_confirmed',
+      'export_clicked'
+    ]);
+  });
+
   it('exports business report PDF locally from saved scenarios', async () => {
     const service = createService();
 

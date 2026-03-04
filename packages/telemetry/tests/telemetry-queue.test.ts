@@ -63,6 +63,13 @@ describe('telemetry queue', () => {
   it('exposes expected telemetry event allowlist', () => {
     expect(TELEMETRY_EVENT_ALLOWLIST).toEqual(
       expect.arrayContaining([
+        'app_opened',
+        'module_opened',
+        'paywall_shown',
+        'upgrade_clicked',
+        'checkout_redirected',
+        'purchase_confirmed',
+        'export_clicked',
         'auth_login_success',
         'auth_login_failure',
         'embed_opened',

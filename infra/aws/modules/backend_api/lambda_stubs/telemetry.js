@@ -7,6 +7,11 @@ const MAX_PAYLOAD_BYTES = 64 * 1024;
 const ALLOWED_EVENT_NAMES = new Set([
   'app_opened',
   'module_opened',
+  'paywall_shown',
+  'upgrade_clicked',
+  'checkout_redirected',
+  'purchase_confirmed',
+  'export_clicked',
   'embed_opened',
   'embed_cta_clicked',
   'scenario_created',

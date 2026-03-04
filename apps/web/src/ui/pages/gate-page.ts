@@ -21,6 +21,8 @@ export const renderGatePage = (
   const actions = document.createElement('div');
   actions.className = 'auth-actions';
   actions.appendChild(createActionButton(translate('gate.startTrial'), async () => {
+    await service.trackUpgradeClicked();
+
     let checkoutUrl: string | null = null;
 
     try {
@@ -30,6 +32,7 @@ export const renderGatePage = (
     }
 
     if (checkoutUrl) {
+      await service.trackCheckoutRedirected();
       window.location.href = checkoutUrl;
       return;
     }

@@ -594,6 +594,42 @@ export class WebAppService {
     });
   }
 
+  public async trackAppOpened(): Promise<void> {
+    await this.emitTelemetryEvent('app_opened', {});
+  }
+
+  public async trackModuleOpened(moduleId: ModuleId): Promise<void> {
+    await this.emitTelemetryEvent('module_opened', {
+      moduleId
+    });
+  }
+
+  public async trackPaywallShown(moduleId: ModuleId): Promise<void> {
+    await this.emitTelemetryEvent('paywall_shown', {
+      moduleId
+    });
+  }
+
+  public async trackUpgradeClicked(): Promise<void> {
+    await this.emitTelemetryEvent('upgrade_clicked', {});
+  }
+
+  public async trackCheckoutRedirected(): Promise<void> {
+    await this.emitTelemetryEvent('checkout_redirected', {});
+  }
+
+  public async trackPurchaseConfirmed(succeeded: boolean): Promise<void> {
+    await this.emitTelemetryEvent('purchase_confirmed', {
+      succeeded
+    });
+  }
+
+  public async trackExportClicked(format: 'pdf' | 'xlsx'): Promise<void> {
+    await this.emitTelemetryEvent('export_clicked', {
+      format
+    });
+  }
+
   public async trackEmbedCtaClicked(moduleId: ModuleId): Promise<void> {
     await this.emitTelemetryEvent('embed_cta_clicked', {
       moduleId

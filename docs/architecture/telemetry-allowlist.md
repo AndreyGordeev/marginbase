@@ -7,12 +7,17 @@ Source of truth: `packages/telemetry/src/index.ts` (`TELEMETRY_EVENT_ALLOWLIST` 
 - `auth_login_success`
 - `auth_login_failure`
 - `trial_started`
+- `paywall_shown`
+- `upgrade_clicked`
+- `checkout_redirected`
+- `purchase_confirmed`
 - `subscription_purchase_started`
 - `subscription_purchase_success`
 - `subscription_purchase_failed`
 - `module_opened`
 - `embed_opened`
 - `embed_cta_clicked`
+- `export_clicked`
 - `scenario_created`
 - `scenario_saved`
 - `scenario_deleted`
@@ -26,12 +31,17 @@ Source of truth: `packages/telemetry/src/index.ts` (`TELEMETRY_EVENT_ALLOWLIST` 
 - `auth_login_success`: none
 - `auth_login_failure`: `reasonCode`
 - `trial_started`: none
+- `paywall_shown`: `moduleId`
+- `upgrade_clicked`: none
+- `checkout_redirected`: none
+- `purchase_confirmed`: `succeeded`
 - `subscription_purchase_started`: none
 - `subscription_purchase_success`: none
 - `subscription_purchase_failed`: `reasonCode`
 - `module_opened`: `moduleId`
 - `embed_opened`: `moduleId`, `poweredBy`
 - `embed_cta_clicked`: `moduleId`
+- `export_clicked`: `format`
 - `scenario_created`: `moduleId`
 - `scenario_saved`: `moduleId`
 - `scenario_deleted`: `moduleId`

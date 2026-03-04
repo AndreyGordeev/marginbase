@@ -124,6 +124,7 @@ export const renderDataBackupPage = async (
 
   const reportExportButton = createActionButton(translate('data.reportExportPdf'), async () => {
     try {
+      await service.trackExportClicked('pdf');
       const payload = await service.exportBusinessReportPdf();
       const pdfBytes = new Uint8Array(payload);
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -142,6 +143,7 @@ export const renderDataBackupPage = async (
 
   const reportExportExcelButton = createActionButton(translate('data.reportExportExcel'), async () => {
     try {
+      await service.trackExportClicked('xlsx');
       const payload = await service.exportBusinessReportXlsx();
       const xlsxBytes = new Uint8Array(payload);
       const blob = new Blob([xlsxBytes], {

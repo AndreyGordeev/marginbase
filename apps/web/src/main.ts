@@ -123,7 +123,9 @@ const processBillingReturn = async (): Promise<void> => {
 
     try {
       await service.forceRefreshEntitlements(refreshToken);
+      await service.trackPurchaseConfirmed(true);
     } catch {
+      await service.trackPurchaseConfirmed(false);
     }
   }
 
@@ -279,6 +281,7 @@ if (typeof document !== 'undefined' && typeof window !== 'undefined') {
   const bootstrap = async (): Promise<void> => {
     await initializeI18nProvider();
     await ensureLanguagePrefixedPath();
+    await service.trackAppOpened();
     await processBillingReturn();
     await service.ensureFirstRunDemoScenarios();
     await render();

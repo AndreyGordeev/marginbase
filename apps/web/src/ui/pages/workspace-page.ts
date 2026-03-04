@@ -39,6 +39,12 @@ export const renderWorkspacePage = async (
   const moduleId = moduleMap[route];
   const moduleTitle = moduleTitleMap[moduleId];
   const allowed = service.canOpenModule(moduleId);
+  await service.trackModuleOpened(moduleId);
+
+  if (!allowed) {
+    await service.trackPaywallShown(moduleId);
+  }
+
   const scenarios = await service.listScenarios(moduleId);
   const selectedScenario = scenarios[0] ?? null;
   const prefill = typeof window !== 'undefined' ? getPrefillFromSearch(window.location.search) : null;
@@ -78,6 +84,8 @@ export const renderWorkspacePage = async (
   listPanel.appendChild(createActionButton(translate('workspace.newScenario'), async () => {
     const canCreateScenario = await service.canCreateScenarioForCurrentPlan();
     if (!canCreateScenario) {
+      await service.trackPaywallShown(moduleId);
+      await service.trackUpgradeClicked();
       showFormError(translate('workspace.scenarioLimitReached'));
       goTo('/subscription');
       return;
@@ -320,7 +328,10 @@ export const renderWorkspacePage = async (
 
     const actions = document.createElement('div');
     actions.className = 'button-row';
-    actions.appendChild(createActionButton(translate('workspace.goToSubscription'), () => goTo('/subscription'), 'primary'));
+    actions.appendChild(createActionButton(translate('workspace.goToSubscription'), async () => {
+      await service.trackUpgradeClicked();
+      goTo('/subscription');
+    }, 'primary'));
     actions.appendChild(createActionButton(translate('workspace.backToDashboard'), () => goTo('/dashboard')));
 
     overlay.appendChild(message);
