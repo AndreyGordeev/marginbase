@@ -1,8 +1,10 @@
 import { expect, test } from '@playwright/test';
+import { attachErrorTracking } from './playwright-helpers';
 
 const languageSelect = (page: import('@playwright/test').Page) => page.locator('select[name="language"]');
 
 test('language switch to pl is applied and persisted after reload', async ({ page }) => {
+  const { expectNoErrors } = attachErrorTracking(page);
   await page.goto('/login');
   await expect(languageSelect(page)).toBeVisible();
 
@@ -17,9 +19,12 @@ test('language switch to pl is applied and persisted after reload', async ({ pag
 
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Pulpit' })).toBeVisible();
+  
+  expectNoErrors();
 });
 
 test('language switch to ru is applied and persisted after reload', async ({ page }) => {
+  const { expectNoErrors } = attachErrorTracking(page);
   await page.goto('/login');
   await expect(languageSelect(page)).toBeVisible();
 
@@ -34,4 +39,6 @@ test('language switch to ru is applied and persisted after reload', async ({ pag
 
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Панель' })).toBeVisible();
+  
+  expectNoErrors();
 });

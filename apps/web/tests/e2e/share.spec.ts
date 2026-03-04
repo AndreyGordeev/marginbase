@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
+import { attachErrorTracking } from './playwright-helpers';
 
 test('share link can be opened and imported back into app', async ({ page }) => {
+  const { expectNoErrors } = attachErrorTracking(page);
   let capturedEncryptedSnapshot: Record<string, unknown> | null = null;
   let capturedToken = 'share_e2e_token';
 
@@ -65,4 +67,6 @@ test('share link can be opened and imported back into app', async ({ page }) => 
   await page.goto('/en/login#/profit');
   await expect(page.getByRole('heading', { name: 'Profit Editor' })).toBeVisible();
   await expect(page.locator('.scenario-item', { hasText: 'Imported Shared Scenario' })).toBeVisible();
+  
+  expectNoErrors();
 });

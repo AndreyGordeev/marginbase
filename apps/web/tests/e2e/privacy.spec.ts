@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test';
 import { findForbiddenKeyPaths } from '../../../../scripts/privacy-forbidden-keys';
+import { attachErrorTracking } from './playwright-helpers';
 
 test('network payloads keep financial key names out of telemetry and share requests', async ({ page }) => {
+  const { expectNoErrors } = attachErrorTracking(page);
   const interceptedTelemetryBodies: Array<Record<string, unknown>> = [];
   const interceptedShareBodies: Array<Record<string, unknown>> = [];
 
@@ -58,5 +60,6 @@ test('network payloads keep financial key names out of telemetry and share reque
   await expect(page.getByRole('heading', { name: 'Shared Scenario' })).toBeVisible();
 
   expect(interceptedTelemetryBodies.length).toBeGreaterThan(0);
-  expect(interceptedShareBodies.length).toBeGreaterThan(0);
+  expect(interceptedShareBodies.length).toBe(1);
+  expectNoErrors();
 });

@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
+import { attachErrorTracking } from './playwright-helpers';
 
 test('business report PDF and XLSX exports download successfully', async ({ page }) => {
+  const { expectNoErrors } = attachErrorTracking(page);
   page.on('dialog', async (dialog) => {
     await dialog.dismiss();
   });
@@ -23,4 +25,6 @@ test('business report PDF and XLSX exports download successfully', async ({ page
   const xlsxDownload = await xlsxDownloadPromise;
   expect(xlsxDownload.suggestedFilename()).toBe('marginbase-business-report.xlsx');
   expect(await xlsxDownload.path()).toBeTruthy();
+  
+  expectNoErrors();
 });

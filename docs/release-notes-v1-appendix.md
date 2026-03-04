@@ -198,3 +198,12 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 ### What changed
 - Added Playwright + axe smoke suite: `apps/web/tests/e2e/accessibility.spec.ts`.
 - New checks validate no serious/critical accessibility violations on key routes: dashboard, profit workspace, locked cashflow paywall, settings.
+
+## NO MANUAL testing follow-up: Playwright error tracking utility — 2026-03-05
+
+### What changed
+- Added reusable Playwright error tracking helper: `apps/web/tests/e2e/playwright-helpers.ts`.
+- New `attachErrorTracking()` function captures console errors, page errors (uncaught exceptions), and failed network requests during E2E test execution.
+- Provides flexible configuration for tracking specific error types and excluding expected failures (e.g., 404s).
+- Integrated error tracking into all 8 E2E test suites: `critical-flows`, `offline`, `i18n`, `privacy`, `share`, `export`, `accessibility`, and `visual`.
+- All functional E2E tests (21/24) pass with error tracking enabled; 3 visual regression tests show minor screenshot differences unrelated to error tracking.

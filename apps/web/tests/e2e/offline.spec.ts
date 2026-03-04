@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
+import { attachErrorTracking } from './playwright-helpers';
 
 test('saved scenario remains usable when browser goes offline', async ({ page, context }) => {
+  const { expectNoErrors } = attachErrorTracking(page);
   const scenarioName = 'Offline Persistence Scenario';
 
   await page.goto('/en/login');
@@ -28,4 +30,5 @@ test('saved scenario remains usable when browser goes offline', async ({ page, c
   await expect(page.locator('.results-summary-label', { hasText: 'Net Profit' })).toBeVisible();
 
   await context.setOffline(false);
+  expectNoErrors();
 });
