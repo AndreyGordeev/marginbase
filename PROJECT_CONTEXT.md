@@ -50,3 +50,14 @@ Current scope also includes:
 - Each roadmap step is implemented in a dedicated git branch.
 - Each roadmap step is delivered as a separate pull request.
 - No mixed-step PRs.
+
+## Documentation Sync (Mandatory)
+- Every change to behavior, API, data model, security policy, architecture, or UX must include matching documentation updates in the same PR.
+- If code changes and docs do not, the change is incomplete.
+- Keep these files aligned when applicable:
+	- `README.md` for scope, setup, and high-level capabilities
+	- `docs/contracts/api.md` for endpoint/request/response changes
+	- `docs/decisions/adr.md` for architectural decisions and trade-offs
+	- `docs/architecture/*.md` for boundary, deployment, or quality-attribute changes
+	- `docs/release-notes-v1.md` for user-visible behavior changes
+- If any `.docx` artifact is added/maintained, keep an equivalent authoritative `.md` version in `docs/` and update both together.

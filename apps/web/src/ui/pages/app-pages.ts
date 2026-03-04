@@ -1,5 +1,6 @@
 import type { ModuleId } from '@marginbase/domain-core';
 import type { ReportModel } from '@marginbase/reporting';
+import { createLanguageSwitcher, translate } from '../../i18n';
 import { getPrefillFromSearch } from '../../features/embed/prefill';
 import { renderShareScenarioDialog } from '../../features/share/ShareScenarioDialog';
 import { type BreakEvenInputState, type CashflowInputState, type ProfitInputState, WebAppService } from '../../web-app-service';
@@ -48,23 +49,23 @@ const MAX_SCENARIO_NAME_LENGTH = 120;
 const FORM_ERROR_VISIBLE_MS = 5000;
 const MAX_SAFE_INTEGER_TEXT = Number.MAX_SAFE_INTEGER.toLocaleString('en-US');
 
-const VALIDATION_FIELD_LABELS: Record<string, string> = {
-  scenarioName: 'Scenario name',
-  unitPriceMinor: 'Unit price',
-  quantity: 'Quantity',
-  variableCostPerUnitMinor: 'Variable cost per unit',
-  fixedCostsMinor: 'Fixed costs',
-  targetProfitMinor: 'Target profit',
-  plannedQuantity: 'Planned quantity',
-  startingCashMinor: 'Starting cash',
-  baseMonthlyRevenueMinor: 'Base revenue',
-  fixedMonthlyCostsMinor: 'Fixed monthly costs',
-  variableMonthlyCostsMinor: 'Variable monthly costs',
-  forecastMonths: 'Months',
-  monthlyGrowthRate: 'Growth rate',
-  netProfitMinor: 'Net profit',
-  totalCostMinor: 'Total cost'
-};
+const getValidationFieldLabels = (): Record<string, string> => ({
+  scenarioName: translate('validation.scenarioName'),
+  unitPriceMinor: translate('validation.unitPrice'),
+  quantity: translate('validation.quantity'),
+  variableCostPerUnitMinor: translate('validation.variableCostPerUnit'),
+  fixedCostsMinor: translate('validation.fixedCosts'),
+  targetProfitMinor: translate('validation.targetProfit'),
+  plannedQuantity: translate('validation.plannedQuantity'),
+  startingCashMinor: translate('validation.startingCash'),
+  baseMonthlyRevenueMinor: translate('validation.baseRevenue'),
+  fixedMonthlyCostsMinor: translate('validation.fixedMonthlyCosts'),
+  variableMonthlyCostsMinor: translate('validation.variableMonthlyCosts'),
+  forecastMonths: translate('validation.months'),
+  monthlyGrowthRate: translate('validation.growthRate'),
+  netProfitMinor: translate('validation.netProfit'),
+  totalCostMinor: translate('validation.totalCost')
+});
 
 const parseRequiredNumber = (value: string, fieldLabel: string): number => {
   const normalized = value.trim();
@@ -85,11 +86,11 @@ const normalizeScenarioName = (value: string): string => {
   const normalized = value.trim();
 
   if (!normalized) {
-    throw new Error('Scenario name is required.');
+    throw new Error(translate('validation.scenarioNameRequired'));
   }
 
   if (normalized.length > MAX_SCENARIO_NAME_LENGTH) {
-    throw new Error(`Scenario name must be ${MAX_SCENARIO_NAME_LENGTH} characters or fewer.`);
+    throw new Error(translate('validation.scenarioNameMax', { max: MAX_SCENARIO_NAME_LENGTH }));
   }
 
   return normalized;
@@ -98,16 +99,16 @@ const normalizeScenarioName = (value: string): string => {
 const toUserFriendlyValidationMessage = (message: string): string => {
   let formattedMessage = message;
 
-  for (const [fieldName, label] of Object.entries(VALIDATION_FIELD_LABELS)) {
+  for (const [fieldName, label] of Object.entries(getValidationFieldLabels())) {
     const fieldPattern = new RegExp(`\\b${fieldName}\\b`, 'g');
     formattedMessage = formattedMessage.replace(fieldPattern, label);
   }
 
   formattedMessage = formattedMessage
-    .replace(/must be a safe integer greater than or equal to 0\.?/gi, `must be a non-negative whole number (max ${MAX_SAFE_INTEGER_TEXT}).`)
-    .replace(/must be a safe integer in minor units\.?/gi, `must be a whole number in minor units (max ${MAX_SAFE_INTEGER_TEXT}).`)
-    .replace(/must be an integer greater than or equal to 0\.?/gi, 'must be a non-negative whole number.')
-    .replace(/must be an integer in minor units\.?/gi, 'must be a whole number in minor units.');
+    .replace(/must be a safe integer greater than or equal to 0\.?/gi, translate('validation.safeIntegerNonNegative', { max: MAX_SAFE_INTEGER_TEXT }))
+    .replace(/must be a safe integer in minor units\.?/gi, translate('validation.safeIntegerMinorUnits', { max: MAX_SAFE_INTEGER_TEXT }))
+    .replace(/must be an integer greater than or equal to 0\.?/gi, translate('validation.integerNonNegative'))
+    .replace(/must be an integer in minor units\.?/gi, translate('validation.integerMinorUnits'));
 
   return formattedMessage;
 };
@@ -138,20 +139,20 @@ const renderBusinessReportPreview = (report: ReportModel): HTMLElement => {
   container.className = 'modal';
 
   const summary = document.createElement('div');
-  summary.innerHTML = `<h3>${report.summary.title}</h3><p>Generated locally: ${report.summary.generatedAtLocal}</p>`;
+  summary.innerHTML = `<h3>${report.summary.title}</h3><p>${translate('report.generatedLocally')}: ${report.summary.generatedAtLocal}</p>`;
   container.appendChild(summary);
 
   if (report.profitability) {
     const section = document.createElement('div');
     section.innerHTML = `
-      <h4>Profitability</h4>
-      <p>Revenue: ${formatReportMoney(report.profitability.revenueTotalMinor, report.summary.currencyCode, report.summary.locale)}</p>
-      <p>Total Cost: ${formatReportMoney(report.profitability.totalCostMinor, report.summary.currencyCode, report.summary.locale)}</p>
-      <p>Gross Profit: ${formatReportMoney(report.profitability.grossProfitMinor, report.summary.currencyCode, report.summary.locale)}</p>
-      <p>Net Profit: ${formatReportMoney(report.profitability.netProfitMinor, report.summary.currencyCode, report.summary.locale)}</p>
-      <p>Contribution Margin: ${formatReportPct(report.profitability.contributionMarginPct, report.summary.locale)}</p>
-      <p>Net Margin: ${formatReportPct(report.profitability.netProfitPct, report.summary.locale)}</p>
-      <p>Markup: ${formatReportPct(report.profitability.markupPct, report.summary.locale)}</p>
+      <h4>${translate('report.profitability')}</h4>
+      <p>${translate('report.revenue')}: ${formatReportMoney(report.profitability.revenueTotalMinor, report.summary.currencyCode, report.summary.locale)}</p>
+      <p>${translate('report.totalCost')}: ${formatReportMoney(report.profitability.totalCostMinor, report.summary.currencyCode, report.summary.locale)}</p>
+      <p>${translate('report.grossProfit')}: ${formatReportMoney(report.profitability.grossProfitMinor, report.summary.currencyCode, report.summary.locale)}</p>
+      <p>${translate('report.netProfit')}: ${formatReportMoney(report.profitability.netProfitMinor, report.summary.currencyCode, report.summary.locale)}</p>
+      <p>${translate('report.contributionMargin')}: ${formatReportPct(report.profitability.contributionMarginPct, report.summary.locale)}</p>
+      <p>${translate('report.netMargin')}: ${formatReportPct(report.profitability.netProfitPct, report.summary.locale)}</p>
+      <p>${translate('report.markup')}: ${formatReportPct(report.profitability.markupPct, report.summary.locale)}</p>
     `;
     container.appendChild(section);
   }
@@ -159,12 +160,12 @@ const renderBusinessReportPreview = (report: ReportModel): HTMLElement => {
   if (report.breakeven) {
     const section = document.createElement('div');
     section.innerHTML = `
-      <h4>Break-even</h4>
-      <p>Break-even Quantity: ${report.breakeven.breakEvenQuantity ?? '—'}</p>
-      <p>Break-even Revenue: ${report.breakeven.breakEvenRevenueMinor === null ? '—' : formatReportMoney(report.breakeven.breakEvenRevenueMinor, report.summary.currencyCode, report.summary.locale)}</p>
-      <p>Required Quantity (Target): ${report.breakeven.requiredQuantityForTargetProfit ?? '—'}</p>
-      <p>Required Revenue (Target): ${report.breakeven.requiredRevenueForTargetProfitMinor === null ? '—' : formatReportMoney(report.breakeven.requiredRevenueForTargetProfitMinor, report.summary.currencyCode, report.summary.locale)}</p>
-      <p>Margin of Safety: ${report.breakeven.marginOfSafetyUnits ?? '—'} (${formatReportPct(report.breakeven.marginOfSafetyPct, report.summary.locale)})</p>
+      <h4>${translate('report.breakeven')}</h4>
+      <p>${translate('report.breakEvenQuantity')}: ${report.breakeven.breakEvenQuantity ?? '—'}</p>
+      <p>${translate('report.breakEvenRevenue')}: ${report.breakeven.breakEvenRevenueMinor === null ? '—' : formatReportMoney(report.breakeven.breakEvenRevenueMinor, report.summary.currencyCode, report.summary.locale)}</p>
+      <p>${translate('report.requiredQuantityTarget')}: ${report.breakeven.requiredQuantityForTargetProfit ?? '—'}</p>
+      <p>${translate('report.requiredRevenueTarget')}: ${report.breakeven.requiredRevenueForTargetProfitMinor === null ? '—' : formatReportMoney(report.breakeven.requiredRevenueForTargetProfitMinor, report.summary.currencyCode, report.summary.locale)}</p>
+      <p>${translate('report.marginOfSafety')}: ${report.breakeven.marginOfSafetyUnits ?? '—'} (${formatReportPct(report.breakeven.marginOfSafetyPct, report.summary.locale)})</p>
     `;
     container.appendChild(section);
   }
@@ -172,13 +173,13 @@ const renderBusinessReportPreview = (report: ReportModel): HTMLElement => {
   if (report.cashflow) {
     const section = document.createElement('div');
     const projectionRows = report.cashflow.monthlyProjection.slice(0, 12).map((entry) => {
-      return `<li>Month ${entry.monthIndex}: ${formatReportMoney(entry.revenueMinor, report.summary.currencyCode, report.summary.locale)} | ${formatReportMoney(entry.expensesMinor, report.summary.currencyCode, report.summary.locale)} | ${formatReportMoney(entry.netCashflowMinor, report.summary.currencyCode, report.summary.locale)} | ${formatReportMoney(entry.cashBalanceMinor, report.summary.currencyCode, report.summary.locale)}</li>`;
+      return `<li>${translate('report.month')} ${entry.monthIndex}: ${formatReportMoney(entry.revenueMinor, report.summary.currencyCode, report.summary.locale)} | ${formatReportMoney(entry.expensesMinor, report.summary.currencyCode, report.summary.locale)} | ${formatReportMoney(entry.netCashflowMinor, report.summary.currencyCode, report.summary.locale)} | ${formatReportMoney(entry.cashBalanceMinor, report.summary.currencyCode, report.summary.locale)}</li>`;
     }).join('');
 
     section.innerHTML = `
-      <h4>Cashflow</h4>
-      <p>Final Balance: ${formatReportMoney(report.cashflow.finalBalanceMinor, report.summary.currencyCode, report.summary.locale)}</p>
-      <p>First Negative Month: ${report.cashflow.firstNegativeMonth ?? '—'}</p>
+      <h4>${translate('report.cashflow')}</h4>
+      <p>${translate('report.finalBalance')}: ${formatReportMoney(report.cashflow.finalBalanceMinor, report.summary.currencyCode, report.summary.locale)}</p>
+      <p>${translate('report.firstNegativeMonth')}: ${report.cashflow.firstNegativeMonth ?? '—'}</p>
       <ul>${projectionRows}</ul>
     `;
     container.appendChild(section);
@@ -187,7 +188,7 @@ const renderBusinessReportPreview = (report: ReportModel): HTMLElement => {
   if (report.riskIndicators.length > 0) {
     const section = document.createElement('div');
     const risks = report.riskIndicators.map((risk) => `<li>${risk.severity.toUpperCase()}: ${risk.message}</li>`).join('');
-    section.innerHTML = `<h4>Risk Indicators</h4><ul>${risks}</ul>`;
+    section.innerHTML = `<h4>${translate('report.riskIndicators')}</h4><ul>${risks}</ul>`;
     container.appendChild(section);
   }
 
@@ -207,18 +208,19 @@ export const renderSidebar = (
   const sidebar = document.createElement('aside');
   sidebar.className = 'sidebar';
   const links: Array<{ label: string; route: AppRoutePath }> = [
-    { label: 'Dashboard', route: '/dashboard' },
-    { label: 'Profit', route: '/profit' },
-    { label: 'Break-even', route: '/break-even' },
-    { label: 'Cashflow', route: '/cashflow' },
-    { label: 'Subscription', route: '/subscription' },
-    { label: 'Data & Backup', route: '/data' },
-    { label: 'Settings', route: '/settings' }
+    { label: translate('sidebar.dashboard'), route: '/dashboard' },
+    { label: translate('sidebar.profit'), route: '/profit' },
+    { label: translate('sidebar.breakeven'), route: '/break-even' },
+    { label: translate('sidebar.cashflow'), route: '/cashflow' },
+    { label: translate('sidebar.subscription'), route: '/subscription' },
+    { label: translate('sidebar.dataBackup'), route: '/data' },
+    { label: translate('sidebar.settings'), route: '/settings' }
   ];
 
   const title = document.createElement('h3');
-  title.textContent = 'Margin Base';
+  title.textContent = translate('sidebar.title');
   sidebar.appendChild(title);
+  sidebar.appendChild(createLanguageSwitcher());
 
   for (const link of links) {
     sidebar.appendChild(
@@ -243,11 +245,11 @@ export const renderGatePage = (
 
   const copy = document.createElement('div');
   copy.className = 'auth-copy';
-  copy.innerHTML = '<h2>Access Status</h2><p>Unlock calculators to save and compare scenarios.</p>';
+  copy.innerHTML = `<h2>${translate('gate.title')}</h2><p>${translate('gate.subtitle')}</p>`;
 
   const actions = document.createElement('div');
   actions.className = 'auth-actions';
-  actions.appendChild(createActionButton('Start Free Trial', async () => {
+  actions.appendChild(createActionButton(translate('gate.startTrial'), async () => {
     let checkoutUrl: string | null = null;
 
     try {
@@ -264,7 +266,7 @@ export const renderGatePage = (
     service.activateTrial();
     goTo('/dashboard');
   }, 'primary'));
-  actions.appendChild(createActionButton('Continue to Dashboard', () => goTo('/dashboard')));
+  actions.appendChild(createActionButton(translate('gate.continueDashboard'), () => goTo('/dashboard')));
 
   card.appendChild(copy);
   card.appendChild(actions);
@@ -287,24 +289,24 @@ export const renderDashboardPage = async (
   main.className = 'main';
   const header = document.createElement('div');
   header.className = 'card';
-  header.innerHTML = '<h2>Dashboard</h2><span class="status">Soft gate enabled</span>';
+  header.innerHTML = `<h2>${translate('dashboard.title')}</h2><span class="status">${translate('dashboard.softGateEnabled')}</span>`;
   main.appendChild(header);
 
   const moduleGrid = document.createElement('div');
   moduleGrid.className = 'grid-3';
   const modules: Array<{ title: string; route: AppRoutePath; moduleId: ModuleId }> = [
-    { title: 'Profit Calculator', route: '/profit', moduleId: 'profit' },
-    { title: 'Break-even Calculator', route: '/break-even', moduleId: 'breakeven' },
-    { title: 'Cashflow Forecaster', route: '/cashflow', moduleId: 'cashflow' }
+    { title: translate('dashboard.module.profit'), route: '/profit', moduleId: 'profit' },
+    { title: translate('dashboard.module.breakeven'), route: '/break-even', moduleId: 'breakeven' },
+    { title: translate('dashboard.module.cashflow'), route: '/cashflow', moduleId: 'cashflow' }
   ];
 
   for (const moduleItem of modules) {
     const card = document.createElement('div');
     card.className = 'card';
     const allowed = service.canOpenModule(moduleItem.moduleId);
-    card.innerHTML = `<h3>${moduleItem.title}</h3><p>Status: ${allowed ? 'Active' : 'Locked'}</p>`;
+    card.innerHTML = `<h3>${moduleItem.title}</h3><p>${translate('dashboard.status')}: ${allowed ? translate('dashboard.active') : translate('dashboard.locked')}</p>`;
     card.appendChild(
-      createActionButton('Open', () => (allowed ? goTo(moduleItem.route) : goTo('/subscription')), allowed ? 'primary' : '')
+      createActionButton(translate('dashboard.open'), () => (allowed ? goTo(moduleItem.route) : goTo('/subscription')), allowed ? 'primary' : '')
     );
     moduleGrid.appendChild(card);
   }
@@ -313,11 +315,11 @@ export const renderDashboardPage = async (
 
   const recentCard = document.createElement('div');
   recentCard.className = 'card';
-  recentCard.innerHTML = '<h3>Recent scenarios</h3>';
+  recentCard.innerHTML = `<h3>${translate('dashboard.recent')}</h3>`;
   const allScenarios = await service.listAllScenarios();
 
   if (allScenarios.length === 0) {
-    recentCard.appendChild(emptyState('No recent activity', 'Your recent scenarios will appear here.', 'Open Profit Calculator', () => goTo('/profit')));
+    recentCard.appendChild(emptyState(translate('dashboard.noRecent'), translate('dashboard.noRecentDesc'), translate('dashboard.openProfit'), () => goTo('/profit')));
   } else {
     const list = document.createElement('ul');
     for (const scenario of allScenarios.slice(0, 5)) {
@@ -331,7 +333,7 @@ export const renderDashboardPage = async (
   main.appendChild(recentCard);
   const ad = document.createElement('div');
   ad.className = 'card';
-  ad.innerHTML = '<div class="ad-placeholder">Ad block placeholder</div>';
+  ad.innerHTML = `<div class="ad-placeholder">${translate('common.adPlaceholder')}</div>`;
   main.appendChild(ad);
   shell.appendChild(main);
   root.replaceChildren(shell);
@@ -359,9 +361,9 @@ export const renderWorkspacePage = async (
     '/cashflow': 'cashflow'
   };
   const moduleTitleMap: Record<ModuleId, string> = {
-    profit: 'Profit',
-    breakeven: 'Break-even',
-    cashflow: 'Cashflow'
+    profit: translate('workspace.module.profit'),
+    breakeven: translate('workspace.module.breakeven'),
+    cashflow: translate('workspace.module.cashflow')
   };
 
   const moduleId = moduleMap[route];
@@ -402,20 +404,20 @@ export const renderWorkspacePage = async (
 
   const listPanel = document.createElement('section');
   listPanel.className = 'card scenario-list';
-  listPanel.innerHTML = `<h3>${moduleTitle} Scenarios</h3>`;
-  listPanel.appendChild(createActionButton('+ New Scenario', async () => {
+  listPanel.innerHTML = `<h3>${moduleTitle} ${translate('workspace.scenarios')}</h3>`;
+  listPanel.appendChild(createActionButton(translate('workspace.newScenario'), async () => {
     await service.createDefaultScenario(moduleId);
     await render();
   }, 'primary scenario-create'));
 
   if (scenarios.length === 0) {
-    listPanel.appendChild(emptyState('No scenarios yet', 'Create your first scenario to start analyzing.'));
+    listPanel.appendChild(emptyState(translate('workspace.noScenarios'), translate('workspace.noScenariosDesc')));
   } else {
     for (const scenario of scenarios) {
       const row = document.createElement('div');
       row.className = 'scenario-item';
       row.innerHTML = `<span>${scenario.scenarioName}</span>`;
-      row.appendChild(createActionButton('Delete', async () => {
+      row.appendChild(createActionButton(translate('workspace.delete'), async () => {
         await service.deleteScenario(scenario.scenarioId);
         await render();
       }));
@@ -425,7 +427,7 @@ export const renderWorkspacePage = async (
 
   const center = document.createElement('section');
   center.className = 'card';
-  center.innerHTML = `<h3>${moduleTitle} Editor</h3>`;
+  center.innerHTML = `<h3>${moduleTitle} ${translate('workspace.editor')}</h3>`;
 
   const form = document.createElement('form');
   form.className = 'form-grid';
@@ -466,43 +468,43 @@ export const renderWorkspacePage = async (
   if (moduleId === 'profit') {
     const state: ProfitInputState = service.getProfitInputState(selectedScenario?.inputData ?? prefillInputData);
     form.innerHTML = `
-      <label>Scenario Name<input name="scenarioName" value="${selectedScenario?.scenarioName ?? state.scenarioName}" /></label>
-      <label>Unit price (minor)<input name="unitPriceMinor" type="number" value="${state.unitPriceMinor}" /></label>
-      <label>Quantity<input name="quantity" type="number" value="${state.quantity}" /></label>
-      <label>Variable cost / unit<input name="variableCostPerUnitMinor" type="number" value="${state.variableCostPerUnitMinor}" /></label>
-      <label>Fixed costs<input name="fixedCostsMinor" type="number" value="${state.fixedCostsMinor}" /></label>
+      <label>${translate('field.scenarioName')}<input name="scenarioName" value="${selectedScenario?.scenarioName ?? state.scenarioName}" /></label>
+      <label>${translate('field.unitPriceMinor')}<input name="unitPriceMinor" type="number" value="${state.unitPriceMinor}" /></label>
+      <label>${translate('field.quantity')}<input name="quantity" type="number" value="${state.quantity}" /></label>
+      <label>${translate('field.variableCostPerUnitMinor')}<input name="variableCostPerUnitMinor" type="number" value="${state.variableCostPerUnitMinor}" /></label>
+      <label>${translate('field.fixedCostsMinor')}<input name="fixedCostsMinor" type="number" value="${state.fixedCostsMinor}" /></label>
     `;
   }
 
   if (moduleId === 'breakeven') {
     const state: BreakEvenInputState = service.getBreakEvenInputState(selectedScenario?.inputData ?? prefillInputData);
     form.innerHTML = `
-      <label>Scenario Name<input name="scenarioName" value="${selectedScenario?.scenarioName ?? state.scenarioName}" /></label>
-      <label>Unit price (minor)<input name="unitPriceMinor" type="number" value="${state.unitPriceMinor}" /></label>
-      <label>Variable cost / unit<input name="variableCostPerUnitMinor" type="number" value="${state.variableCostPerUnitMinor}" /></label>
-      <label>Fixed costs<input name="fixedCostsMinor" type="number" value="${state.fixedCostsMinor}" /></label>
-      <label>Target profit<input name="targetProfitMinor" type="number" value="${state.targetProfitMinor}" /></label>
-      <label>Planned quantity<input name="plannedQuantity" type="number" value="${state.plannedQuantity}" /></label>
+      <label>${translate('field.scenarioName')}<input name="scenarioName" value="${selectedScenario?.scenarioName ?? state.scenarioName}" /></label>
+      <label>${translate('field.unitPriceMinor')}<input name="unitPriceMinor" type="number" value="${state.unitPriceMinor}" /></label>
+      <label>${translate('field.variableCostPerUnitMinor')}<input name="variableCostPerUnitMinor" type="number" value="${state.variableCostPerUnitMinor}" /></label>
+      <label>${translate('field.fixedCostsMinor')}<input name="fixedCostsMinor" type="number" value="${state.fixedCostsMinor}" /></label>
+      <label>${translate('field.targetProfitMinor')}<input name="targetProfitMinor" type="number" value="${state.targetProfitMinor}" /></label>
+      <label>${translate('field.plannedQuantity')}<input name="plannedQuantity" type="number" value="${state.plannedQuantity}" /></label>
     `;
   }
 
   if (moduleId === 'cashflow') {
     const state: CashflowInputState = service.getCashflowInputState(selectedScenario?.inputData ?? prefillInputData);
     form.innerHTML = `
-      <label>Scenario Name<input name="scenarioName" value="${selectedScenario?.scenarioName ?? state.scenarioName}" /></label>
-      <label>Starting cash<input name="startingCashMinor" type="number" value="${state.startingCashMinor}" /></label>
-      <label>Base revenue<input name="baseMonthlyRevenueMinor" type="number" value="${state.baseMonthlyRevenueMinor}" /></label>
-      <label>Fixed monthly costs<input name="fixedMonthlyCostsMinor" type="number" value="${state.fixedMonthlyCostsMinor}" /></label>
-      <label>Variable monthly costs<input name="variableMonthlyCostsMinor" type="number" value="${state.variableMonthlyCostsMinor}" /></label>
-      <label>Months<input name="forecastMonths" type="number" value="${state.forecastMonths}" /></label>
-      <label>Growth rate<input name="monthlyGrowthRate" type="number" step="0.01" value="${state.monthlyGrowthRate}" /></label>
+      <label>${translate('field.scenarioName')}<input name="scenarioName" value="${selectedScenario?.scenarioName ?? state.scenarioName}" /></label>
+      <label>${translate('field.startingCashMinor')}<input name="startingCashMinor" type="number" value="${state.startingCashMinor}" /></label>
+      <label>${translate('field.baseMonthlyRevenueMinor')}<input name="baseMonthlyRevenueMinor" type="number" value="${state.baseMonthlyRevenueMinor}" /></label>
+      <label>${translate('field.fixedMonthlyCostsMinor')}<input name="fixedMonthlyCostsMinor" type="number" value="${state.fixedMonthlyCostsMinor}" /></label>
+      <label>${translate('field.variableMonthlyCostsMinor')}<input name="variableMonthlyCostsMinor" type="number" value="${state.variableMonthlyCostsMinor}" /></label>
+      <label>${translate('field.forecastMonths')}<input name="forecastMonths" type="number" value="${state.forecastMonths}" /></label>
+      <label>${translate('field.monthlyGrowthRate')}<input name="monthlyGrowthRate" type="number" step="0.01" value="${state.monthlyGrowthRate}" /></label>
     `;
   }
 
   form.insertAdjacentElement('afterbegin', formError);
 
   form.appendChild(
-    createActionButton('Culculate Scenario', async () => {
+    createActionButton(translate('workspace.calculateScenario'), async () => {
       clearFormError();
 
       try {
@@ -513,10 +515,10 @@ export const renderWorkspacePage = async (
           await service.saveProfitScenario({
             scenarioId: selectedScenario?.scenarioId,
             scenarioName,
-            unitPriceMinor: parseRequiredNumber(String(data.get('unitPriceMinor') ?? ''), 'Unit price'),
-            quantity: parseRequiredNumber(String(data.get('quantity') ?? ''), 'Quantity'),
-            variableCostPerUnitMinor: parseRequiredNumber(String(data.get('variableCostPerUnitMinor') ?? ''), 'Variable cost per unit'),
-            fixedCostsMinor: parseRequiredNumber(String(data.get('fixedCostsMinor') ?? ''), 'Fixed costs')
+            unitPriceMinor: parseRequiredNumber(String(data.get('unitPriceMinor') ?? ''), translate('field.unitPrice')),
+            quantity: parseRequiredNumber(String(data.get('quantity') ?? ''), translate('field.quantity')),
+            variableCostPerUnitMinor: parseRequiredNumber(String(data.get('variableCostPerUnitMinor') ?? ''), translate('field.variableCostPerUnit')),
+            fixedCostsMinor: parseRequiredNumber(String(data.get('fixedCostsMinor') ?? ''), translate('field.fixedCosts'))
           });
         }
 
@@ -524,11 +526,11 @@ export const renderWorkspacePage = async (
           await service.saveBreakEvenScenario({
             scenarioId: selectedScenario?.scenarioId,
             scenarioName,
-            unitPriceMinor: parseRequiredNumber(String(data.get('unitPriceMinor') ?? ''), 'Unit price'),
-            variableCostPerUnitMinor: parseRequiredNumber(String(data.get('variableCostPerUnitMinor') ?? ''), 'Variable cost per unit'),
-            fixedCostsMinor: parseRequiredNumber(String(data.get('fixedCostsMinor') ?? ''), 'Fixed costs'),
-            targetProfitMinor: parseRequiredNumber(String(data.get('targetProfitMinor') ?? ''), 'Target profit'),
-            plannedQuantity: parseRequiredNumber(String(data.get('plannedQuantity') ?? ''), 'Planned quantity')
+            unitPriceMinor: parseRequiredNumber(String(data.get('unitPriceMinor') ?? ''), translate('field.unitPrice')),
+            variableCostPerUnitMinor: parseRequiredNumber(String(data.get('variableCostPerUnitMinor') ?? ''), translate('field.variableCostPerUnit')),
+            fixedCostsMinor: parseRequiredNumber(String(data.get('fixedCostsMinor') ?? ''), translate('field.fixedCosts')),
+            targetProfitMinor: parseRequiredNumber(String(data.get('targetProfitMinor') ?? ''), translate('field.targetProfit')),
+            plannedQuantity: parseRequiredNumber(String(data.get('plannedQuantity') ?? ''), translate('field.plannedQuantity'))
           });
         }
 
@@ -536,18 +538,18 @@ export const renderWorkspacePage = async (
           await service.saveCashflowScenario({
             scenarioId: selectedScenario?.scenarioId,
             scenarioName,
-            startingCashMinor: parseRequiredNumber(String(data.get('startingCashMinor') ?? ''), 'Starting cash'),
-            baseMonthlyRevenueMinor: parseRequiredNumber(String(data.get('baseMonthlyRevenueMinor') ?? ''), 'Base revenue'),
-            fixedMonthlyCostsMinor: parseRequiredNumber(String(data.get('fixedMonthlyCostsMinor') ?? ''), 'Fixed monthly costs'),
-            variableMonthlyCostsMinor: parseRequiredNumber(String(data.get('variableMonthlyCostsMinor') ?? ''), 'Variable monthly costs'),
-            forecastMonths: parseRequiredNumber(String(data.get('forecastMonths') ?? ''), 'Months'),
-            monthlyGrowthRate: parseRequiredNumber(String(data.get('monthlyGrowthRate') ?? ''), 'Growth rate')
+            startingCashMinor: parseRequiredNumber(String(data.get('startingCashMinor') ?? ''), translate('field.startingCash')),
+            baseMonthlyRevenueMinor: parseRequiredNumber(String(data.get('baseMonthlyRevenueMinor') ?? ''), translate('field.baseRevenue')),
+            fixedMonthlyCostsMinor: parseRequiredNumber(String(data.get('fixedMonthlyCostsMinor') ?? ''), translate('field.fixedMonthlyCosts')),
+            variableMonthlyCostsMinor: parseRequiredNumber(String(data.get('variableMonthlyCostsMinor') ?? ''), translate('field.variableMonthlyCosts')),
+            forecastMonths: parseRequiredNumber(String(data.get('forecastMonths') ?? ''), translate('field.months')),
+            monthlyGrowthRate: parseRequiredNumber(String(data.get('monthlyGrowthRate') ?? ''), translate('field.growthRate'))
           });
         }
 
         await render();
       } catch (error) {
-        const message = error instanceof Error ? toUserFriendlyValidationMessage(error.message) : 'Validation failed. Please review your inputs.';
+        const message = error instanceof Error ? toUserFriendlyValidationMessage(error.message) : translate('workspace.validationFailed');
         showFormError(message);
       }
     }, 'primary form-submit')
@@ -556,19 +558,19 @@ export const renderWorkspacePage = async (
   center.appendChild(form);
   const ad = document.createElement('div');
   ad.className = 'ad-placeholder';
-  ad.textContent = 'Ad block placeholder';
+  ad.textContent = translate('common.adPlaceholder');
   center.appendChild(ad);
 
   const results = document.createElement('section');
   results.className = 'card';
-  results.innerHTML = '<h3>Results</h3>';
+  results.innerHTML = `<h3>${translate('workspace.results')}</h3>`;
 
   const shareDialogHost = document.createElement('div');
   shareDialogHost.className = 'modal';
 
-  const shareButton = createActionButton('Share Scenario', async () => {
+  const shareButton = createActionButton(translate('workspace.shareScenario'), async () => {
     if (!selectedScenario) {
-      showFormError('Create a scenario first before sharing.');
+      showFormError(translate('workspace.createScenarioBeforeShare'));
       return;
     }
 
@@ -581,7 +583,7 @@ export const renderWorkspacePage = async (
         expiresAt: share.expiresAt,
         onCopy: async () => {
           await navigator.clipboard.writeText(shareUrl);
-          window.alert('Share link copied.');
+          window.alert(translate('workspace.shareLinkCopied'));
         },
         onClose: () => {
           shareDialogHost.replaceChildren();
@@ -591,7 +593,7 @@ export const renderWorkspacePage = async (
 
       shareDialogHost.replaceChildren(dialog);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Share link creation failed.';
+      const message = error instanceof Error ? error.message : translate('workspace.shareLinkCreateFailed');
       showFormError(message);
     }
   });
@@ -615,7 +617,7 @@ export const renderWorkspacePage = async (
       };
 
       const text = document.createElement('span');
-      text.textContent = 'Show debug JSON';
+      text.textContent = translate('workspace.showDebugJson');
 
       toggleRow.appendChild(checkbox);
       toggleRow.appendChild(text);
@@ -629,7 +631,7 @@ export const renderWorkspacePage = async (
       }
     }
   } else {
-    results.appendChild(emptyState('No results yet', 'Calculate scenario to view formatted outputs.'));
+    results.appendChild(emptyState(translate('workspace.noResults'), translate('workspace.noResultsDesc')));
   }
 
   if (!allowed) {
@@ -637,12 +639,12 @@ export const renderWorkspacePage = async (
     overlay.className = 'locked-overlay';
 
     const message = document.createElement('strong');
-    message.textContent = 'This module requires an active subscription.';
+    message.textContent = translate('workspace.requiresSubscription');
 
     const actions = document.createElement('div');
     actions.className = 'button-row';
-    actions.appendChild(createActionButton('Go to Subscription', () => goTo('/subscription'), 'primary'));
-    actions.appendChild(createActionButton('Back to Dashboard', () => goTo('/dashboard')));
+    actions.appendChild(createActionButton(translate('workspace.goToSubscription'), () => goTo('/subscription'), 'primary'));
+    actions.appendChild(createActionButton(translate('workspace.backToDashboard'), () => goTo('/dashboard')));
 
     overlay.appendChild(message);
     overlay.appendChild(actions);
@@ -671,25 +673,25 @@ export const renderSubscriptionPage = (
   main.className = 'main';
   const card = document.createElement('div');
   card.className = 'card';
-  card.innerHTML = '<h2>Subscription</h2><p>Monthly plans (Price TBD)</p>';
+  card.innerHTML = `<h2>${translate('subscription.title')}</h2><p>${translate('subscription.monthlyPlans')}</p>`;
 
   const actions = document.createElement('div');
   actions.className = 'button-row';
-  actions.appendChild(createActionButton('Activate Bundle (Local Mock)', () => {
+  actions.appendChild(createActionButton(translate('subscription.activateBundleLocal'), () => {
     service.activateBundle();
     goTo('/dashboard');
   }, 'primary'));
-  actions.appendChild(createActionButton('Refresh Subscription Status', () => goTo('/subscription')));
+  actions.appendChild(createActionButton(translate('subscription.refreshStatus'), () => goTo('/subscription')));
 
   const disclosure = document.createElement('div');
   disclosure.className = 'inline-error';
-  disclosure.innerHTML = '<p>Free trial requires a payment method.</p><p>After the trial, your subscription renews automatically unless cancelled.</p>';
+  disclosure.innerHTML = `<p>${translate('subscription.disclosureTrial')}</p><p>${translate('subscription.disclosureRenewal')}</p>`;
 
   const disclosureLinks = document.createElement('div');
   disclosureLinks.className = 'button-row';
   const termsLink = document.createElement('button');
   termsLink.className = 'link-muted';
-  termsLink.textContent = 'Terms of Service';
+  termsLink.textContent = translate('legal.terms');
   termsLink.onclick = () => {
     setLegalBackTarget('/');
     goTo('/terms');
@@ -697,7 +699,7 @@ export const renderSubscriptionPage = (
 
   const cancellationLink = document.createElement('button');
   cancellationLink.className = 'link-muted';
-  cancellationLink.textContent = 'Cancellation Policy';
+  cancellationLink.textContent = translate('legal.cancellation');
   cancellationLink.onclick = () => {
     setLegalBackTarget('/');
     goTo('/cancellation');
@@ -729,12 +731,12 @@ export const renderDataBackupPage = async (
   main.className = 'main';
 
   const title = document.createElement('h2');
-  title.textContent = 'Data & Backup';
+  title.textContent = translate('data.title');
 
   const sections = document.createElement('div');
   sections.className = 'space-y-6';
 
-  const exportButton = createActionButton('Export all scenarios (JSON)', async () => {
+  const exportButton = createActionButton(translate('data.exportAllJson'), async () => {
     const payload = await service.exportScenariosJson();
     const blob = new Blob([payload], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -743,10 +745,10 @@ export const renderDataBackupPage = async (
     anchor.download = 'marginbase-export.json';
     anchor.click();
     URL.revokeObjectURL(url);
-    window.alert('Export completed.');
+    window.alert(translate('data.exportCompleted'));
   }, 'primary');
 
-  const reportExportButton = createActionButton('Export business report (PDF)', async () => {
+  const reportExportButton = createActionButton(translate('data.reportExportPdf'), async () => {
     try {
       const payload = await service.exportBusinessReportPdf();
       const pdfBytes = new Uint8Array(payload);
@@ -757,14 +759,14 @@ export const renderDataBackupPage = async (
       anchor.download = 'marginbase-business-report.pdf';
       anchor.click();
       URL.revokeObjectURL(url);
-      window.alert('Business report exported.');
+      window.alert(translate('data.reportExported'));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Report export failed.';
+      const message = error instanceof Error ? error.message : translate('data.reportExportFailed');
       window.alert(message);
     }
   });
 
-  const reportExportExcelButton = createActionButton('Export business report (Excel)', async () => {
+  const reportExportExcelButton = createActionButton(translate('data.reportExportExcel'), async () => {
     try {
       const payload = await service.exportBusinessReportXlsx();
       const xlsxBytes = new Uint8Array(payload);
@@ -777,9 +779,9 @@ export const renderDataBackupPage = async (
       anchor.download = 'marginbase-business-report.xlsx';
       anchor.click();
       URL.revokeObjectURL(url);
-      window.alert('Business report exported.');
+      window.alert(translate('data.reportExported'));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Report export failed.';
+      const message = error instanceof Error ? error.message : translate('data.reportExportFailed');
       window.alert(message);
     }
   });
@@ -787,23 +789,23 @@ export const renderDataBackupPage = async (
   const reportPreview = document.createElement('div');
   reportPreview.className = 'modal';
 
-  const reportPreviewButton = createActionButton('Preview business report', async () => {
+  const reportPreviewButton = createActionButton(translate('data.previewReport'), async () => {
     try {
       const report = await service.getBusinessReportModel();
-      const closeButton = createActionButton('Close preview', () => {
+      const closeButton = createActionButton(translate('data.closePreview'), () => {
         reportPreview.replaceChildren();
       });
 
       const content = renderBusinessReportPreview(report);
       reportPreview.replaceChildren(content, closeButton);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Report preview failed.';
+      const message = error instanceof Error ? error.message : translate('data.reportPreviewFailed');
       window.alert(message);
     }
   });
 
   const importInput = document.createElement('textarea');
-  importInput.placeholder = 'Paste import JSON here';
+  importInput.placeholder = translate('data.importPlaceholder');
   importInput.rows = 10;
 
   const importSummary = document.createElement('div');
@@ -816,7 +818,7 @@ export const renderDataBackupPage = async (
     try {
       const items = await service.listMyShareSnapshots();
       if (items.length === 0) {
-        shareLinksSummary.innerHTML = '<p>No shared links yet.</p>';
+        shareLinksSummary.innerHTML = `<p>${translate('data.share.empty')}</p>`;
         return;
       }
 
@@ -827,8 +829,8 @@ export const renderDataBackupPage = async (
       for (const item of items) {
         const row = document.createElement('div');
         row.className = 'card';
-        row.innerHTML = `<p><strong>${item.module}</strong></p><p>Token: ${item.token}</p><p>Created: ${item.createdAt}</p><p>Expires: ${item.expiresAt}</p>`;
-        row.appendChild(createActionButton('Revoke', async () => {
+        row.innerHTML = `<p><strong>${item.module}</strong></p><p>${translate('data.share.token')}: ${item.token}</p><p>${translate('data.share.created')}: ${item.createdAt}</p><p>${translate('data.share.expires')}: ${item.expiresAt}</p>`;
+        row.appendChild(createActionButton(translate('data.share.revoke'), async () => {
           await service.revokeMyShareSnapshot(item.token);
           await refreshSharedLinks();
         }));
@@ -837,43 +839,43 @@ export const renderDataBackupPage = async (
 
       shareLinksSummary.appendChild(list);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to load shared links.';
+      const message = error instanceof Error ? error.message : translate('data.share.loadFailed');
       shareLinksSummary.innerHTML = `<div class="inline-error">${message}</div>`;
     }
   };
 
-  const previewButton = createActionButton('Preview Import', () => {
+  const previewButton = createActionButton(translate('data.previewImport'), () => {
     const preview = service.previewImport(importInput.value);
     if (!preview.ok) {
-      importSummary.innerHTML = `<div class="inline-error"><strong>Preview failed.</strong> ${preview.errors[0]?.message ?? 'Import preview failed.'}</div>`;
+      importSummary.innerHTML = `<div class="inline-error"><strong>${translate('data.previewFailed')}</strong> ${preview.errors[0]?.message ?? translate('data.importPreviewFailed')}</div>`;
       return;
     }
 
     importSummary.innerHTML = `
-      <h3>Import Scenarios</h3>
-      <p>Total: ${preview.summary.total}</p>
-      <p>Profit: ${preview.summary.profit}</p>
-      <p>Break-even: ${preview.summary.breakeven}</p>
-      <p>Cashflow: ${preview.summary.cashflow}</p>
-      <p><strong>This will replace all existing scenarios.</strong></p>
+      <h3>${translate('data.importScenarios')}</h3>
+      <p>${translate('data.total')}: ${preview.summary.total}</p>
+      <p>${translate('data.profit')}: ${preview.summary.profit}</p>
+      <p>${translate('data.breakeven')}: ${preview.summary.breakeven}</p>
+      <p>${translate('data.cashflow')}: ${preview.summary.cashflow}</p>
+      <p><strong>${translate('data.replaceWarning')}</strong></p>
     `;
   });
 
-  const confirmButton = createActionButton('Confirm Import (Replace all)', async () => {
+  const confirmButton = createActionButton(translate('data.confirmImportReplace'), async () => {
     const result = service.previewImport(importInput.value);
     if (!result.ok) {
-      window.alert('Import failed.');
+      window.alert(translate('data.importFailed'));
       return;
     }
 
     await service.applyImport(result);
-    window.alert('Import completed.');
+    window.alert(translate('data.importCompleted'));
     await render();
   }, 'primary');
 
   const exportCard = document.createElement('section');
   exportCard.className = 'card';
-  exportCard.innerHTML = '<h3>Export</h3><p>Export all local scenarios to a JSON file.</p>';
+  exportCard.innerHTML = `<h3>${translate('data.exportCardTitle')}</h3><p>${translate('data.exportCardDesc')}</p>`;
   exportCard.appendChild(exportButton);
   exportCard.appendChild(reportPreviewButton);
   exportCard.appendChild(reportExportButton);
@@ -882,7 +884,7 @@ export const renderDataBackupPage = async (
 
   const importCard = document.createElement('section');
   importCard.className = 'card';
-  importCard.innerHTML = '<h3>Import</h3><p>Import scenarios from JSON. This replaces all existing scenarios.</p>';
+  importCard.innerHTML = `<h3>${translate('data.importCardTitle')}</h3><p>${translate('data.importCardDesc')}</p>`;
   const importActions = document.createElement('div');
   importActions.className = 'button-row';
   importCard.appendChild(importInput);
@@ -893,8 +895,8 @@ export const renderDataBackupPage = async (
 
   const shareCard = document.createElement('section');
   shareCard.className = 'card';
-  shareCard.innerHTML = '<h3>My Shared Links</h3><p>Review and revoke your shared scenario links.</p>';
-  shareCard.appendChild(createActionButton('Refresh Shared Links', () => {
+  shareCard.innerHTML = `<h3>${translate('data.share.title')}</h3><p>${translate('data.share.desc')}</p>`;
+  shareCard.appendChild(createActionButton(translate('data.share.refresh'), () => {
     void refreshSharedLinks();
   }, 'primary'));
   shareCard.appendChild(shareLinksSummary);
@@ -924,12 +926,12 @@ export const renderSettingsPage = async (
 
   const card = document.createElement('div');
   card.className = 'card';
-  card.innerHTML = '<h2>Settings</h2><p>Account actions and future configuration options.</p>';
+  card.innerHTML = `<h2>${translate('settings.title')}</h2><p>${translate('settings.subtitle')}</p>`;
 
-  const deleteAccountButton = createActionButton('Delete account data', async () => {
+  const deleteAccountButton = createActionButton(translate('settings.deleteAccountData'), async () => {
     const deleted = await service.deleteAccount('local_web_user');
     if (deleted) {
-      window.alert('Account data deleted.');
+      window.alert(translate('settings.accountDeleted'));
       goTo('/login');
     }
   });
@@ -938,17 +940,17 @@ export const renderSettingsPage = async (
 
   const legalCard = document.createElement('div');
   legalCard.className = 'card';
-  legalCard.innerHTML = '<h3>Legal</h3>';
+  legalCard.innerHTML = `<h3>${translate('settings.legal')}</h3>`;
 
   const legalLinks = document.createElement('ul');
   legalLinks.className = 'legal-links';
   const settingsEntries: Array<{ label: string; route: LegalRoute }> = [
-    { label: 'Terms of Service', route: '/terms' },
-    { label: 'Privacy Policy', route: '/privacy' },
-    { label: 'Cancellation & Withdrawal', route: '/cancellation' },
-    { label: 'Refund Policy', route: '/refund' },
-    { label: 'Legal Notice', route: '/legal' },
-    { label: 'Cookie Policy', route: '/cookies' }
+    { label: translate('legal.terms'), route: '/terms' },
+    { label: translate('legal.privacy'), route: '/privacy' },
+    { label: translate('legal.cancellation'), route: '/cancellation' },
+    { label: translate('legal.refund'), route: '/refund' },
+    { label: translate('legal.notice'), route: '/legal' },
+    { label: translate('legal.cookies'), route: '/cookies' }
   ];
 
   for (const entry of settingsEntries) {

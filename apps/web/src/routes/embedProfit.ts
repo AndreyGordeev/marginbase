@@ -1,6 +1,7 @@
 import { calculateProfit } from '@marginbase/domain-core';
 import { createEmbedShell, createPoweredByFooter, parseEmbedOptions } from '../features/embed/EmbedLayout';
 import { encodePrefill } from '../features/embed/prefill';
+import { translate } from '../i18n';
 import { renderModuleResults } from '../ui/results/module-results';
 import { type WebAppService } from '../web-app-service';
 
@@ -26,7 +27,7 @@ const toPlainJson = (value: unknown): unknown => {
 
 export const renderEmbedProfitRoute = (root: HTMLElement, service: WebAppService): void => {
   const options = parseEmbedOptions(window.location.search);
-  const shell = createEmbedShell('Embed: Profit Calculator', options);
+  const shell = createEmbedShell(translate('embed.profit.title'), options);
   void service.trackEmbedOpened('profit', options.poweredBy);
 
   const state = {
@@ -41,10 +42,10 @@ export const renderEmbedProfitRoute = (root: HTMLElement, service: WebAppService
   const form = document.createElement('form');
   form.className = 'form-grid';
   form.innerHTML = `
-    <label>Unit price (minor)<input name="unitPriceMinor" type="number" value="${state.unitPriceMinor}" /></label>
-    <label>Quantity<input name="quantity" type="number" value="${state.quantity}" /></label>
-    <label>Variable cost / unit<input name="variableCostPerUnitMinor" type="number" value="${state.variableCostPerUnitMinor}" /></label>
-    <label>Fixed costs<input name="fixedCostsMinor" type="number" value="${state.fixedCostsMinor}" /></label>
+    <label>${translate('field.unitPriceMinor')}<input name="unitPriceMinor" type="number" value="${state.unitPriceMinor}" /></label>
+    <label>${translate('field.quantity')}<input name="quantity" type="number" value="${state.quantity}" /></label>
+    <label>${translate('field.variableCostPerUnitMinor')}<input name="variableCostPerUnitMinor" type="number" value="${state.variableCostPerUnitMinor}" /></label>
+    <label>${translate('field.fixedCostsMinor')}<input name="fixedCostsMinor" type="number" value="${state.fixedCostsMinor}" /></label>
   `;
 
   const results = document.createElement('section');
@@ -67,7 +68,7 @@ export const renderEmbedProfitRoute = (root: HTMLElement, service: WebAppService
 
     const cta = document.createElement('a');
     cta.href = `/profit?prefill=${encodeURIComponent(encodePrefill({ module: 'profit', inputData: { ...state } }))}`;
-    cta.textContent = 'Open in MarginBase';
+    cta.textContent = translate('embed.openInApp');
     cta.onclick = () => {
       void service.trackEmbedCtaClicked('profit');
     };

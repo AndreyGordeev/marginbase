@@ -18,7 +18,9 @@
     "@marginbase/entitlements": "workspace:*",
     "@marginbase/reporting": "workspace:*",
     "@marginbase/storage": "workspace:*",
-    "@marginbase/telemetry": "workspace:*"
+    "@marginbase/telemetry": "workspace:*",
+    "i18next": "^25.8.14",
+    "i18next-browser-languagedetector": "^8.2.1"
   },
   "devDependencies": {
     "fake-indexeddb": "^6.2.2",

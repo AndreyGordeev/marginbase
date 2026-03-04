@@ -1,6 +1,7 @@
 import { calculateBreakEven } from '@marginbase/domain-core';
 import { createEmbedShell, createPoweredByFooter, parseEmbedOptions } from '../features/embed/EmbedLayout';
 import { encodePrefill } from '../features/embed/prefill';
+import { translate } from '../i18n';
 import { renderModuleResults } from '../ui/results/module-results';
 import { type WebAppService } from '../web-app-service';
 
@@ -26,7 +27,7 @@ const toPlainJson = (value: unknown): unknown => {
 
 export const renderEmbedBreakevenRoute = (root: HTMLElement, service: WebAppService): void => {
   const options = parseEmbedOptions(window.location.search);
-  const shell = createEmbedShell('Embed: Break-even Calculator', options);
+  const shell = createEmbedShell(translate('embed.breakeven.title'), options);
   void service.trackEmbedOpened('breakeven', options.poweredBy);
 
   const state = {
@@ -42,11 +43,11 @@ export const renderEmbedBreakevenRoute = (root: HTMLElement, service: WebAppServ
   const form = document.createElement('form');
   form.className = 'form-grid';
   form.innerHTML = `
-    <label>Unit price (minor)<input name="unitPriceMinor" type="number" value="${state.unitPriceMinor}" /></label>
-    <label>Variable cost / unit<input name="variableCostPerUnitMinor" type="number" value="${state.variableCostPerUnitMinor}" /></label>
-    <label>Fixed costs<input name="fixedCostsMinor" type="number" value="${state.fixedCostsMinor}" /></label>
-    <label>Target profit<input name="targetProfitMinor" type="number" value="${state.targetProfitMinor}" /></label>
-    <label>Planned quantity<input name="plannedQuantity" type="number" value="${state.plannedQuantity}" /></label>
+    <label>${translate('field.unitPriceMinor')}<input name="unitPriceMinor" type="number" value="${state.unitPriceMinor}" /></label>
+    <label>${translate('field.variableCostPerUnitMinor')}<input name="variableCostPerUnitMinor" type="number" value="${state.variableCostPerUnitMinor}" /></label>
+    <label>${translate('field.fixedCostsMinor')}<input name="fixedCostsMinor" type="number" value="${state.fixedCostsMinor}" /></label>
+    <label>${translate('field.targetProfitMinor')}<input name="targetProfitMinor" type="number" value="${state.targetProfitMinor}" /></label>
+    <label>${translate('field.plannedQuantity')}<input name="plannedQuantity" type="number" value="${state.plannedQuantity}" /></label>
   `;
 
   const results = document.createElement('section');
@@ -70,7 +71,7 @@ export const renderEmbedBreakevenRoute = (root: HTMLElement, service: WebAppServ
 
     const cta = document.createElement('a');
     cta.href = `/break-even?prefill=${encodeURIComponent(encodePrefill({ module: 'breakeven', inputData: { ...state } }))}`;
-    cta.textContent = 'Open in MarginBase';
+    cta.textContent = translate('embed.openInApp');
     cta.onclick = () => {
       void service.trackEmbedCtaClicked('breakeven');
     };

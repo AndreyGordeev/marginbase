@@ -8,6 +8,7 @@ Offline-first finance toolkit for small business.
 - Local Business Report export: PDF + XLSX
 - Shareable scenario links: sanitized snapshots via `/s/:token`
 - Embeddable calculators: `/embed/profit`, `/embed/breakeven`, `/embed/cashflow`
+- UI localization for `en,de,fr,es,pl,it,ru` with language-aware app routing (`/:lang/*` for app pages)
 
 ## Architecture Guardrails
 

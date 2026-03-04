@@ -1,6 +1,7 @@
 import { calculateCashflow } from '@marginbase/domain-core';
 import { createEmbedShell, createPoweredByFooter, parseEmbedOptions } from '../features/embed/EmbedLayout';
 import { encodePrefill } from '../features/embed/prefill';
+import { translate } from '../i18n';
 import { renderModuleResults } from '../ui/results/module-results';
 import { type WebAppService } from '../web-app-service';
 
@@ -26,7 +27,7 @@ const toPlainJson = (value: unknown): unknown => {
 
 export const renderEmbedCashflowRoute = (root: HTMLElement, service: WebAppService): void => {
   const options = parseEmbedOptions(window.location.search);
-  const shell = createEmbedShell('Embed: Cashflow Calculator', options);
+  const shell = createEmbedShell(translate('embed.cashflow.title'), options);
   void service.trackEmbedOpened('cashflow', options.poweredBy);
 
   const state = {
@@ -43,12 +44,12 @@ export const renderEmbedCashflowRoute = (root: HTMLElement, service: WebAppServi
   const form = document.createElement('form');
   form.className = 'form-grid';
   form.innerHTML = `
-    <label>Starting cash<input name="startingCashMinor" type="number" value="${state.startingCashMinor}" /></label>
-    <label>Base revenue<input name="baseMonthlyRevenueMinor" type="number" value="${state.baseMonthlyRevenueMinor}" /></label>
-    <label>Fixed monthly costs<input name="fixedMonthlyCostsMinor" type="number" value="${state.fixedMonthlyCostsMinor}" /></label>
-    <label>Variable monthly costs<input name="variableMonthlyCostsMinor" type="number" value="${state.variableMonthlyCostsMinor}" /></label>
-    <label>Months<input name="forecastMonths" type="number" value="${state.forecastMonths}" /></label>
-    <label>Growth rate<input name="monthlyGrowthRate" type="number" step="0.01" value="${state.monthlyGrowthRate}" /></label>
+    <label>${translate('field.startingCashMinor')}<input name="startingCashMinor" type="number" value="${state.startingCashMinor}" /></label>
+    <label>${translate('field.baseMonthlyRevenueMinor')}<input name="baseMonthlyRevenueMinor" type="number" value="${state.baseMonthlyRevenueMinor}" /></label>
+    <label>${translate('field.fixedMonthlyCostsMinor')}<input name="fixedMonthlyCostsMinor" type="number" value="${state.fixedMonthlyCostsMinor}" /></label>
+    <label>${translate('field.variableMonthlyCostsMinor')}<input name="variableMonthlyCostsMinor" type="number" value="${state.variableMonthlyCostsMinor}" /></label>
+    <label>${translate('field.forecastMonths')}<input name="forecastMonths" type="number" value="${state.forecastMonths}" /></label>
+    <label>${translate('field.monthlyGrowthRate')}<input name="monthlyGrowthRate" type="number" step="0.01" value="${state.monthlyGrowthRate}" /></label>
   `;
 
   const results = document.createElement('section');
@@ -74,7 +75,7 @@ export const renderEmbedCashflowRoute = (root: HTMLElement, service: WebAppServi
 
     const cta = document.createElement('a');
     cta.href = `/cashflow?prefill=${encodeURIComponent(encodePrefill({ module: 'cashflow', inputData: { ...state } }))}`;
-    cta.textContent = 'Open in MarginBase';
+    cta.textContent = translate('embed.openInApp');
     cta.onclick = () => {
       void service.trackEmbedCtaClicked('cashflow');
     };

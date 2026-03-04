@@ -4,6 +4,7 @@
 - ../PROJECT_CONTEXT.md
 - ../README.md
 - ../.github/copilot-instructions.md
+- documentation-sync-policy.md
 - release-notes-v1.md
 
 ## Current Delivery Status

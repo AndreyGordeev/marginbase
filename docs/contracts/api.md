@@ -10,12 +10,21 @@ Purpose: define a stable backend contract for clients and serverless services.
 - `POST /billing/webhook/stripe`
 - `POST /billing/verify`
 - `POST /account/delete`
+- `POST /share/create`
+- `GET /share/:token`
+- `DELETE /share/:token`
+- `GET /share/list?userId=<ownerUserId>`
 
 ## Shared Rules
 - JSON only
 - Strict schema validation
-- Never include monetary scenario values
+- Never include monetary scenario values in telemetry/auth/entitlements/billing endpoints
+- Explicit exception: sanitized share snapshots are allowed only on `/share/*` endpoints
 - Errors must return stable codes
+
+## Auth / Headers
+- `Authorization: Bearer <idToken>` is required for authenticated endpoints (for example `GET /entitlements`, `DELETE /share/:token`).
+- `POST /auth/verify` accepts the Google ID token in request payload (`googleIdToken`) and may also include bearer header.
 
 ## `EntitlementSet` (example)
 ```json
@@ -54,6 +63,74 @@ Response:
 ```json
 {
   "checkoutUrl": "https://checkout.stripe.com/c/pay/cs_test_123"
+}
+```
+
+## Share Snapshot Endpoints
+
+### `POST /share/create`
+
+Request:
+```json
+{
+  "snapshot": {
+    "schemaVersion": 1,
+    "module": "profit",
+    "inputData": {
+      "scenarioName": "Q2 plan"
+    },
+    "currencyCode": "EUR"
+  },
+  "expiresInDays": 7,
+  "ownerUserId": "u_123"
+}
+```
+
+Response:
+```json
+{
+  "token": "abc123",
+  "expiresAt": "2026-03-11T00:00:00Z"
+}
+```
+
+### `GET /share/:token`
+
+Response:
+```json
+{
+  "snapshot": {
+    "schemaVersion": 1,
+    "module": "profit",
+    "inputData": {},
+    "currencyCode": "EUR"
+  }
+}
+```
+
+### `DELETE /share/:token`
+
+Response:
+```json
+{
+  "revoked": true,
+  "token": "abc123"
+}
+```
+
+### `GET /share/list?userId=<ownerUserId>`
+
+Response:
+```json
+{
+  "items": [
+    {
+      "token": "abc123",
+      "module": "profit",
+      "createdAt": "2026-03-01T00:00:00Z",
+      "expiresAt": "2026-03-11T00:00:00Z"
+    }
+  ]
 }
 ```
 

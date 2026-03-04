@@ -14,6 +14,7 @@ Use PROJECT_CONTEXT.md as the primary source of truth.
 - Keep DB behind repository interfaces
 - Validate scenario schema on save/import
 - Batch telemetry and debounce entitlement refresh
+- Update all affected documentation files in the same change whenever behavior/contracts/architecture/UI are modified
 
 ## Don't
 - Store scenario financial values in backend or telemetry
@@ -31,3 +32,4 @@ Use PROJECT_CONTEXT.md as the primary source of truth.
 - docs/decisions/adr.md
 - docs/compliance/regulatory-baseline.md
 - docs/architecture/drivers.md
+- docs/documentation-sync-policy.md

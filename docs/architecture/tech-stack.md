@@ -5,12 +5,21 @@ Date: 2026-03-01
 This document explains **what technologies we use, why**, and how GitHub Copilot should apply them when generating code.
 Scope: Web + iOS + Android (offline-first) + minimal AWS backend (EU).
 
+Decision references:
+- `ADR-001` (TypeScript + shared domain core)
+- `ADR-003` (numeric precision strategy)
+- `ADR-006` (React Native runtime choice)
+- `ADR-007` (minimal AWS backend scope)
+- `ADR-009` (AWS web hosting model)
+- `ADR-011` (infrastructure as code)
+- `ADR-013` (canonical web i18n/routing model)
+
 ---
 
 ## 1. High-Level Stack Summary
 
 ### Client
-- **Web:** React + TypeScript + Vite
+- **Web:** TypeScript + Vite (vanilla DOM modules)
 - **Mobile:** React Native (Bare) + TypeScript
 - **Shared:** `domain-core` (TypeScript) for calculations + schema + migrations
 
@@ -59,12 +68,16 @@ Scope: Web + iOS + Android (offline-first) + minimal AWS backend (EU).
 
 ## 3. Detailed Tech Choices (What + For What)
 
-### 3.1 Web: React + Vite + TypeScript
+### 3.1 Web: TypeScript + Vite (vanilla DOM modules)
 **Use for:**
 - SPA screens, routing, rendering charts/tables, importing/exporting JSON.
 
 **Why:**
 - Fast dev loop, small bundles, predictable TS typing.
+
+**i18n note:**
+- Uses `i18next` + `i18next-browser-languagedetector` in UI layer.
+- App pages use language-aware route prefix (`/:lang/*`); embed/share routes remain stable public paths.
 
 **Copilot rules:**
 - Keep UI “dumb”: no formulas, no DB direct calls.

@@ -1,3 +1,5 @@
+import { translate } from '../../i18n';
+
 export type LegalRoute = '/terms' | '/privacy' | '/legal' | '/cancellation' | '/refund' | '/cookies';
 
 export type LegalBackTarget = '/login' | '/' | '/legal-center';
@@ -107,7 +109,7 @@ export const renderLegalDocument = (
   const back = document.createElement('a');
   back.href = '#';
   back.className = 'legal-back';
-  back.textContent = '← Back';
+  back.textContent = `← ${translate('common.back')}`;
   back.onclick = (event) => {
     event.preventDefault();
     goTo(resolveLegalBackTarget());
@@ -129,14 +131,14 @@ export const renderLegalCenter = (root: HTMLElement, goTo: (route: LegalNavigati
   const back = document.createElement('a');
   back.href = '#';
   back.className = 'legal-back';
-  back.textContent = '← Back';
+  back.textContent = `← ${translate('common.back')}`;
   back.onclick = (event) => {
     event.preventDefault();
     goTo(resolveLegalBackTarget());
   };
 
   const heading = document.createElement('h1');
-  heading.textContent = 'Legal documents';
+  heading.textContent = translate('legal.documents');
 
   const list = document.createElement('ul');
   list.className = 'legal-links';

@@ -1,3 +1,5 @@
+import { translate } from '../../i18n';
+
 export interface EmbedOptions {
   theme: 'light' | 'dark';
   currencyCode: string;
@@ -33,7 +35,7 @@ export const createEmbedShell = (title: string, options: EmbedOptions): HTMLElem
 
   const card = document.createElement('section');
   card.className = 'card';
-  card.innerHTML = `<h2>${title}</h2><p>Stateless embed calculator. Computation runs locally.</p>`;
+  card.innerHTML = `<h2>${title}</h2><p>${translate('embed.subtitle')}</p>`;
 
   shell.appendChild(card);
   return shell;
@@ -49,7 +51,7 @@ export const createPoweredByFooter = (options: EmbedOptions): HTMLElement | null
 
   const link = document.createElement('a');
   link.href = '/login';
-  link.textContent = 'Powered by MarginBase';
+  link.textContent = translate('embed.poweredBy');
 
   footer.appendChild(link);
   return footer;

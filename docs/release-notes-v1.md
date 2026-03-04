@@ -78,3 +78,24 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 - Auto-renew lifecycle handling: documented and test-covered
 - Access revocation on cancellation: implemented and test-covered
 - Offline grace compatibility, legal disclosure alignment, and deployable infra config: completed
+
+---
+
+## i18n Coverage & Documentation Governance (2026-03-04)
+
+### Web i18n rollout
+- i18n provider and language-aware app routing delivered for web UI.
+- Non-English locales (`de`, `fr`, `es`, `pl`, `it`, `ru`) synchronized with expanded keyspace and translated user-facing strings.
+- Shared scenario, embed views, reports, validation messages, results panels, dashboard/workspace/settings/data pages fully switched to translation keys.
+- Localization consistency pass completed for previously mixed anglicisms in non-English locales.
+
+### Quality status
+- Web checks after localization batches remained green:
+	- `corepack pnpm --filter @marginbase/web typecheck`
+	- `corepack pnpm --filter @marginbase/web test` (29/29)
+
+### Documentation governance
+- Mandatory documentation-sync policy added and linked:
+	- `docs/documentation-sync-policy.md`
+	- `PROJECT_CONTEXT.md` (`Documentation Sync (Mandatory)`)
+	- `.github/pull_request_template.md` documentation checklist

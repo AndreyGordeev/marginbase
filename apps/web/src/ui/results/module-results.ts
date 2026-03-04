@@ -1,4 +1,5 @@
 import type { ModuleId } from '@marginbase/domain-core';
+import { translate } from '../../i18n';
 import { formatMoneyFromMinor, formatPct } from '../format/formatters';
 
 const toFiniteNumber = (value: unknown): number | null => {
@@ -25,14 +26,14 @@ const resolveCurrencyCode = (inputData?: Record<string, unknown>): string => {
 
 const toStatusLabel = (netProfitMinor: number): string => {
   if (netProfitMinor > 0) {
-    return 'Profitable';
+    return translate('results.status.profitable');
   }
 
   if (netProfitMinor < 0) {
-    return 'Operating at a loss';
+    return translate('results.status.loss');
   }
 
-  return 'Break-even';
+  return translate('results.status.breakeven');
 };
 
 const toPolarityClass = (numericValue: number): 'metric-positive' | 'metric-negative' | 'metric-neutral' => {
@@ -49,15 +50,15 @@ const toPolarityClass = (numericValue: number): 'metric-positive' | 'metric-nega
 
 const toProfitWarningLabel = (warningCode: string): string => {
   if (warningCode === 'R_ZERO') {
-    return 'Revenue is zero, so percentage metrics are unavailable.';
+    return translate('results.warning.profit.rZero');
   }
 
   if (warningCode === 'V_ZERO') {
-    return 'Variable cost per unit is zero, so markup percentage is unavailable.';
+    return translate('results.warning.profit.vZero');
   }
 
   if (warningCode === 'INSUFFICIENT_DATA_TVC') {
-    return 'Insufficient variable cost data was provided for a complete cost breakdown.';
+    return translate('results.warning.profit.insufficientDataTvc');
   }
 
   return warningCode;
@@ -65,11 +66,11 @@ const toProfitWarningLabel = (warningCode: string): string => {
 
 const toBreakEvenWarningLabel = (warningCode: string): string => {
   if (warningCode === 'UC_NON_POSITIVE') {
-    return 'Unit contribution is non-positive, so break-even point cannot be calculated.';
+    return translate('results.warning.breakeven.ucNonPositive');
   }
 
   if (warningCode === 'P_ZERO_PLANNED_REVENUE') {
-    return 'Planned revenue was provided with zero price, so planned quantity cannot be resolved.';
+    return translate('results.warning.breakeven.pZeroPlannedRevenue');
   }
 
   return warningCode;
@@ -77,11 +78,11 @@ const toBreakEvenWarningLabel = (warningCode: string): string => {
 
 const toCashflowWarningLabel = (warningCode: string): string => {
   if (warningCode === 'NEGATIVE_GROWTH') {
-    return 'Negative growth is applied, which may reduce cash balance over time.';
+    return translate('results.warning.cashflow.negativeGrowth');
   }
 
   if (warningCode === 'IMMEDIATE_NEGATIVE') {
-    return 'Cash balance becomes negative in the first forecast month.';
+    return translate('results.warning.cashflow.immediateNegative');
   }
 
   return warningCode;
@@ -107,7 +108,7 @@ const createWarningsList = (warnings: string[]): HTMLElement | null => {
   section.className = 'results-warnings';
 
   const heading = document.createElement('h4');
-  heading.textContent = 'Warnings';
+  heading.textContent = translate('results.warnings');
   section.appendChild(heading);
 
   const list = document.createElement('ul');
@@ -137,7 +138,7 @@ const renderProfitResults = (resultData: Record<string, unknown>, currencyCode: 
 
   const summaryLabel = document.createElement('div');
   summaryLabel.className = 'results-summary-label';
-  summaryLabel.textContent = 'Net Profit';
+  summaryLabel.textContent = translate('results.netProfit');
 
   const summaryValue = document.createElement('div');
   summaryValue.className = `results-summary-value ${toPolarityClass(netProfitMinor)}`;
@@ -150,9 +151,9 @@ const renderProfitResults = (resultData: Record<string, unknown>, currencyCode: 
   const lines = document.createElement('div');
   lines.className = 'results-secondary-lines';
   lines.innerHTML = `
-    <div><span>Revenue</span><strong>${formatMoneyFromMinor(revenueMinor, currencyCode)}</strong></div>
-    <div><span>Total Cost</span><strong>${formatMoneyFromMinor(totalCostMinor, currencyCode)}</strong></div>
-    <div><span>Gross Profit</span><strong>${formatMoneyFromMinor(grossProfitMinor, currencyCode)}</strong></div>
+    <div><span>${translate('results.revenue')}</span><strong>${formatMoneyFromMinor(revenueMinor, currencyCode)}</strong></div>
+    <div><span>${translate('results.totalCost')}</span><strong>${formatMoneyFromMinor(totalCostMinor, currencyCode)}</strong></div>
+    <div><span>${translate('results.grossProfit')}</span><strong>${formatMoneyFromMinor(grossProfitMinor, currencyCode)}</strong></div>
   `;
 
   summary.appendChild(summaryLabel);
@@ -165,9 +166,9 @@ const renderProfitResults = (resultData: Record<string, unknown>, currencyCode: 
   metrics.className = 'results-metrics-grid';
 
   const metricsConfig = [
-    { label: 'Contribution Margin %', value: toFiniteNumber(resultData.contributionMarginPct) },
-    { label: 'Net Profit Margin %', value: toFiniteNumber(resultData.netProfitPct) },
-    { label: 'Markup %', value: toFiniteNumber(resultData.markupPct) }
+    { label: translate('results.contributionMarginPct'), value: toFiniteNumber(resultData.contributionMarginPct) },
+    { label: translate('results.netProfitMarginPct'), value: toFiniteNumber(resultData.netProfitPct) },
+    { label: translate('results.markupPct'), value: toFiniteNumber(resultData.markupPct) }
   ];
 
   for (const metric of metricsConfig) {
@@ -218,22 +219,22 @@ const renderBreakEvenResults = (resultData: Record<string, unknown>, currencyCod
 
   const summaryLabel = document.createElement('div');
   summaryLabel.className = 'results-summary-label';
-  summaryLabel.textContent = 'Break-even Quantity';
+  summaryLabel.textContent = translate('results.breakEvenQuantity');
 
   const summaryValue = document.createElement('div');
   summaryValue.className = `results-summary-value ${toPolarityClass(-(breakEvenQuantity ?? 0))}`;
-  summaryValue.textContent = breakEvenQuantity === null ? '—' : `${formatNumber(breakEvenQuantity, 2)} units`;
+  summaryValue.textContent = breakEvenQuantity === null ? '—' : `${formatNumber(breakEvenQuantity, 2)} ${translate('results.units')}`;
 
   const status = document.createElement('div');
   status.className = 'results-summary-status metric-neutral';
-  status.textContent = breakEvenQuantity === null ? 'Break-even unavailable' : 'Break-even point calculated';
+  status.textContent = breakEvenQuantity === null ? translate('results.breakEvenUnavailable') : translate('results.breakEvenCalculated');
 
   const lines = document.createElement('div');
   lines.className = 'results-secondary-lines';
   lines.innerHTML = `
-    <div><span>Break-even Revenue</span><strong>${breakEvenRevenueMinor === null ? '—' : formatMoneyFromMinor(breakEvenRevenueMinor, currencyCode)}</strong></div>
-    <div><span>Required Qty (Target Profit)</span><strong>${requiredQuantity === null ? '—' : `${formatNumber(requiredQuantity, 2)} units`}</strong></div>
-    <div><span>Required Revenue (Target Profit)</span><strong>${requiredRevenueMinor === null ? '—' : formatMoneyFromMinor(requiredRevenueMinor, currencyCode)}</strong></div>
+    <div><span>${translate('results.breakEvenRevenue')}</span><strong>${breakEvenRevenueMinor === null ? '—' : formatMoneyFromMinor(breakEvenRevenueMinor, currencyCode)}</strong></div>
+    <div><span>${translate('results.requiredQtyTargetProfit')}</span><strong>${requiredQuantity === null ? '—' : `${formatNumber(requiredQuantity, 2)} ${translate('results.units')}`}</strong></div>
+    <div><span>${translate('results.requiredRevenueTargetProfit')}</span><strong>${requiredRevenueMinor === null ? '—' : formatMoneyFromMinor(requiredRevenueMinor, currencyCode)}</strong></div>
   `;
 
   summary.appendChild(summaryLabel);
@@ -247,17 +248,17 @@ const renderBreakEvenResults = (resultData: Record<string, unknown>, currencyCod
 
   const metricRows = [
     {
-      label: 'Unit Contribution',
+      label: translate('results.unitContribution'),
       text: formatMoneyFromMinor(unitContributionMinor, currencyCode),
       value: unitContributionMinor
     },
     {
-      label: 'Margin of Safety (Units)',
+      label: translate('results.marginOfSafetyUnits'),
       text: marginOfSafetyUnits === null ? '—' : formatNumber(marginOfSafetyUnits, 2),
       value: marginOfSafetyUnits ?? 0
     },
     {
-      label: 'Margin of Safety %',
+      label: translate('results.marginOfSafetyPct'),
       text: marginOfSafetyPct === null ? '—' : formatPct(marginOfSafetyPct, 2),
       value: marginOfSafetyPct ?? 0
     }
@@ -313,7 +314,7 @@ const renderCashflowResults = (resultData: Record<string, unknown>, currencyCode
 
   const summaryLabel = document.createElement('div');
   summaryLabel.className = 'results-summary-label';
-  summaryLabel.textContent = 'Final Cash Balance';
+  summaryLabel.textContent = translate('results.finalCashBalance');
 
   const summaryValue = document.createElement('div');
   summaryValue.className = `results-summary-value ${toPolarityClass(finalBalanceMinor)}`;
@@ -321,14 +322,18 @@ const renderCashflowResults = (resultData: Record<string, unknown>, currencyCode
 
   const status = document.createElement('div');
   status.className = `results-summary-status ${toPolarityClass(finalBalanceMinor)}`;
-  status.textContent = finalBalanceMinor > 0 ? 'Positive ending balance' : finalBalanceMinor < 0 ? 'Negative ending balance' : 'Break-even ending balance';
+  status.textContent = finalBalanceMinor > 0
+    ? translate('results.positiveEndingBalance')
+    : finalBalanceMinor < 0
+      ? translate('results.negativeEndingBalance')
+      : translate('results.breakEvenEndingBalance');
 
   const lines = document.createElement('div');
   lines.className = 'results-secondary-lines';
   lines.innerHTML = `
-    <div><span>Runway Month</span><strong>${runwayMonth === null ? 'No depletion in forecast' : `${formatNumber(runwayMonth, 0)}`}</strong></div>
-    <div><span>First Negative Month</span><strong>${firstNegativeMonth === null ? 'None' : `${formatNumber(firstNegativeMonth, 0)}`}</strong></div>
-    <div><span>Projected Months</span><strong>${formatNumber(monthlyProjection.length, 0)}</strong></div>
+    <div><span>${translate('results.runwayMonth')}</span><strong>${runwayMonth === null ? translate('results.noDepletionForecast') : `${formatNumber(runwayMonth, 0)}`}</strong></div>
+    <div><span>${translate('results.firstNegativeMonth')}</span><strong>${firstNegativeMonth === null ? translate('results.none') : `${formatNumber(firstNegativeMonth, 0)}`}</strong></div>
+    <div><span>${translate('results.projectedMonths')}</span><strong>${formatNumber(monthlyProjection.length, 0)}</strong></div>
   `;
 
   summary.appendChild(summaryLabel);
@@ -342,18 +347,18 @@ const renderCashflowResults = (resultData: Record<string, unknown>, currencyCode
 
   const metricRows = [
     {
-      label: 'Net Cashflow (Last Month)',
+      label: translate('results.netCashflowLastMonth'),
       text: lastNetCashflowMinor === null ? '—' : formatMoneyFromMinor(lastNetCashflowMinor, currencyCode),
       value: lastNetCashflowMinor ?? 0
     },
     {
-      label: 'Monthly Expenses',
+      label: translate('results.monthlyExpenses'),
       text: monthlyExpensesMinor === null ? '—' : formatMoneyFromMinor(monthlyExpensesMinor, currencyCode),
       value: -(monthlyExpensesMinor ?? 0)
     },
     {
-      label: 'Runway Indicator',
-      text: runwayMonth === null ? 'Within forecast' : `Depletes by month ${formatNumber(runwayMonth, 0)}`,
+      label: translate('results.runwayIndicator'),
+      text: runwayMonth === null ? translate('results.withinForecast') : `${translate('results.depletesByMonth')} ${formatNumber(runwayMonth, 0)}`,
       value: runwayMonth === null ? 1 : -1
     }
   ];

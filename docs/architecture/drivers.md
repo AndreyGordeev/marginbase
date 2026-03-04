@@ -1,6 +1,13 @@
 ## Architecture Drivers (v1)
 Date: 2026-02-28  |  Scope: Web + iOS + Android  |  EU-first, Global-ready
 
+Decision references:
+- `ADR-001` (TypeScript + shared domain core)
+- `ADR-002` (offline-first data ownership)
+- `ADR-007` (minimal AWS backend scope)
+- `ADR-008` (entitlements offline grace model)
+- `ADR-010` (payments strategy)
+
 ## 1. Business Drivers
 - B1 — EU-first launch with global expansion readiness.
 - B2 — Low operational cloud cost (thin backend, client-side calculations).

@@ -1,4 +1,5 @@
 import type { ModuleId } from '@marginbase/domain-core';
+import { translate } from '../i18n';
 import { WebAppService } from '../web-app-service';
 import { renderModuleResults } from '../ui/results/module-results';
 
@@ -18,7 +19,7 @@ export const renderSharedScenarioRoute = async (
 
   const card = document.createElement('section');
   card.className = 'card';
-  card.innerHTML = '<h2>Shared Scenario</h2><p>Loaded from a sanitized share snapshot.</p>';
+  card.innerHTML = `<h2>${translate('shared.title')}</h2><p>${translate('shared.subtitle')}</p>`;
 
   try {
     const shared = await service.getSharedScenarioView(token);
@@ -32,14 +33,14 @@ export const renderSharedScenarioRoute = async (
 
     const openRoute = shared.module === 'profit' ? '/profit' : shared.module === 'breakeven' ? '/break-even' : '/cashflow';
 
-    actions.appendChild(deps.createActionButton('Import this scenario', async () => {
+    actions.appendChild(deps.createActionButton(translate('shared.importScenario'), async () => {
       try {
         const importedModule = await service.importSharedScenario(token);
         const importedRoute = importedModule === 'profit' ? '/profit' : importedModule === 'breakeven' ? '/break-even' : '/cashflow';
-        window.alert('Scenario imported to local storage.');
+        window.alert(translate('shared.importedAlert'));
         deps.goTo(importedRoute);
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Import failed.';
+        const message = error instanceof Error ? error.message : translate('shared.importFailed');
         window.alert(message);
         if (message.toLowerCase().includes('sign in')) {
           deps.goTo('/login');
@@ -47,14 +48,14 @@ export const renderSharedScenarioRoute = async (
       }
     }));
 
-    actions.appendChild(deps.createActionButton('Save to My Scenarios', async () => {
+    actions.appendChild(deps.createActionButton(translate('shared.saveScenario'), async () => {
       try {
         const savedModule = await service.saveSharedScenario(token);
         const savedRoute = savedModule === 'profit' ? '/profit' : savedModule === 'breakeven' ? '/break-even' : '/cashflow';
-        window.alert('Scenario saved.');
+        window.alert(translate('shared.savedAlert'));
         deps.goTo(savedRoute);
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Save failed.';
+        const message = error instanceof Error ? error.message : translate('shared.saveFailed');
         window.alert(message);
         const lower = message.toLowerCase();
         if (lower.includes('sign in')) {
@@ -66,8 +67,8 @@ export const renderSharedScenarioRoute = async (
       }
     }));
 
-    actions.appendChild(deps.createActionButton('Open in MarginBase', () => deps.goTo(openRoute), 'primary'));
-    actions.appendChild(deps.createActionButton('Back to Login', () => deps.goTo('/login')));
+    actions.appendChild(deps.createActionButton(translate('shared.openInApp'), () => deps.goTo(openRoute), 'primary'));
+    actions.appendChild(deps.createActionButton(translate('shared.backLogin'), () => deps.goTo('/login')));
 
     page.appendChild(card);
     page.appendChild(results);
@@ -75,9 +76,9 @@ export const renderSharedScenarioRoute = async (
   } catch (error) {
     const errorCard = document.createElement('section');
     errorCard.className = 'card';
-    const message = error instanceof Error ? error.message : 'Failed to load shared scenario.';
-    errorCard.innerHTML = `<h3>Unable to open shared scenario</h3><p>${message}</p>`;
-    errorCard.appendChild(deps.createActionButton('Back to Login', () => deps.goTo('/login'), 'primary'));
+    const message = error instanceof Error ? error.message : translate('shared.loadFailed');
+    errorCard.innerHTML = `<h3>${translate('shared.unableTitle')}</h3><p>${message}</p>`;
+    errorCard.appendChild(deps.createActionButton(translate('shared.backLogin'), () => deps.goTo('/login'), 'primary'));
     page.appendChild(card);
     page.appendChild(errorCard);
   }

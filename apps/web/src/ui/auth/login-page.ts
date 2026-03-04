@@ -1,4 +1,5 @@
 import type { LegalBackTarget } from '../legal/legal-render';
+import { createLanguageSwitcher, translate } from '../../i18n';
 
 type LoginRoute = '/gate' | '/privacy' | '/terms' | '/legal-center';
 
@@ -23,18 +24,19 @@ export const renderLoginPage = (root: HTMLElement, deps: LoginRenderDeps): void 
   const left = document.createElement('section');
   left.className = 'card login-panel';
   left.innerHTML = `
-    <h1 class="login-heading">SMB Finance Toolkit</h1>
-    <p class="login-subheading">Financial clarity for small businesses.</p>
+    <h1 class="login-heading">${translate('login.heading')}</h1>
+    <p class="login-subheading">${translate('login.subheading')}</p>
     <ul class="login-values">
-      <li>Profit & margin analysis in seconds</li>
-      <li>Break-even modeling for smarter pricing</li>
-      <li>Cashflow forecasting without spreadsheets</li>
+      <li>${translate('login.value1')}</li>
+      <li>${translate('login.value2')}</li>
+      <li>${translate('login.value3')}</li>
     </ul>
   `;
 
   const auth = document.createElement('div');
   auth.className = 'login-auth';
-  auth.appendChild(createActionButton('Continue with Google', () => {
+  auth.appendChild(createLanguageSwitcher());
+  auth.appendChild(createActionButton(translate('login.continueWithGoogle'), () => {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('marginbase_signed_in', 'true');
       localStorage.setItem('marginbase_signed_in_user_id', 'local_web_user');
@@ -46,9 +48,9 @@ export const renderLoginPage = (root: HTMLElement, deps: LoginRenderDeps): void 
   const trust = document.createElement('div');
   trust.className = 'login-trust';
   trust.innerHTML = `
-    <div>🔒 Offline-first. Your data stays on your device.</div>
-    <div>🇪🇺 EU-hosted infrastructure</div>
-    <div>No spreadsheets required</div>
+    <div>${translate('login.trust1')}</div>
+    <div>${translate('login.trust2')}</div>
+    <div>${translate('login.trust3')}</div>
   `;
 
   left.appendChild(auth);
@@ -57,8 +59,8 @@ export const renderLoginPage = (root: HTMLElement, deps: LoginRenderDeps): void 
   const right = document.createElement('section');
   right.className = 'card login-preview';
   right.innerHTML = `
-    <h3 class="preview-title">Product Preview</h3>
-    <p class="preview-subtitle">Live calculations, structured insights, no spreadsheet chaos.</p>
+    <h3 class="preview-title">${translate('login.previewTitle')}</h3>
+    <p class="preview-subtitle">${translate('login.previewSubtitle')}</p>
     <div class="preview-surface">
       <div class="preview-kpis">
         <div class="preview-kpi"><span class="preview-kpi-label">Margin</span><span class="preview-kpi-value">31.8%</span><span class="preview-kpi-delta">↑ 2.1%</span></div>
@@ -84,7 +86,7 @@ export const renderLoginPage = (root: HTMLElement, deps: LoginRenderDeps): void 
         <div class="preview-field"><span>Revenue</span><strong>120,000</strong></div>
         <div class="preview-field"><span>Costs</span><strong>82,000</strong></div>
         <div class="preview-result"><span>Margin</span><strong>31.8%</strong></div>
-        <div class="preview-cta">Open Profit Calculator</div>
+        <div class="preview-cta">${translate('login.previewCta')}</div>
       </div>
     </div>
   `;
@@ -96,7 +98,7 @@ export const renderLoginPage = (root: HTMLElement, deps: LoginRenderDeps): void 
   legal.className = 'login-legal';
   const privacyLink = document.createElement('button');
   privacyLink.className = 'link-muted';
-  privacyLink.textContent = 'Privacy Policy';
+  privacyLink.textContent = translate('legal.privacy');
   privacyLink.onclick = () => {
     setLegalBackTarget('/login');
     goTo('/privacy');
@@ -104,7 +106,7 @@ export const renderLoginPage = (root: HTMLElement, deps: LoginRenderDeps): void 
 
   const termsLink = document.createElement('button');
   termsLink.className = 'link-muted';
-  termsLink.textContent = 'Terms of Service';
+  termsLink.textContent = translate('legal.terms');
   termsLink.onclick = () => {
     setLegalBackTarget('/login');
     goTo('/terms');
@@ -112,7 +114,7 @@ export const renderLoginPage = (root: HTMLElement, deps: LoginRenderDeps): void 
 
   const legalCenterLink = document.createElement('button');
   legalCenterLink.className = 'link-muted';
-  legalCenterLink.textContent = 'Legal Center';
+  legalCenterLink.textContent = translate('legal.center');
   legalCenterLink.onclick = () => {
     setLegalBackTarget('/login');
     goTo('/legal-center');

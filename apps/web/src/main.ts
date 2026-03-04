@@ -1,4 +1,5 @@
 import { WebAppService } from './web-app-service';
+import { SUPPORTED_LANGUAGES, getCurrentLanguage, initializeI18nProvider, setCurrentLanguage, translate, type SupportedLanguage } from './i18n';
 import { renderEmbedBreakevenRoute } from './routes/embedBreakeven';
 import { renderEmbedCashflowRoute } from './routes/embedCashflow';
 import { renderEmbedProfitRoute } from './routes/embedProfit';
@@ -35,14 +36,104 @@ const ROUTES: RoutePath[] = [
   '/legal/terms'
 ];
 
-const getSharedToken = (): string | null => {
-  const hash = window.location.hash.replace('#', '');
+const stripTrailingSlash = (path: string): string => {
+  if (path.length > 1 && path.endsWith('/')) {
+    return path.slice(0, -1);
+  }
+
+  return path;
+};
+
+const isSupportedLanguage = (value: string): value is SupportedLanguage => {
+  return (SUPPORTED_LANGUAGES as readonly string[]).includes(value);
+};
+
+const splitPath = (path: string): string[] => {
+  return stripTrailingSlash(path).split('/').filter((segment) => segment.trim().length > 0);
+};
+
+const parsePathWithOptionalLanguage = (path: string): {
+  language: SupportedLanguage | null;
+  normalizedPath: string;
+} => {
+  const normalizedInput = path && path.startsWith('/') ? path : '/';
+  const segments = splitPath(normalizedInput);
+  if (segments.length === 0) {
+    return {
+      language: null,
+      normalizedPath: '/'
+    };
+  }
+
+  const [first, ...rest] = segments;
+  if (!isSupportedLanguage(first)) {
+    return {
+      language: null,
+      normalizedPath: normalizedInput
+    };
+  }
+
+  return {
+    language: first,
+    normalizedPath: rest.length > 0 ? `/${rest.join('/')}` : '/'
+  };
+};
+
+const getHashPathWithoutLanguage = (): string => {
+  const hashPath = window.location.hash.replace('#', '').trim();
+  if (!hashPath) {
+    return '';
+  }
+
+  return parsePathWithOptionalLanguage(hashPath).normalizedPath;
+};
+
+const getPathnameLanguageContext = (): {
+  language: SupportedLanguage | null;
+  normalizedPath: string;
+} => {
+  return parsePathWithOptionalLanguage(window.location.pathname);
+};
+
+const ensureLanguagePrefixedPath = async (): Promise<void> => {
+  const pathnameContext = getPathnameLanguageContext();
+
+  if (pathnameContext.language) {
+    await setCurrentLanguage(pathnameContext.language);
+    return;
+  }
+
+  const normalizedPath = pathnameContext.normalizedPath;
+  const isLegacyPublicPath =
+    normalizedPath.startsWith('/s/') ||
+    normalizedPath === '/s' ||
+    normalizedPath.startsWith('/embed/') ||
+    normalizedPath === '/embed';
+
+  if (isLegacyPublicPath) {
+    return;
+  }
+
+  const detectedLanguage = getCurrentLanguage();
+  const targetPath = normalizedPath === '/' ? '/login' : normalizedPath;
+  const query = window.location.search ?? '';
+  const hash = window.location.hash ?? '';
+  const localizedUrl = `/${detectedLanguage}${targetPath}${query}${hash}`;
+  const currentUrl = `${window.location.pathname}${query}${hash}`;
+
+  if (localizedUrl !== currentUrl) {
+    window.history.replaceState(null, '', localizedUrl);
+  }
+};
+
+const getSharedToken = (pathnameWithoutLanguage: string): string | null => {
+  const hash = getHashPathWithoutLanguage();
   if (hash.startsWith('/s/')) {
     const token = hash.slice('/s/'.length).trim();
     return token ? decodeURIComponent(token) : null;
   }
 
-  const path = window.location.pathname;
+  const path = pathnameWithoutLanguage;
   if (path.startsWith('/s/')) {
     const token = path.slice('/s/'.length).trim();
     return token ? decodeURIComponent(token) : null;
@@ -51,9 +142,9 @@ const getSharedToken = (): string | null => {
   return null;
 };
 
-const getEmbedRoute = (): '/embed/profit' | '/embed/breakeven' | '/embed/cashflow' | null => {
-  const hash = window.location.hash.replace('#', '');
-  const path = hash || window.location.pathname;
+const getEmbedRoute = (pathnameWithoutLanguage: string): '/embed/profit' | '/embed/breakeven' | '/embed/cashflow' | null => {
+  const hashPath = getHashPathWithoutLanguage();
+  const path = hashPath || pathnameWithoutLanguage;
 
   if (path === '/embed/profit') {
     return '/embed/profit';
@@ -70,13 +161,13 @@ const getEmbedRoute = (): '/embed/profit' | '/embed/breakeven' | '/embed/cashflo
   return null;
 };
 
-const getRoute = (): RoutePath => {
-  const hash = window.location.hash.replace('#', '') as RoutePath;
+const getRoute = (pathnameWithoutLanguage: string): RoutePath => {
+  const hash = getHashPathWithoutLanguage() as RoutePath;
   if (ROUTES.includes(hash)) {
     return hash;
   }
 
-  const path = window.location.pathname as RoutePath;
+  const path = pathnameWithoutLanguage as RoutePath;
   return ROUTES.includes(path) ? path : '/login';
 };
 
@@ -116,8 +207,17 @@ const render = async (): Promise<void> => {
     return;
   }
 
+  if (typeof document !== 'undefined') {
+    document.title = String(translate('appName'));
+  }
+
   addBaseStyles();
-  const embedRoute = getEmbedRoute();
+  const pathnameContext = getPathnameLanguageContext();
+  if (pathnameContext.language) {
+    await setCurrentLanguage(pathnameContext.language);
+  }
+
+  const embedRoute = getEmbedRoute(pathnameContext.normalizedPath);
   if (embedRoute === '/embed/profit') {
     renderEmbedProfitRoute(root, service);
     return;
@@ -133,13 +233,13 @@ const render = async (): Promise<void> => {
     return;
   }
 
-  const sharedToken = getSharedToken();
+  const sharedToken = getSharedToken(pathnameContext.normalizedPath);
   if (sharedToken) {
     await renderSharedScenarioRoute(root, service, sharedToken, { createActionButton, goTo });
     return;
   }
 
-  const route = getRoute();
+  const route = getRoute(pathnameContext.normalizedPath);
 
   if (route === '/' || route === '/login') {
     renderLoginPage(root, { createActionButton, goTo, setLegalBackTarget });
@@ -232,13 +332,19 @@ if (typeof document !== 'undefined' && typeof window !== 'undefined') {
   });
 
   if (!window.location.hash) {
-    const path = window.location.pathname as RoutePath;
+    const path = getPathnameLanguageContext().normalizedPath as RoutePath;
     if (!ROUTES.includes(path)) {
       goTo('/login');
     }
   }
 
-  void render();
+  const bootstrap = async (): Promise<void> => {
+    await initializeI18nProvider();
+    await ensureLanguagePrefixedPath();
+    await render();
+  };
+
+  void bootstrap();
 } else {
   console.log('Web app bundle built. Open in browser environment to run UI.');
 }

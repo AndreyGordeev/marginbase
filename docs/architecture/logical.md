@@ -5,6 +5,12 @@ Date: 2026-03-01
 This document is an implementation-oriented explanation of the logical component architecture.
 It is written to help GitHub Copilot (and humans) generate consistent code structure and boundaries.
 
+Decision references:
+- `ADR-001` (TypeScript + shared domain core)
+- `ADR-007` (minimal AWS backend scope)
+- `ADR-008` (entitlements offline grace)
+- `ADR-013` (canonical web i18n/routing model)
+
 ---
 
 ## 1. Logical Component Diagram
@@ -87,7 +93,7 @@ State --> Crash
 ## 3. Component Responsibilities (Copilot guidance)
 
 ### 3.1 Web UI (`WebUI`)
-**Role:** React web application screens and routing.
+**Role:** TypeScript web application (vanilla DOM modules) with route-based rendering.
 
 **Must do:**
 - Render screens defined in UI blueprints.

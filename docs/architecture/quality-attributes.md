@@ -1,3 +1,9 @@
+Decision references:
+- `ADR-002` (offline-first data ownership)
+- `ADR-003` (numeric precision strategy)
+- `ADR-007` (minimal AWS backend scope)
+- `ADR-008` (entitlements offline grace model)
+
 ## Quality attributes table
 | Quality Attribute | Measurable Target (v1) | Architecture Tactics / Patterns | Risks & Trade-offs | Acceptance / Tests |
 |---|---|---|---|---|

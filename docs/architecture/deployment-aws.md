@@ -2,6 +2,12 @@
 
 Date: 2026-03-01
 
+Decision references:
+- `ADR-007` (minimal AWS backend scope)
+- `ADR-009` (AWS web hosting model)
+- `ADR-010` (payments strategy)
+- `ADR-011` (infrastructure as code)
+
 This document is an implementation-oriented deployment description (AWS EU) written to help GitHub Copilot generate:
 - infra (Terraform layout),
 - backend services (Lambda handlers, API contracts),

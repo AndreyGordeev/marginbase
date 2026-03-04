@@ -1,11 +1,12 @@
 ## Architecture Decision Records (v1)
 
-Date: 2026-03-01 Status: Accepted baseline decisions before
-implementation.
+Date: 2026-03-01
+Status: Accepted (baseline decisions before implementation)
 
-# ADR-001: Unified TypeScript Stack (React + React Native) and Shared Domain Core
+# ADR-001: Unified TypeScript Stack and Shared Domain Core
 
-Date: 2026-03-01 Status: Accepted
+Date: 2026-03-01
+Status: Accepted
 
 ## Context
 
@@ -45,7 +46,8 @@ of chosen solution.
 
 # ADR-002: Offline-First Data Ownership
 
-Date: 2026-03-01 Status: Accepted
+Date: 2026-03-01
+Status: Accepted
 
 ## Context
 
@@ -84,7 +86,8 @@ of chosen solution.
 
 # ADR-003: Numeric Precision Strategy
 
-Date: 2026-03-01 Status: Accepted
+Date: 2026-03-01
+Status: Accepted
 
 ## Context
 
@@ -121,7 +124,8 @@ of chosen solution.
 
 # ADR-004: Encrypted Mobile Storage
 
-Date: 2026-03-01 Status: Accepted
+Date: 2026-03-01
+Status: Accepted
 
 ## Context
 
@@ -158,7 +162,8 @@ of chosen solution.
 
 # ADR-005: Web Local Vault (Paid Users)
 
-Date: 2026-03-01 Status: Accepted
+Date: 2026-03-01
+Status: Accepted
 
 ## Context
 
@@ -196,7 +201,8 @@ of chosen solution.
 
 # ADR-006: React Native Runtime Choice
 
-Date: 2026-03-01 Status: Accepted
+Date: 2026-03-01
+Status: Accepted
 
 ## Context
 
@@ -233,7 +239,8 @@ of chosen solution.
 
 # ADR-007: Minimal AWS Backend Scope
 
-Date: 2026-03-01 Status: Accepted
+Date: 2026-03-01
+Status: Accepted
 
 ## Context
 
@@ -271,7 +278,8 @@ of chosen solution.
 
 # ADR-008: Entitlements Offline Grace Model
 
-Date: 2026-03-01 Status: Accepted
+Date: 2026-03-01
+Status: Accepted
 
 ## Context
 
@@ -308,7 +316,8 @@ of chosen solution.
 
 # ADR-009: Web Hosting Model (AWS)
 
-Date: 2026-03-01 Status: Accepted
+Date: 2026-03-01
+Status: Accepted
 
 ## Context
 
@@ -345,7 +354,8 @@ of chosen solution.
 
 # ADR-010: Payments Strategy (Global-Ready)
 
-Date: 2026-03-01 Status: Accepted
+Date: 2026-03-01
+Status: Accepted
 
 ## Context
 
@@ -381,7 +391,8 @@ of chosen solution.
 
 # ADR-011: Infrastructure as Code
 
-Date: 2026-03-01 Status: Accepted
+Date: 2026-03-01
+Status: Accepted
 
 ## Context
 
@@ -417,7 +428,8 @@ of chosen solution.
 
 # ADR-012: State Management Strategy
 
-Date: 2026-03-01 Status: Accepted
+Date: 2026-03-01
+Status: Accepted
 
 ## Context
 
@@ -450,3 +462,57 @@ Aligned with GDPR-first baseline and EU hosting constraints.
 
 Discussed during architecture phase and intentionally rejected in favor
 of chosen solution.
+
+# ADR-013: Web i18n and Routing Canonical Model
+
+Date: 2026-03-04
+Status: Accepted
+
+## Context
+
+Web runtime has delivered i18n across supported languages (`en,de,fr,es,pl,it,ru`) with a mixed routing model:
+- language-aware internal app routes
+- stable legacy public routes for share/embed compatibility
+
+Earlier ADRs were written before this rollout and may describe historical web assumptions.
+
+## Decision
+
+Adopt and document the canonical web routing/i18n model as:
+
+1. i18n is UI-only in `apps/web` (`i18next` + browser language detector).
+2. Internal app routes are language-aware (`/:lang/...`).
+3. Legacy public routes remain unprefixed for compatibility:
+	- share: `/s/:token`
+	- embeds: `/embed/profit`, `/embed/breakeven`, `/embed/cashflow`
+4. Language can be resolved from current i18n state and `lang` query where applicable (not path-segmented embed routes).
+5. Domain and backend boundaries remain unchanged:
+	- no localization logic in `packages/domain-core`
+	- no monetary scenario values in telemetry/auth/entitlements/billing endpoints
+
+This ADR supersedes prior implied web routing assumptions where they conflict with the above model.
+
+## Consequences
+
+### Positive
+
+- Preserves backward compatibility for existing public links and embeds
+- Keeps language-aware UX for internal app navigation
+- Reduces implementation ambiguity for future features and docs updates
+
+### Negative
+
+- Mixed route strategy increases routing edge-case handling
+- Requires continued discipline to keep docs and runtime in sync
+
+### Operational Impact
+
+Low operational impact; primarily documentation and implementation-guidance alignment.
+
+### Security / Compliance Impact
+
+No security posture degradation; privacy constraints and telemetry restrictions remain unchanged.
+
+### Alternatives Considered
+
+- Full migration to path-segmented language for all routes (including `/embed/:lang/...`) was deferred to avoid breaking existing public integrations.
