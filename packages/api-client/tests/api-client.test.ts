@@ -146,6 +146,28 @@ describe('MarginbaseApiClient', () => {
     );
   });
 
+  it('creates billing portal session and returns portal url', async () => {
+    const fetchMock = vi.fn(async () => {
+      return jsonResponse(200, {
+        portalUrl: 'https://billing.stripe.com/p/session/test_123'
+      });
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = new MarginbaseApiClient({ baseUrl: 'https://api.marginbase.test' });
+    const result = await client.createBillingPortalSession({
+      userId: 'u-2',
+      returnUrl: 'https://marginbase.com/account'
+    });
+
+    expect(result.portalUrl).toContain('billing.stripe.com');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.marginbase.test/billing/portal-session',
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
+
   it('deletes account and returns deletion flags', async () => {
     vi.stubGlobal(
       'fetch',

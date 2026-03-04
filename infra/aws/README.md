@@ -14,6 +14,7 @@ This folder contains Terraform modules to provision the Step 10 dev environment 
    - `DELETE /share/{token}`
    - `POST /billing/verify`
    - `POST /billing/checkout/session`
+   - `POST /billing/portal-session`
    - `POST /billing/webhook/stripe`
   - `POST /telemetry/batch`
 - Compute: Lambda stubs (`auth`, `entitlements`, `billing`, `telemetry`, `account-delete`, `share-create`, `share-get`, `share-delete`, `share-list`)

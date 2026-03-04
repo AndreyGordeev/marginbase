@@ -64,6 +64,12 @@ describe('api contracts', () => {
         });
       }
 
+      if (url.endsWith('/billing/portal-session')) {
+        return jsonResponse(200, {
+          portalUrl: 'https://billing.stripe.com/p/session/test_123'
+        });
+      }
+
       if (url.endsWith('/account/delete')) {
         return jsonResponse(200, {
           deleted: true,
@@ -121,6 +127,7 @@ describe('api contracts', () => {
       receiptToken: 'receipt_1'
     });
     await client.createCheckoutSession({ planId: 'bundle', userId: 'u_1', email: 'user@example.com' });
+    await client.createBillingPortalSession({ userId: 'u_1', returnUrl: 'https://marginbase.com/account' });
     await client.deleteAccount({ userId: 'u_1' });
     await client.createShareSnapshot({
       encryptedSnapshot: {
@@ -154,6 +161,10 @@ describe('api contracts', () => {
     );
     expect(fetchMock).toHaveBeenCalledWith(
       'https://api.marginbase.test/billing/checkout/session',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.marginbase.test/billing/portal-session',
       expect.objectContaining({ method: 'POST' })
     );
     expect(fetchMock).toHaveBeenCalledWith(

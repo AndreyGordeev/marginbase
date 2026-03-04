@@ -90,6 +90,15 @@ export interface BillingCheckoutSessionResponse {
   checkoutUrl: string;
 }
 
+export interface BillingPortalSessionRequest {
+  userId: string;
+  returnUrl?: string;
+}
+
+export interface BillingPortalSessionResponse {
+  portalUrl: string;
+}
+
 export interface AccountDeleteRequest {
   userId: string;
 }
@@ -244,6 +253,16 @@ export class MarginbaseApiClient {
     });
 
     return parseJson<BillingCheckoutSessionResponse>(response);
+  }
+
+  public async createBillingPortalSession(request: BillingPortalSessionRequest): Promise<BillingPortalSessionResponse> {
+    const response = await fetch(`${this.baseUrl}/billing/portal-session`, {
+      method: 'POST',
+      headers: buildHeaders(),
+      body: JSON.stringify(request)
+    });
+
+    return parseJson<BillingPortalSessionResponse>(response);
   }
 
   public async deleteAccount(request: AccountDeleteRequest): Promise<AccountDeleteResponse> {

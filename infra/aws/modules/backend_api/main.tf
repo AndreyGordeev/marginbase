@@ -487,6 +487,12 @@ resource "aws_apigatewayv2_route" "billing_checkout_session" {
   target    = "integrations/${aws_apigatewayv2_integration.billing.id}"
 }
 
+resource "aws_apigatewayv2_route" "billing_portal_session" {
+  api_id    = aws_apigatewayv2_api.http.id
+  route_key = "POST /billing/portal-session"
+  target    = "integrations/${aws_apigatewayv2_integration.billing.id}"
+}
+
 resource "aws_apigatewayv2_route" "billing_webhook_stripe" {
   api_id    = aws_apigatewayv2_api.http.id
   route_key = "POST /billing/webhook/stripe"

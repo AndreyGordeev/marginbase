@@ -56,7 +56,7 @@ import {
 type ModuleId = EntitlementModuleId;
 
 type WebApiClient = Pick<MarginbaseApiClient, 'refreshEntitlements' | 'deleteAccount'> &
-  Partial<Pick<MarginbaseApiClient, 'createCheckoutSession' | 'createShareSnapshot' | 'getShareSnapshot' | 'deleteShareSnapshot' | 'listShareSnapshots' | 'sendTelemetryBatch'>>;
+  Partial<Pick<MarginbaseApiClient, 'createCheckoutSession' | 'createBillingPortalSession' | 'createShareSnapshot' | 'getShareSnapshot' | 'deleteShareSnapshot' | 'listShareSnapshots' | 'sendTelemetryBatch'>>;
 
 const SIGNED_IN_STORAGE_KEY = 'marginbase_signed_in';
 const SIGNED_IN_USER_ID_STORAGE_KEY = 'marginbase_signed_in_user_id';
@@ -172,6 +172,19 @@ export class WebAppService {
     });
 
     return response.checkoutUrl;
+  }
+
+  public async startBillingPortalSession(userId: string, returnUrl?: string): Promise<string | null> {
+    if (!this.apiClient.createBillingPortalSession) {
+      return null;
+    }
+
+    const response = await this.apiClient.createBillingPortalSession({
+      userId,
+      returnUrl
+    });
+
+    return response.portalUrl;
   }
 
   public canOpenModule(moduleId: ModuleId): boolean {
