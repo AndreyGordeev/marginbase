@@ -10,7 +10,8 @@ const loginAndContinueToDashboard = async (page: import('@playwright/test').Page
 test('profit compute flow works end-to-end', async ({ page }) => {
   await loginAndContinueToDashboard(page);
 
-  await page.getByRole('button', { name: 'Open Profit Calculator' }).click();
+  const profitCard = page.locator('.card', { hasText: 'Profit Calculator' }).first();
+  await profitCard.getByRole('button', { name: 'Open' }).click();
   await expect(page.getByRole('heading', { name: 'Profit Editor' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Calculate Scenario' }).click();

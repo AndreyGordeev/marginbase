@@ -1,7 +1,7 @@
 import type { LegalBackTarget } from '../legal/legal-render';
 import { createLanguageSwitcher, translate } from '../../i18n';
 
-type LoginRoute = '/gate' | '/privacy' | '/terms' | '/legal-center';
+type LoginRoute = '/gate' | '/dashboard' | '/privacy' | '/terms' | '/legal-center';
 
 type LoginRenderDeps = {
   createActionButton: (label: string, onClick: () => void, className?: string) => HTMLButtonElement;
@@ -44,6 +44,14 @@ export const renderLoginPage = (root: HTMLElement, deps: LoginRenderDeps): void 
 
     goTo('/gate');
   }, 'primary'));
+  auth.appendChild(createActionButton(translate('login.continueAsGuest'), () => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('marginbase_signed_in', 'false');
+      localStorage.removeItem('marginbase_signed_in_user_id');
+    }
+
+    goTo('/dashboard');
+  }));
 
   const trust = document.createElement('div');
   trust.className = 'login-trust';

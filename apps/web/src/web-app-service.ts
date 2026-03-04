@@ -61,6 +61,7 @@ type WebApiClient = Pick<MarginbaseApiClient, 'refreshEntitlements' | 'deleteAcc
 const SIGNED_IN_STORAGE_KEY = 'marginbase_signed_in';
 const SIGNED_IN_USER_ID_STORAGE_KEY = 'marginbase_signed_in_user_id';
 const TELEMETRY_CONSENT_STORAGE_KEY = 'marginbase_telemetry_consent';
+const FIRST_RUN_DEMO_SCENARIOS_KEY = 'marginbase_first_run_demo_scenarios_seeded';
 
 const nowIso = (): string => new Date().toISOString();
 
@@ -158,6 +159,54 @@ export class WebAppService {
   public activateBundle(): void {
     this.entitlementCache = createBundleEntitlementCache(nowIso);
     saveEntitlementCache(this.entitlementCache);
+  }
+
+  public async ensureFirstRunDemoScenarios(): Promise<void> {
+    const hasLocalStorage = typeof localStorage !== 'undefined';
+    const alreadySeeded = hasLocalStorage && localStorage.getItem(FIRST_RUN_DEMO_SCENARIOS_KEY) === 'true';
+
+    if (alreadySeeded) {
+      return;
+    }
+
+    const existingScenarios = await this.listAllScenarios();
+    if (existingScenarios.length > 0) {
+      if (hasLocalStorage) {
+        localStorage.setItem(FIRST_RUN_DEMO_SCENARIOS_KEY, 'true');
+      }
+      return;
+    }
+
+    await this.saveProfitScenario({
+      scenarioName: 'Demo Profit Scenario',
+      unitPriceMinor: 2000,
+      quantity: 100,
+      variableCostPerUnitMinor: 1200,
+      fixedCostsMinor: 30000
+    });
+
+    await this.saveBreakEvenScenario({
+      scenarioName: 'Demo Break-even Scenario',
+      unitPriceMinor: 2000,
+      variableCostPerUnitMinor: 1200,
+      fixedCostsMinor: 30000,
+      targetProfitMinor: 20000,
+      plannedQuantity: 120
+    });
+
+    await this.saveCashflowScenario({
+      scenarioName: 'Demo Cashflow Scenario',
+      startingCashMinor: 150000,
+      baseMonthlyRevenueMinor: 90000,
+      fixedMonthlyCostsMinor: 45000,
+      variableMonthlyCostsMinor: 22000,
+      forecastMonths: 6,
+      monthlyGrowthRate: 0.02
+    });
+
+    if (hasLocalStorage) {
+      localStorage.setItem(FIRST_RUN_DEMO_SCENARIOS_KEY, 'true');
+    }
   }
 
   public async startCheckoutSession(planId: BillingPlanId, userId: string, email: string): Promise<string | null> {

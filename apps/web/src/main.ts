@@ -68,7 +68,7 @@ const ensureLanguagePrefixedPath = async (): Promise<void> => {
   }
 
   const detectedLanguage = getCurrentLanguage();
-  const targetPath = normalizedPath === '/' ? '/login' : normalizedPath;
+  const targetPath = normalizedPath === '/' ? '/dashboard' : normalizedPath;
   const query = window.location.search ?? '';
   const hash = window.location.hash ?? '';
   const localizedUrl = `/${detectedLanguage}${targetPath}${query}${hash}`;
@@ -254,6 +254,7 @@ if (typeof document !== 'undefined' && typeof window !== 'undefined') {
   const bootstrap = async (): Promise<void> => {
     await initializeI18nProvider();
     await ensureLanguagePrefixedPath();
+    await service.ensureFirstRunDemoScenarios();
     await render();
   };
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createRepository, createService } from './helpers/web-app-service-fixtures';
+import { createRepository, createService, installLocalStorage } from './helpers/web-app-service-fixtures';
 import { WebAppService } from '../src/web-app-service';
 
 describe('WebAppService repository + core scenarios', () => {
@@ -77,5 +77,21 @@ describe('WebAppService repository + core scenarios', () => {
     });
 
     expect((await service.listScenarios('profit')).length).toBe(1);
+  });
+
+  it('seeds demo scenarios on first run and does not duplicate on repeat', async () => {
+    installLocalStorage();
+    const service = createService();
+
+    await service.ensureFirstRunDemoScenarios();
+    const firstRunScenarios = await service.listAllScenarios();
+    expect(firstRunScenarios.length).toBe(3);
+    expect(firstRunScenarios.some((scenario) => scenario.module === 'profit')).toBe(true);
+    expect(firstRunScenarios.some((scenario) => scenario.module === 'breakeven')).toBe(true);
+    expect(firstRunScenarios.some((scenario) => scenario.module === 'cashflow')).toBe(true);
+
+    await service.ensureFirstRunDemoScenarios();
+    const secondRunScenarios = await service.listAllScenarios();
+    expect(secondRunScenarios.length).toBe(3);
   });
 });

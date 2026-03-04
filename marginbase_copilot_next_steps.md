@@ -30,6 +30,8 @@ customer.subscription.deleted
 
 ### 2. First Run Activation
 
+Status: IMPLEMENTED (2026-03-04)
+
 Flow: Open App → Demo Scenarios → Explore Calculators → Optional Login
 
 Requirements: - no forced login - local scenario storage - demo
