@@ -192,3 +192,9 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 ### What changed
 - Added dedicated export E2E flow: `apps/web/tests/e2e/export.spec.ts` with PDF/XLSX download assertions.
 - Added dedicated share E2E flow: `apps/web/tests/e2e/share.spec.ts` covering share link creation, shared-link opening, and import persistence verification.
+
+## NO MANUAL testing follow-up: accessibility smoke checks — 2026-03-05
+
+### What changed
+- Added Playwright + axe smoke suite: `apps/web/tests/e2e/accessibility.spec.ts`.
+- New checks validate no serious/critical accessibility violations on key routes: dashboard, profit workspace, locked cashflow paywall, settings.
