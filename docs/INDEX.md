@@ -6,6 +6,7 @@
 - ../.github/copilot-instructions.md
 - documentation-sync-policy.md
 - release-notes-v1.md
+- release-notes-v1-appendix.md
 
 ## Current Delivery Status
 - ../PROJECT_CONTEXT.md (all current growth-scope items completed)
