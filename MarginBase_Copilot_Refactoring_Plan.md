@@ -3,6 +3,28 @@ Date: 2026-03-04
 Audience: GitHub Copilot / dev team  
 Goal: Reduce complexity, remove duplication, and align documentation/tests with the current shipped behavior.
 
+## Execution Status (Final)
+
+Date closed: 2026-03-04  
+Program status: ✅ Completed (PR-R1 … PR-R10)
+
+Completed increments:
+- ✅ PR-R1 — page-module split (`d68dff7`)
+- ✅ PR-R2 — `WebAppService` internal decomposition (`d68dff7`)
+- ✅ PR-R3 — stateless embed-route refactor (covered in subsequent merged increments)
+- ✅ PR-R4 — route-focused tests + shared-link edge cases (`e182d03`)
+- ✅ PR-R5 — split `web-app-service` tests by responsibility (`d68dff7`)
+- ✅ PR-R6 — docs consistency sweep for share/embed wording (`1660dc1`)
+- ✅ PR-R7 — telemetry docs/code policy alignment (`bd167d2`)
+- ✅ PR-R8 — i18n parity + automated guard test (`4e1f0c1`)
+- ✅ PR-R9 — domain calc specs completed (`267d047`)
+- ✅ PR-R10 — durable release-notes structure + appendix (`4cd837e`)
+
+Outcome summary:
+- Hotspots decomposed and regression risk reduced by targeted test coverage.
+- Canonical docs synchronized with shipped behavior and route/telemetry/share contracts.
+- Release notes converted to concise + appendix format for lower merge conflict risk.
+
 ---
 
 ## 0) Source of truth (must read first)
