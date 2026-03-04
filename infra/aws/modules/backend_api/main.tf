@@ -125,6 +125,33 @@ resource "aws_cloudwatch_log_group" "share_list" {
   tags              = var.tags
 }
 
+resource "aws_cloudwatch_log_metric_filter" "billing_webhook_failures" {
+  name           = "${var.project_name}-${var.environment}-billing-webhook-failures"
+  log_group_name = aws_cloudwatch_log_group.billing.name
+  pattern        = "\"billing_webhook_failure\""
+
+  metric_transformation {
+    name      = "BillingWebhookFailures"
+    namespace = "MarginBase/Billing"
+    value     = "1"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "billing_webhook_failures" {
+  alarm_name          = "${var.project_name}-${var.environment}-billing-webhook-failures"
+  alarm_description   = "Triggers when Stripe webhook processing failures are detected in billing lambda logs."
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = aws_cloudwatch_log_metric_filter.billing_webhook_failures.metric_transformation[0].name
+  namespace           = aws_cloudwatch_log_metric_filter.billing_webhook_failures.metric_transformation[0].namespace
+  period              = 300
+  statistic           = "Sum"
+  threshold           = 1
+  treat_missing_data  = "notBreaching"
+  actions_enabled     = false
+  tags                = var.tags
+}
+
 data "aws_iam_policy_document" "lambda_access" {
   statement {
     sid    = "AllowCloudWatchLogs"

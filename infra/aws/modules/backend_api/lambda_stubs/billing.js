@@ -270,6 +270,24 @@ const parseRouteKey = (event) => {
   return '';
 };
 
+const logWebhookFailure = ({ reason, eventId }) => {
+  console.error('billing_webhook_failure', {
+    reason,
+    eventId: typeof eventId === 'string' ? eventId : '',
+    timestamp: nowIso()
+  });
+};
+
+const emitBillingStatusChanged = ({ userId, status, eventType }) => {
+  console.info('billing_status_changed', {
+    userId,
+    status,
+    eventType,
+    source: 'stripe',
+    timestamp: nowIso()
+  });
+};
+
 const handleCheckoutSession = async (event) => {
   const body = parseJsonBody(event);
   const planId = typeof body.planId === 'string' ? body.planId : '';
@@ -383,6 +401,10 @@ const handlePortalSession = async (event) => {
 const handleStripeWebhook = async (event) => {
   const signature = event?.headers?.['stripe-signature'] ?? event?.headers?.['Stripe-Signature'] ?? '';
   if (!signature || !process.env.STRIPE_WEBHOOK_SECRET) {
+    logWebhookFailure({
+      reason: 'invalid_signature_or_missing_secret'
+    });
+
     return response(400, {
       code: 'INVALID_SIGNATURE',
       message: 'Missing Stripe signature or webhook secret configuration.'
@@ -490,6 +512,12 @@ const handleStripeWebhook = async (event) => {
       currentPeriodEnd: nextCurrentPeriodEnd,
       trialEnd: nextTrialEnd
     });
+
+    emitBillingStatusChanged({
+      userId,
+      status: nextStatus,
+      eventType
+    });
   }
 
   await putWebhookEvent({
@@ -518,7 +546,22 @@ exports.handler = async (event) => {
   }
 
   if (routeKey === 'POST /billing/webhook/stripe') {
-    return handleStripeWebhook(event);
+    try {
+      return await handleStripeWebhook(event);
+    } catch (error) {
+      const body = parseJsonBody(event);
+      const eventId = typeof body.id === 'string' ? body.id : '';
+
+      logWebhookFailure({
+        reason: error instanceof Error ? error.message : 'unexpected_error',
+        eventId
+      });
+
+      return response(500, {
+        code: 'WEBHOOK_PROCESSING_ERROR',
+        message: 'Unable to process Stripe webhook event.'
+      });
+    }
   }
 
   const body = parseJsonBody(event);

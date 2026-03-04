@@ -67,6 +67,7 @@ This folder contains Terraform modules to provision the Step 10 dev environment 
 - In `environment=prod`, CORS validation enforces non-empty `api_cors_allowed_origins`, forbids `*`, and requires `https://` origins.
 - `POST /share/create` has dedicated throttling via `share_create_rate_limit` and `share_create_burst_limit`.
 - `POST /share/create` also enforces per-owner daily active link cap via `share_max_active_links_per_day`.
+- Stripe webhook failures emit `billing_webhook_failure` log markers and are tracked by a dedicated CloudWatch metric filter + alarm (`billing-webhook-failures`).
 - Throttling validation enforces `share_create_rate_limit` in `1..100`, `share_create_burst_limit` in `1..500`, and `burst >= rate`.
 - Throttling validation also enforces `share_create_burst_limit <= 5 * share_create_rate_limit`.
 - In `environment=prod`, throttling validation also enforces `share_create_rate_limit >= 3` and `share_create_burst_limit >= 6`.
