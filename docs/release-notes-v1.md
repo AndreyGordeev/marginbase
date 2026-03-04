@@ -99,3 +99,15 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 	- `docs/documentation-sync-policy.md`
 	- `PROJECT_CONTEXT.md` (`Documentation Sync (Mandatory)`)
 	- `.github/pull_request_template.md` documentation checklist
+
+---
+
+## PR-7: Embed Calculators Stateless Routes (2026-03-04)
+
+### What changed
+- Embed calculators now support both route styles: `/embed/<calculator>` and `/embed/<lang>/<calculator>`.
+- Embed views remain stateless and local-only for computation (no account, no scenario persistence).
+- Added local JSON export for current embed inputs (`Export inputs (JSON)`).
+
+### UX outcome
+- Embed pages stay minimal and iframe-friendly with a single in-app CTA and optional powered-by footer.

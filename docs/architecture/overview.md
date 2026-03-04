@@ -12,7 +12,7 @@ Date: 2026-03-04  |  Scope: Web + iOS + Android (offline-first, minimal backend)
 ## Current delivered web capabilities
 - Localized application UI across login, dashboard, workspace, subscription, settings, data/backup, reports, legal navigation, and result panels.
 - Language-aware app routes (`/:lang/*`) with detection/canonicalization for non-localized app routes.
-- Share snapshot route support (`/s/:token`) and embed calculators (`/embed/profit`, `/embed/breakeven`, `/embed/cashflow`).
+- Share snapshot route support (`/s/:token`) and stateless embed calculators (`/embed/:calculator` and `/embed/:lang/:calculator`).
 - Embed UI texts localized via shared translation keys.
 
 ## Recommended defaults

@@ -1,5 +1,6 @@
 import { calculateBreakEven } from '@marginbase/domain-core';
 import { createEmbedShell, createPoweredByFooter, parseEmbedOptions } from '../features/embed/EmbedLayout';
+import { downloadEmbedInputsJson } from '../features/embed/export-inputs';
 import { encodePrefill } from '../features/embed/prefill';
 import { translate } from '../i18n';
 import { renderModuleResults } from '../ui/results/module-results';
@@ -76,10 +77,22 @@ export const renderEmbedBreakevenRoute = (root: HTMLElement, service: WebAppServ
       void service.trackEmbedCtaClicked('breakeven');
     };
 
+    const exportInputsButton = document.createElement('button');
+    exportInputsButton.type = 'button';
+    exportInputsButton.textContent = translate('embed.exportInputs');
+    exportInputsButton.onclick = () => {
+      downloadEmbedInputsJson('breakeven', { ...state });
+    };
+
+    const actions = document.createElement('div');
+    actions.className = 'button-row';
+    actions.appendChild(cta);
+    actions.appendChild(exportInputsButton);
+
     results.replaceChildren(renderModuleResults('breakeven', toPlainJson(calculated) as Record<string, unknown>, {
       ...state,
       currencyCode: options.currencyCode
-    }), cta);
+    }), actions);
   };
 
   form.addEventListener('input', recalc);

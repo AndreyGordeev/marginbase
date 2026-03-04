@@ -142,20 +142,38 @@ const getSharedToken = (pathnameWithoutLanguage: string): string | null => {
   return null;
 };
 
-const getEmbedRoute = (pathnameWithoutLanguage: string): '/embed/profit' | '/embed/breakeven' | '/embed/cashflow' | null => {
+const getEmbedRoute = (pathnameWithoutLanguage: string): {
+  route: '/embed/profit' | '/embed/breakeven' | '/embed/cashflow';
+  language: SupportedLanguage | null;
+} | null => {
   const hashPath = getHashPathWithoutLanguage();
   const path = hashPath || pathnameWithoutLanguage;
+  const segments = stripTrailingSlash(path).split('/').filter((segment) => segment.trim().length > 0);
 
-  if (path === '/embed/profit') {
-    return '/embed/profit';
+  if (segments.length === 0 || segments[0] !== 'embed') {
+    return null;
   }
 
-  if (path === '/embed/breakeven' || path === '/embed/break-even') {
-    return '/embed/breakeven';
+  let language: SupportedLanguage | null = null;
+  let calculatorSegment = segments[1] ?? '';
+
+  if (segments.length >= 3 && isSupportedLanguage(segments[1])) {
+    language = segments[1];
+    calculatorSegment = segments[2] ?? '';
   }
 
-  if (path === '/embed/cashflow') {
-    return '/embed/cashflow';
+  const normalizedCalculator = calculatorSegment === 'break-even' ? 'breakeven' : calculatorSegment;
+
+  if (normalizedCalculator === 'profit') {
+    return { route: '/embed/profit', language };
+  }
+
+  if (normalizedCalculator === 'breakeven') {
+    return { route: '/embed/breakeven', language };
+  }
+
+  if (normalizedCalculator === 'cashflow') {
+    return { route: '/embed/cashflow', language };
   }
 
   return null;
@@ -218,17 +236,21 @@ const render = async (): Promise<void> => {
   }
 
   const embedRoute = getEmbedRoute(pathnameContext.normalizedPath);
-  if (embedRoute === '/embed/profit') {
+  if (embedRoute?.language) {
+    await setCurrentLanguage(embedRoute.language);
+  }
+
+  if (embedRoute?.route === '/embed/profit') {
     renderEmbedProfitRoute(root, service);
     return;
   }
 
-  if (embedRoute === '/embed/breakeven') {
+  if (embedRoute?.route === '/embed/breakeven') {
     renderEmbedBreakevenRoute(root, service);
     return;
   }
 
-  if (embedRoute === '/embed/cashflow') {
+  if (embedRoute?.route === '/embed/cashflow') {
     renderEmbedCashflowRoute(root, service);
     return;
   }

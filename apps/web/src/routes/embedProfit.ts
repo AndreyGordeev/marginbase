@@ -1,5 +1,6 @@
 import { calculateProfit } from '@marginbase/domain-core';
 import { createEmbedShell, createPoweredByFooter, parseEmbedOptions } from '../features/embed/EmbedLayout';
+import { downloadEmbedInputsJson } from '../features/embed/export-inputs';
 import { encodePrefill } from '../features/embed/prefill';
 import { translate } from '../i18n';
 import { renderModuleResults } from '../ui/results/module-results';
@@ -73,10 +74,22 @@ export const renderEmbedProfitRoute = (root: HTMLElement, service: WebAppService
       void service.trackEmbedCtaClicked('profit');
     };
 
+    const exportInputsButton = document.createElement('button');
+    exportInputsButton.type = 'button';
+    exportInputsButton.textContent = translate('embed.exportInputs');
+    exportInputsButton.onclick = () => {
+      downloadEmbedInputsJson('profit', { ...state });
+    };
+
+    const actions = document.createElement('div');
+    actions.className = 'button-row';
+    actions.appendChild(cta);
+    actions.appendChild(exportInputsButton);
+
     results.replaceChildren(renderModuleResults('profit', toPlainJson(calculated) as Record<string, unknown>, {
       ...state,
       currencyCode: options.currencyCode
-    }), cta);
+    }), actions);
   };
 
   form.addEventListener('input', recalc);
