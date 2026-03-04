@@ -4,6 +4,7 @@
 
 - ✅ Phase 1 started: property-based tests (`fast-check`) added in `packages/domain-core/tests/property-based.test.ts`.
 - ✅ Coverage execution baseline added for `domain-core` (`test:coverage` + `vitest.config.ts` baseline gate).
+- ✅ Added cross-package integration test (`storage + domain-core`) roundtrip in `packages/storage/tests/storage-domain-roundtrip.integration.test.ts`.
 - 🎯 Long-term target unchanged: raise `domain-core` to 95% lines/branches after schema-branch backfill tests.
 - ⏭️ Next in sequence: storage adapter integration tests (`fake-indexeddb`) and telemetry forbidden-key guard hardening.
 
