@@ -129,3 +129,10 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 
 ### UX outcome
 - Embed pages stay minimal and iframe-friendly with a single in-app CTA and optional powered-by footer.
+
+## Billing UX follow-up: Checkout + Portal actions in Subscription page — 2026-03-04
+
+### What changed
+- Subscription page now includes direct Stripe checkout action for upgrade flow (`POST /billing/checkout/session` via web service).
+- Added “Manage Subscription” action that opens Stripe Billing Portal (`POST /billing/portal-session`) for signed-in users.
+- Checkout and portal failures now surface user-facing messages and keep local fallback path (`Activate Bundle Local`) available for offline/demo flow.

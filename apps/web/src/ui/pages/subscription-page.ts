@@ -21,10 +21,57 @@ export const renderSubscriptionPage = (
 
   const actions = document.createElement('div');
   actions.className = 'button-row';
+  actions.appendChild(createActionButton(translate('subscription.startCheckout'), async () => {
+    const signedInUserId = service.getSignedInUserId();
+    const userId = signedInUserId && signedInUserId.length > 0 ? signedInUserId : 'local_web_user';
+    const email = `${userId}@marginbase.local`;
+
+    await service.trackUpgradeClicked();
+
+    let checkoutUrl: string | null = null;
+
+    try {
+      checkoutUrl = await service.startCheckoutSession('bundle', userId, email);
+    } catch {
+      checkoutUrl = null;
+    }
+
+    if (checkoutUrl) {
+      await service.trackCheckoutRedirected();
+      window.location.href = checkoutUrl;
+      return;
+    }
+
+    window.alert(translate('subscription.checkoutFailed'));
+  }, 'primary'));
+  actions.appendChild(createActionButton(translate('subscription.manageBilling'), async () => {
+    const signedInUserId = service.getSignedInUserId();
+    if (!signedInUserId) {
+      window.alert(translate('subscription.signInRequired'));
+      return;
+    }
+
+    const defaultReturnUrl = `${window.location.origin}${window.location.pathname}#/settings`;
+
+    let portalUrl: string | null = null;
+
+    try {
+      portalUrl = await service.startBillingPortalSession(signedInUserId, defaultReturnUrl);
+    } catch {
+      portalUrl = null;
+    }
+
+    if (portalUrl) {
+      window.location.href = portalUrl;
+      return;
+    }
+
+    window.alert(translate('subscription.manageBillingFailed'));
+  }));
   actions.appendChild(createActionButton(translate('subscription.activateBundleLocal'), () => {
     service.activateBundle();
     goTo('/dashboard');
-  }, 'primary'));
+  }));
   actions.appendChild(createActionButton(translate('subscription.refreshStatus'), () => goTo('/subscription')));
 
   const disclosure = document.createElement('div');
