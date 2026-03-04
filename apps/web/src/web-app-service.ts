@@ -24,10 +24,12 @@ import {
 import { buildReportModel, exportReportPdf, exportReportXlsx, type ReportModel } from '@marginbase/reporting';
 import {
   canUseModule,
+  PRICING_CONFIG,
   shouldRefreshEntitlements,
   type ModuleId as EntitlementModuleId,
   type EntitlementCache,
-  type EntitlementSet
+  type EntitlementSet,
+  type PricingConfig
 } from '@marginbase/entitlements';
 import {
   IndexedDbConnection,
@@ -239,6 +241,13 @@ export interface CashflowInputState {
   monthlyGrowthRate: number;
 }
 
+export interface EntitlementStatusSnapshot {
+  status: EntitlementCache['status'] | 'unknown';
+  source: EntitlementCache['source'] | 'unknown';
+  currentPeriodEnd: EntitlementCache['currentPeriodEnd'] | null;
+  trialEnd: EntitlementCache['trialEnd'] | null;
+}
+
 export class WebAppService {
   private readonly baseScenarioRepository: ScenarioRepository;
   private scenarioRepository: ScenarioRepository;
@@ -274,7 +283,9 @@ export class WebAppService {
   public activateTrial(): void {
     this.entitlementCache = {
       entitlementSet: { ...this.entitlementCache.entitlementSet, profit: true },
-      lastVerifiedAt: nowIso()
+      lastVerifiedAt: nowIso(),
+      status: 'trialing',
+      source: 'unknown'
     };
     saveEntitlementCache(this.entitlementCache);
   }
@@ -282,9 +293,24 @@ export class WebAppService {
   public activateBundle(): void {
     this.entitlementCache = {
       entitlementSet: { bundle: true, profit: true, breakeven: true, cashflow: true },
-      lastVerifiedAt: nowIso()
+      lastVerifiedAt: nowIso(),
+      status: 'active',
+      source: 'unknown'
     };
     saveEntitlementCache(this.entitlementCache);
+  }
+
+  public getPricingConfig(): PricingConfig {
+    return PRICING_CONFIG;
+  }
+
+  public getEntitlementStatusSnapshot(): EntitlementStatusSnapshot {
+    return {
+      status: this.entitlementCache.status ?? 'unknown',
+      source: this.entitlementCache.source ?? 'unknown',
+      currentPeriodEnd: this.entitlementCache.currentPeriodEnd ?? null,
+      trialEnd: this.entitlementCache.trialEnd ?? null
+    };
   }
 
   public async startCheckoutSession(planId: BillingPlanId, userId: string, email: string): Promise<string | null> {

@@ -99,3 +99,16 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 	- `docs/documentation-sync-policy.md`
 	- `PROJECT_CONTEXT.md` (`Documentation Sync (Mandatory)`)
 	- `.github/pull_request_template.md` documentation checklist
+
+---
+
+## Paywall UX Increment (2026-03-04)
+
+### PR-2 scope
+- Added a consistent paywall card for locked module entry points and subscription page.
+- Added a persistent dashboard upgrade entry.
+- Added settings subscription section with status/source display and manage-subscription action.
+
+### Behavior notes
+- Locked module access now routes to a single upgrade experience with clear CTA.
+- Checkout CTA uses Stripe checkout session when available; local trial fallback remains for non-prod/stub flows.

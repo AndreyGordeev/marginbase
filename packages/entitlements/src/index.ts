@@ -25,9 +25,19 @@ export interface EntitlementPolicyConfig {
   refreshDebounceHours: number;
 }
 
+export interface PricingConfig {
+  bundleMonthlyLabel: string;
+  trialDays: number;
+}
+
 export const ENTITLEMENT_POLICY: EntitlementPolicyConfig = Object.freeze({
   offlineGraceHours: 72,
   refreshDebounceHours: 24
+});
+
+export const PRICING_CONFIG: PricingConfig = Object.freeze({
+  bundleMonthlyLabel: '€19/mo',
+  trialDays: 7
 });
 
 const parseIso = (iso: string): Date | null => {

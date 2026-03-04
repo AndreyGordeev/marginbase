@@ -48,6 +48,9 @@ type WorkspaceDeps = CommonDeps & {
 const MAX_SCENARIO_NAME_LENGTH = 120;
 const FORM_ERROR_VISIBLE_MS = 5000;
 const MAX_SAFE_INTEGER_TEXT = Number.MAX_SAFE_INTEGER.toLocaleString('en-US');
+const PAYWALL_CONTEXT_STORAGE_KEY = 'marginbase_paywall_context_module';
+
+type PaywallSource = 'dashboard' | 'workspace' | 'subscription';
 
 const getValidationFieldLabels = (): Record<string, string> => ({
   scenarioName: translate('validation.scenarioName'),
@@ -132,6 +135,98 @@ const formatReportPct = (value: number | null, locale: string): string => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
   }).format(value);
+};
+
+const setPaywallContext = (moduleId: ModuleId): void => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.sessionStorage.setItem(PAYWALL_CONTEXT_STORAGE_KEY, moduleId);
+};
+
+const consumePaywallContext = (): ModuleId | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const value = window.sessionStorage.getItem(PAYWALL_CONTEXT_STORAGE_KEY);
+  window.sessionStorage.removeItem(PAYWALL_CONTEXT_STORAGE_KEY);
+
+  if (value === 'profit' || value === 'breakeven' || value === 'cashflow') {
+    return value;
+  }
+
+  return null;
+};
+
+const getPaywallModuleLabel = (moduleId: ModuleId | null): string => {
+  if (moduleId === 'profit') {
+    return translate('paywall.module.profit');
+  }
+
+  if (moduleId === 'breakeven') {
+    return translate('paywall.module.breakeven');
+  }
+
+  if (moduleId === 'cashflow') {
+    return translate('paywall.module.cashflow');
+  }
+
+  return translate('paywall.module.bundle');
+};
+
+const renderPaywallCard = (
+  service: WebAppService,
+  deps: Pick<CommonDeps, 'createActionButton' | 'goTo'>,
+  source: PaywallSource,
+  moduleId: ModuleId | null
+): HTMLElement => {
+  const { createActionButton, goTo } = deps;
+  const pricing = service.getPricingConfig();
+
+  const card = document.createElement('section');
+  card.className = 'card';
+  card.innerHTML = `
+    <h2>${translate('paywall.title')}</h2>
+    <p>${translate('paywall.subtitle', { module: getPaywallModuleLabel(moduleId) })}</p>
+    <h3>${translate('paywall.unlockHeading')}</h3>
+    <ul>
+      <li>${translate('paywall.unlock.bundle')}</li>
+      <li>${translate('paywall.unlock.breakeven')}</li>
+      <li>${translate('paywall.unlock.cashflow')}</li>
+    </ul>
+    <p><strong>${translate('paywall.priceLine', { price: pricing.bundleMonthlyLabel, days: pricing.trialDays })}</strong></p>
+  `;
+
+  const actions = document.createElement('div');
+  actions.className = 'button-row';
+  actions.appendChild(createActionButton(translate('paywall.startTrialUpgrade'), async () => {
+    let checkoutUrl: string | null = null;
+
+    try {
+      checkoutUrl = await service.startCheckoutSession('bundle', service.getSignedInUserId() ?? 'local_web_user', 'local_web_user@marginbase.local');
+    } catch {
+      checkoutUrl = null;
+    }
+
+    if (checkoutUrl) {
+      window.location.href = checkoutUrl;
+      return;
+    }
+
+    service.activateTrial();
+    goTo('/dashboard');
+  }, 'primary'));
+  actions.appendChild(createActionButton(translate('paywall.backDashboard'), () => goTo('/dashboard')));
+
+  const sourceHint = document.createElement('p');
+  sourceHint.className = 'status';
+  sourceHint.textContent = `${translate('paywall.source')}: ${source}`;
+
+  card.appendChild(actions);
+  card.appendChild(sourceHint);
+  return card;
 };
 
 const renderBusinessReportPreview = (report: ReportModel): HTMLElement => {
@@ -290,6 +385,7 @@ export const renderDashboardPage = async (
   const header = document.createElement('div');
   header.className = 'card';
   header.innerHTML = `<h2>${translate('dashboard.title')}</h2><span class="status">${translate('dashboard.softGateEnabled')}</span>`;
+  header.appendChild(createActionButton(translate('dashboard.upgradeEntry'), () => goTo('/subscription'), 'primary'));
   main.appendChild(header);
 
   const moduleGrid = document.createElement('div');
@@ -306,7 +402,15 @@ export const renderDashboardPage = async (
     const allowed = service.canOpenModule(moduleItem.moduleId);
     card.innerHTML = `<h3>${moduleItem.title}</h3><p>${translate('dashboard.status')}: ${allowed ? translate('dashboard.active') : translate('dashboard.locked')}</p>`;
     card.appendChild(
-      createActionButton(translate('dashboard.open'), () => (allowed ? goTo(moduleItem.route) : goTo('/subscription')), allowed ? 'primary' : '')
+      createActionButton(translate('dashboard.open'), () => {
+        if (allowed) {
+          goTo(moduleItem.route);
+          return;
+        }
+
+        setPaywallContext(moduleItem.moduleId);
+        goTo('/subscription');
+      }, allowed ? 'primary' : '')
     );
     moduleGrid.appendChild(card);
   }
@@ -392,6 +496,20 @@ export const renderWorkspacePage = async (
 
     return undefined;
   })();
+
+  if (!allowed) {
+    const shell = document.createElement('div');
+    shell.className = 'shell';
+    shell.appendChild(renderSidebar(route, { createActionButton, goTo }));
+
+    const main = document.createElement('main');
+    main.className = 'main';
+    main.appendChild(renderPaywallCard(service, { createActionButton, goTo }, 'workspace', moduleId));
+
+    shell.appendChild(main);
+    root.replaceChildren(shell);
+    return;
+  }
 
   const shell = document.createElement('div');
   shell.className = 'shell';
@@ -634,23 +752,6 @@ export const renderWorkspacePage = async (
     results.appendChild(emptyState(translate('workspace.noResults'), translate('workspace.noResultsDesc')));
   }
 
-  if (!allowed) {
-    const overlay = document.createElement('div');
-    overlay.className = 'locked-overlay';
-
-    const message = document.createElement('strong');
-    message.textContent = translate('workspace.requiresSubscription');
-
-    const actions = document.createElement('div');
-    actions.className = 'button-row';
-    actions.appendChild(createActionButton(translate('workspace.goToSubscription'), () => goTo('/subscription'), 'primary'));
-    actions.appendChild(createActionButton(translate('workspace.backToDashboard'), () => goTo('/dashboard')));
-
-    overlay.appendChild(message);
-    overlay.appendChild(actions);
-    results.appendChild(overlay);
-  }
-
   workspace.appendChild(listPanel);
   workspace.appendChild(center);
   workspace.appendChild(results);
@@ -671,21 +772,8 @@ export const renderSubscriptionPage = (
   shell.appendChild(renderSidebar('/subscription', { createActionButton, goTo }));
   const main = document.createElement('main');
   main.className = 'main';
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.innerHTML = `<h2>${translate('subscription.title')}</h2><p>${translate('subscription.monthlyPlans')}</p>`;
-
-  const actions = document.createElement('div');
-  actions.className = 'button-row';
-  actions.appendChild(createActionButton(translate('subscription.activateBundleLocal'), () => {
-    service.activateBundle();
-    goTo('/dashboard');
-  }, 'primary'));
-  actions.appendChild(createActionButton(translate('subscription.refreshStatus'), () => goTo('/subscription')));
-
-  const disclosure = document.createElement('div');
-  disclosure.className = 'inline-error';
-  disclosure.innerHTML = `<p>${translate('subscription.disclosureTrial')}</p><p>${translate('subscription.disclosureRenewal')}</p>`;
+  const moduleContext = consumePaywallContext();
+  const card = renderPaywallCard(service, { createActionButton, goTo }, 'subscription', moduleContext);
 
   const disclosureLinks = document.createElement('div');
   disclosureLinks.className = 'button-row';
@@ -708,8 +796,6 @@ export const renderSubscriptionPage = (
   disclosureLinks.appendChild(termsLink);
   disclosureLinks.appendChild(cancellationLink);
 
-  card.appendChild(actions);
-  card.appendChild(disclosure);
   card.appendChild(disclosureLinks);
   main.appendChild(card);
   shell.appendChild(main);
@@ -928,6 +1014,16 @@ export const renderSettingsPage = async (
   card.className = 'card';
   card.innerHTML = `<h2>${translate('settings.title')}</h2><p>${translate('settings.subtitle')}</p>`;
 
+  const entitlement = service.getEntitlementStatusSnapshot();
+  const subscriptionCard = document.createElement('div');
+  subscriptionCard.className = 'card';
+  subscriptionCard.innerHTML = `
+    <h3>${translate('settings.subscriptionTitle')}</h3>
+    <p>${translate('settings.subscriptionStatus')}: ${entitlement.status}</p>
+    <p>${translate('settings.subscriptionSource')}: ${entitlement.source}</p>
+  `;
+  subscriptionCard.appendChild(createActionButton(translate('settings.manageSubscription'), () => goTo('/subscription'), 'primary'));
+
   const deleteAccountButton = createActionButton(translate('settings.deleteAccountData'), async () => {
     const deleted = await service.deleteAccount('local_web_user');
     if (deleted) {
@@ -969,6 +1065,7 @@ export const renderSettingsPage = async (
 
   legalCard.appendChild(legalLinks);
   main.appendChild(card);
+  main.appendChild(subscriptionCard);
   main.appendChild(legalCard);
   shell.appendChild(main);
   root.replaceChildren(shell);
