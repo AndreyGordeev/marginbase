@@ -24,7 +24,11 @@ const pct = (value: number | null, locale: string): string => {
 
 const line = (value: string, indent = 0): string => `${' '.repeat(indent)}${value}`;
 
-export const exportReportPdf = async (report: ReportModel): Promise<Uint8Array> => {
+export interface ReportPdfExportOptions {
+  watermarkText?: string;
+}
+
+export const exportReportPdf = async (report: ReportModel, options: ReportPdfExportOptions = {}): Promise<Uint8Array> => {
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([595, 842]);
   const { width, height } = page.getSize();
@@ -104,6 +108,20 @@ export const exportReportPdf = async (report: ReportModel): Promise<Uint8Array> 
     });
 
     y -= isHeader ? 18 : 14;
+  }
+
+  const watermarkText = options.watermarkText?.trim();
+  if (watermarkText) {
+    for (const currentPage of pdf.getPages()) {
+      currentPage.drawText(watermarkText, {
+        x: 40,
+        y: 24,
+        size: 9,
+        font,
+        color: rgb(0.6, 0.6, 0.6),
+        maxWidth: width - 80
+      });
+    }
   }
 
   return pdf.save();
