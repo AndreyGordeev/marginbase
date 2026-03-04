@@ -48,6 +48,7 @@
   "embed.subtitle": "Stateless embed calculator. Computation runs locally.",
   "embed.poweredBy": "Powered by MarginBase",
   "embed.openInApp": "Open in MarginBase",
+  "embed.exportInputs": "Export inputs (JSON)",
   "embed.profit.title": "Embed: Profit Calculator",
   "embed.breakeven.title": "Embed: Break-even Calculator",
   "embed.cashflow.title": "Embed: Cashflow Calculator",
