@@ -45,6 +45,7 @@ type WebApiClient = Pick<MarginbaseApiClient, 'refreshEntitlements' | 'deleteAcc
 
 const SIGNED_IN_STORAGE_KEY = 'marginbase_signed_in';
 const SIGNED_IN_USER_ID_STORAGE_KEY = 'marginbase_signed_in_user_id';
+const TELEMETRY_CONSENT_STORAGE_KEY = 'marginbase_telemetry_consent';
 
 const toPlainJson = (value: unknown): unknown => {
   if (Array.isArray(value)) {
@@ -320,6 +321,22 @@ export class WebAppService {
 
     const value = localStorage.getItem(SIGNED_IN_USER_ID_STORAGE_KEY);
     return value && value.trim() ? value : null;
+  }
+
+  public getTelemetryConsent(): boolean {
+    if (typeof localStorage === 'undefined') {
+      return false;
+    }
+
+    return localStorage.getItem(TELEMETRY_CONSENT_STORAGE_KEY) === 'true';
+  }
+
+  public setTelemetryConsent(enabled: boolean): void {
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
+
+    localStorage.setItem(TELEMETRY_CONSENT_STORAGE_KEY, enabled ? 'true' : 'false');
   }
 
   public async refreshEntitlementsIfNeeded(idToken: string): Promise<boolean> {
@@ -634,6 +651,32 @@ export class WebAppService {
     });
   }
 
+  public async trackPricingViewed(source: string): Promise<void> {
+    await this.emitTelemetryEvent('pricing_viewed', {
+      source
+    });
+  }
+
+  public async trackPaywallViewed(moduleId: ModuleId, source: string): Promise<void> {
+    await this.emitTelemetryEvent('paywall_viewed', {
+      moduleId,
+      source
+    });
+  }
+
+  public async trackLockedModuleAttempt(moduleId: ModuleId): Promise<void> {
+    await this.emitTelemetryEvent('locked_module_attempt', {
+      moduleId
+    });
+  }
+
+  public async trackCheckoutAbandoned(stage: string, reason: string): Promise<void> {
+    await this.emitTelemetryEvent('checkout_abandoned', {
+      stage,
+      reason
+    });
+  }
+
   public async importSharedScenario(token: string): Promise<ModuleId> {
     if (!this.isSignedIn()) {
       throw new Error('Sign in is required to import shared scenarios.');
@@ -775,7 +818,7 @@ export class WebAppService {
   }
 
   private async emitTelemetryEvent(name: TelemetryEventName, attributes: Record<string, string | boolean>): Promise<void> {
-    if (!this.apiClient.sendTelemetryBatch) {
+    if (!this.apiClient.sendTelemetryBatch || !this.getTelemetryConsent()) {
       return;
     }
 

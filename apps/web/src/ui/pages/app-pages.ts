@@ -306,7 +306,16 @@ export const renderDashboardPage = async (
     const allowed = service.canOpenModule(moduleItem.moduleId);
     card.innerHTML = `<h3>${moduleItem.title}</h3><p>${translate('dashboard.status')}: ${allowed ? translate('dashboard.active') : translate('dashboard.locked')}</p>`;
     card.appendChild(
-      createActionButton(translate('dashboard.open'), () => (allowed ? goTo(moduleItem.route) : goTo('/subscription')), allowed ? 'primary' : '')
+      createActionButton(translate('dashboard.open'), () => {
+        if (allowed) {
+          goTo(moduleItem.route);
+          return;
+        }
+
+        void service.trackLockedModuleAttempt(moduleItem.moduleId);
+        void service.trackPaywallViewed(moduleItem.moduleId, 'dashboard');
+        goTo('/subscription');
+      }, allowed ? 'primary' : '')
     );
     moduleGrid.appendChild(card);
   }
@@ -643,7 +652,11 @@ export const renderWorkspacePage = async (
 
     const actions = document.createElement('div');
     actions.className = 'button-row';
-    actions.appendChild(createActionButton(translate('workspace.goToSubscription'), () => goTo('/subscription'), 'primary'));
+    actions.appendChild(createActionButton(translate('workspace.goToSubscription'), () => {
+      void service.trackLockedModuleAttempt(moduleId);
+      void service.trackPaywallViewed(moduleId, 'workspace');
+      goTo('/subscription');
+    }, 'primary'));
     actions.appendChild(createActionButton(translate('workspace.backToDashboard'), () => goTo('/dashboard')));
 
     overlay.appendChild(message);
@@ -674,10 +687,12 @@ export const renderSubscriptionPage = (
   const card = document.createElement('div');
   card.className = 'card';
   card.innerHTML = `<h2>${translate('subscription.title')}</h2><p>${translate('subscription.monthlyPlans')}</p>`;
+  void service.trackPricingViewed('subscription');
 
   const actions = document.createElement('div');
   actions.className = 'button-row';
   actions.appendChild(createActionButton(translate('subscription.activateBundleLocal'), () => {
+    void service.trackCheckoutAbandoned('checkout', 'fallback_local_activation');
     service.activateBundle();
     goTo('/dashboard');
   }, 'primary'));
@@ -928,6 +943,27 @@ export const renderSettingsPage = async (
   card.className = 'card';
   card.innerHTML = `<h2>${translate('settings.title')}</h2><p>${translate('settings.subtitle')}</p>`;
 
+  const telemetryCard = document.createElement('div');
+  telemetryCard.className = 'card';
+  telemetryCard.innerHTML = `<h3>${translate('settings.telemetryTitle')}</h3><p>${translate('settings.telemetryDesc')}</p>`;
+
+  const telemetryToggleLabel = document.createElement('label');
+  telemetryToggleLabel.className = 'button-row';
+
+  const telemetryToggle = document.createElement('input');
+  telemetryToggle.type = 'checkbox';
+  telemetryToggle.checked = service.getTelemetryConsent();
+  telemetryToggle.onchange = () => {
+    service.setTelemetryConsent(telemetryToggle.checked);
+  };
+
+  const telemetryToggleText = document.createElement('span');
+  telemetryToggleText.textContent = translate('settings.telemetryConsentLabel');
+
+  telemetryToggleLabel.appendChild(telemetryToggle);
+  telemetryToggleLabel.appendChild(telemetryToggleText);
+  telemetryCard.appendChild(telemetryToggleLabel);
+
   const deleteAccountButton = createActionButton(translate('settings.deleteAccountData'), async () => {
     const deleted = await service.deleteAccount('local_web_user');
     if (deleted) {
@@ -969,6 +1005,7 @@ export const renderSettingsPage = async (
 
   legalCard.appendChild(legalLinks);
   main.appendChild(card);
+  main.appendChild(telemetryCard);
   main.appendChild(legalCard);
   shell.appendChild(main);
   root.replaceChildren(shell);

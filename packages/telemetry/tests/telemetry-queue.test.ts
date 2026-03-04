@@ -20,6 +20,12 @@ describe('telemetry queue', () => {
 
     const embedAccepted = queue.enqueue(createTelemetryEvent('embed_opened', { moduleId: 'cashflow', poweredBy: true }));
     expect(embedAccepted.accepted).toBe(true);
+
+    const funnelAccepted = queue.enqueue(createTelemetryEvent('paywall_viewed', {
+      moduleId: 'breakeven',
+      source: 'dashboard'
+    }));
+    expect(funnelAccepted.accepted).toBe(true);
   });
 
   it('rejects disallowed payload field types', () => {
@@ -67,6 +73,10 @@ describe('telemetry queue', () => {
         'auth_login_failure',
         'embed_opened',
         'embed_cta_clicked',
+        'pricing_viewed',
+        'paywall_viewed',
+        'locked_module_attempt',
+        'checkout_abandoned',
         'scenario_saved',
         'export_completed',
         'import_failed'

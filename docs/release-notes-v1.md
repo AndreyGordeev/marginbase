@@ -99,3 +99,19 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 	- `docs/documentation-sync-policy.md`
 	- `PROJECT_CONTEXT.md` (`Documentation Sync (Mandatory)`)
 	- `.github/pull_request_template.md` documentation checklist
+
+---
+
+## Telemetry Consent + Funnel Increment (2026-03-04)
+
+### PR-4 scope
+- Added telemetry consent toggle in Settings (default OFF for non-essential analytics).
+- Added conversion funnel telemetry events with strict allowlist fields:
+	- `pricing_viewed` { source }
+	- `paywall_viewed` { moduleId, source }
+	- `locked_module_attempt` { moduleId }
+	- `checkout_abandoned` { stage, reason }
+
+### Behavior notes
+- Telemetry upload is gated by local consent state.
+- Monetary/scenario values remain excluded by telemetry allowlist validation.

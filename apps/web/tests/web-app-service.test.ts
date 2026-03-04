@@ -277,6 +277,8 @@ describe('WebAppService', () => {
   });
 
   it('emits embed telemetry events with allowlisted attributes only', async () => {
+    installLocalStorage();
+
     const sendTelemetryBatch = vi.fn(async () => {
       return {
         accepted: true,
@@ -297,6 +299,8 @@ describe('WebAppService', () => {
         sendTelemetryBatch
       }
     );
+
+    service.setTelemetryConsent(true);
 
     await service.trackEmbedOpened('profit', true);
     await service.trackEmbedCtaClicked('profit');
@@ -325,6 +329,36 @@ describe('WebAppService', () => {
         })
       ]
     });
+  });
+
+  it('does not emit telemetry when consent is disabled', async () => {
+    installLocalStorage();
+
+    const sendTelemetryBatch = vi.fn(async () => {
+      return {
+        accepted: true,
+        count: 1,
+        objectKey: '2026/03/04/anonymous/test.json'
+      };
+    });
+
+    const service = new WebAppService(
+      new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection()),
+      {
+        refreshEntitlements: async () => {
+          throw new Error('not used');
+        },
+        deleteAccount: async () => {
+          throw new Error('not used');
+        },
+        sendTelemetryBatch
+      }
+    );
+
+    service.setTelemetryConsent(false);
+    await service.trackEmbedOpened('cashflow', true);
+
+    expect(sendTelemetryBatch).not.toHaveBeenCalled();
   });
 
   it('exports business report PDF locally from saved scenarios', async () => {
