@@ -186,3 +186,9 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 - Expanded `packages/domain-core/tests/property-based.test.ts` with higher-run (`numRuns: 1000`) property checks.
 - Added invariants for profit monotonicity under increasing revenue and break-even non-negativity constraints.
 - Added cashflow projection invariant checks (net consistency and cumulative balance with Decimal tolerance).
+
+## NO MANUAL testing follow-up: export + share E2E critical paths — 2026-03-05
+
+### What changed
+- Added dedicated export E2E flow: `apps/web/tests/e2e/export.spec.ts` with PDF/XLSX download assertions.
+- Added dedicated share E2E flow: `apps/web/tests/e2e/share.spec.ts` covering share link creation, shared-link opening, and import persistence verification.
