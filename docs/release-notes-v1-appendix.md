@@ -179,3 +179,10 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 - Added Playwright network privacy E2E: `apps/web/tests/e2e/privacy.spec.ts`.
 - Added API client contract assertion that request bodies remain free of forbidden financial key names.
 - Telemetry privacy tests now reuse the same forbidden-key source.
+
+## NO MANUAL testing follow-up: domain-core property test expansion — 2026-03-05
+
+### What changed
+- Expanded `packages/domain-core/tests/property-based.test.ts` with higher-run (`numRuns: 1000`) property checks.
+- Added invariants for profit monotonicity under increasing revenue and break-even non-negativity constraints.
+- Added cashflow projection invariant checks (net consistency and cumulative balance with Decimal tolerance).

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { calculateBreakEven, calculateProfit } from '../src';
+import Decimal from 'decimal.js';
+import { calculateBreakEven, calculateCashflow, calculateProfit } from '../src';
 
 describe('property-based invariants', () => {
   it('profit unit mode keeps accounting identities', () => {
@@ -35,7 +36,43 @@ describe('property-based invariants', () => {
           }
         }
       ),
-      { numRuns: 200 }
+      { numRuns: 1000 }
+    );
+  });
+
+  it('profit net result is monotonic when revenue increases and costs stay constant', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 0, max: 500_000 }),
+        fc.integer({ min: 0, max: 500_000 }),
+        fc.integer({ min: 0, max: 500_000 }),
+        fc.integer({ min: 0, max: 500_000 }),
+        (baseRevenueMinor, extraRevenueMinor, totalVariableCostsMinor, fixedCostsMinor) => {
+          const lowRevenue = baseRevenueMinor;
+          const highRevenue = baseRevenueMinor + extraRevenueMinor;
+
+          const low = calculateProfit({
+            mode: 'revenue',
+            totalRevenueMinor: lowRevenue,
+            totalVariableCostsMinor,
+            fixedCostsMinor
+          });
+
+          const high = calculateProfit({
+            mode: 'revenue',
+            totalRevenueMinor: highRevenue,
+            totalVariableCostsMinor,
+            fixedCostsMinor
+          });
+
+          expect(high.netProfitMinor.greaterThanOrEqualTo(low.netProfitMinor)).toBe(true);
+
+          if (high.netProfitPct !== null) {
+            expect(high.netProfitPct.isFinite()).toBe(true);
+          }
+        }
+      ),
+      { numRuns: 1000 }
     );
   });
 
@@ -61,7 +98,7 @@ describe('property-based invariants', () => {
           expect(result.warnings).toContain('UC_NON_POSITIVE');
         }
       ),
-      { numRuns: 200 }
+      { numRuns: 1000 }
     );
   });
 
@@ -84,7 +121,73 @@ describe('property-based invariants', () => {
           expect(result.warnings).toEqual([]);
         }
       ),
-      { numRuns: 200 }
+      { numRuns: 1000 }
+    );
+  });
+
+  it('break-even and target quantities stay non-negative for non-negative inputs', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 100_000 }),
+        fc.integer({ min: 0, max: 99_999 }),
+        fc.integer({ min: 0, max: 1_000_000 }),
+        fc.integer({ min: 0, max: 1_000_000 }),
+        (unitPriceMinor, variableCostPerUnitMinor, fixedCostsMinor, targetProfitMinor) => {
+          fc.pre(unitPriceMinor > variableCostPerUnitMinor);
+
+          const result = calculateBreakEven({
+            unitPriceMinor,
+            variableCostPerUnitMinor,
+            fixedCostsMinor,
+            targetProfitMinor
+          });
+
+          expect(result.breakEvenQuantity?.greaterThanOrEqualTo(0)).toBe(true);
+          expect(result.requiredQuantityForTargetProfit?.greaterThanOrEqualTo(0)).toBe(true);
+          expect(result.requiredQuantityForTargetProfit?.greaterThanOrEqualTo(result.breakEvenQuantity ?? 0)).toBe(true);
+        }
+      ),
+      { numRuns: 1000 }
+    );
+  });
+
+  it('cashflow balance equals start plus cumulative monthly net cashflow', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 0, max: 1_000_000 }),
+        fc.integer({ min: 0, max: 300_000 }),
+        fc.integer({ min: 0, max: 300_000 }),
+        fc.integer({ min: 0, max: 300_000 }),
+        fc.integer({ min: 1, max: 24 }),
+        fc.double({ min: -0.3, max: 0.5, noNaN: true, noDefaultInfinity: true }),
+        (startingCashMinor, baseMonthlyRevenueMinor, fixedMonthlyCostsMinor, variableMonthlyCostsMinor, forecastMonths, monthlyGrowthRate) => {
+          const result = calculateCashflow({
+            startingCashMinor,
+            baseMonthlyRevenueMinor,
+            fixedMonthlyCostsMinor,
+            variableMonthlyCostsMinor,
+            forecastMonths,
+            monthlyGrowthRate
+          });
+
+          let cumulativeNet = new Decimal(0);
+
+          for (const month of result.monthlyProjection) {
+            expect(month.netCashflowMinor.equals(month.revenueMinor.minus(month.expensesMinor))).toBe(true);
+            cumulativeNet = cumulativeNet.plus(month.netCashflowMinor);
+          }
+
+          const expectedFinal = new Decimal(startingCashMinor).plus(cumulativeNet);
+          const finalDelta = result.finalBalanceMinor.minus(expectedFinal).abs();
+          expect(finalDelta.lte(new Decimal('0.000001'))).toBe(true);
+
+          if (result.firstNegativeMonth !== null) {
+            expect(result.firstNegativeMonth).toBeGreaterThanOrEqual(1);
+            expect(result.firstNegativeMonth).toBeLessThanOrEqual(forecastMonths);
+          }
+        }
+      ),
+      { numRuns: 1000 }
     );
   });
 });
