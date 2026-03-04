@@ -5,6 +5,23 @@ globalThis.__userProfileMemoryStore = memoryUserStore;
 const memoryWebhookEventStore = globalThis.__billingWebhookEventMemoryStore ?? new Map();
 globalThis.__billingWebhookEventMemoryStore = memoryWebhookEventStore;
 
+const webhookEventTtlSeconds = 30 * 24 * 60 * 60;
+
+const nowEpochSeconds = () => {
+  return Math.floor(Date.now() / 1000);
+};
+
+const withWebhookEventExpiry = (eventRecord) => {
+  if (typeof eventRecord?.expiresAt === 'number' && Number.isFinite(eventRecord.expiresAt)) {
+    return eventRecord;
+  }
+
+  return {
+    ...eventRecord,
+    expiresAt: nowEpochSeconds() + webhookEventTtlSeconds
+  };
+};
+
 const toEntitlementRecord = (userId, payload) => {
   return {
     userId,
@@ -104,25 +121,40 @@ const deleteUserProfile = async (userId) => {
 
 const getWebhookEvent = async (eventId) => {
   if (typeof globalThis.__webhookEventGet === 'function') {
-    return globalThis.__webhookEventGet({
+    const eventRecord = await globalThis.__webhookEventGet({
       tableName: getTableName(),
       eventId
     });
+
+    if (eventRecord && typeof eventRecord.expiresAt === 'number' && eventRecord.expiresAt <= nowEpochSeconds()) {
+      return null;
+    }
+
+    return eventRecord;
   }
 
-  return memoryWebhookEventStore.get(eventId) ?? null;
+  const eventRecord = memoryWebhookEventStore.get(eventId) ?? null;
+
+  if (eventRecord && typeof eventRecord.expiresAt === 'number' && eventRecord.expiresAt <= nowEpochSeconds()) {
+    memoryWebhookEventStore.delete(eventId);
+    return null;
+  }
+
+  return eventRecord;
 };
 
 const putWebhookEvent = async (eventRecord) => {
+  const ttlRecord = withWebhookEventExpiry(eventRecord);
+
   if (typeof globalThis.__webhookEventPut === 'function') {
     await globalThis.__webhookEventPut({
       tableName: getTableName(),
-      eventRecord
+      eventRecord: ttlRecord
     });
     return;
   }
 
-  memoryWebhookEventStore.set(eventRecord.eventId, eventRecord);
+  memoryWebhookEventStore.set(ttlRecord.eventId, ttlRecord);
 };
 
 exports.getRecord = getRecord;

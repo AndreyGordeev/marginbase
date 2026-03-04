@@ -142,4 +142,5 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 ### What changed
 - Billing webhook handler now verifies Stripe-style `Stripe-Signature` HMAC (`sha256`) against raw request body and configured webhook secret.
 - Invalid signatures are rejected with `INVALID_SIGNATURE` and counted in webhook failure observability path.
+- Webhook idempotency records now persist with explicit TTL metadata (`expiresAt`, 30 days) for replay-window control.
 - Backend lambda tests updated to generate valid signed webhook headers and include explicit invalid-signature rejection coverage.

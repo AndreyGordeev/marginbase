@@ -385,6 +385,57 @@ test('stripe webhook rejects invalid signature', async () => {
   delete process.env.STRIPE_WEBHOOK_SECRET;
 });
 
+test('stripe webhook writes idempotency event with ttl metadata', async () => {
+  process.env.ENTITLEMENTS_TABLE_NAME = 'entitlements-table';
+  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_123';
+
+  let capturedEventRecord = null;
+
+  globalThis.__webhookEventGet = async () => {
+    return null;
+  };
+
+  globalThis.__webhookEventPut = async ({ eventRecord }) => {
+    capturedEventRecord = eventRecord;
+  };
+
+  globalThis.__ddbGet = async () => {
+    return null;
+  };
+
+  globalThis.__ddbPut = async () => {
+    return;
+  };
+
+  const payload = {
+    id: 'evt_ttl_1',
+    type: 'invoice.paid',
+    data: {
+      object: {
+        status: 'active',
+        current_period_end: 1772600000,
+        metadata: {
+          userId: 'u_webhook_ttl'
+        }
+      }
+    }
+  };
+
+  const response = await billingHandler(buildStripeWebhookEvent(payload, 'whsec_test_123'));
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(capturedEventRecord.eventId, 'evt_ttl_1');
+  assert.equal(typeof capturedEventRecord.expiresAt, 'number');
+  assert.equal(capturedEventRecord.expiresAt > Math.floor(Date.now() / 1000), true);
+
+  delete process.env.ENTITLEMENTS_TABLE_NAME;
+  delete process.env.STRIPE_WEBHOOK_SECRET;
+  delete globalThis.__webhookEventGet;
+  delete globalThis.__webhookEventPut;
+  delete globalThis.__ddbGet;
+  delete globalThis.__ddbPut;
+});
+
 test('stripe lifecycle transitions from trialing to active to canceled and revokes entitlements', async () => {
   const tableData = new Map();
 
