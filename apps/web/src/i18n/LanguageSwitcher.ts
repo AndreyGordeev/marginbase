@@ -18,7 +18,17 @@ const updateUrlLanguage = (language: SupportedLanguage): void => {
   }
 
   const url = new URL(window.location.href);
-  url.searchParams.set('lang', language);
+  const segments = url.pathname.split('/').filter((segment) => segment.length > 0);
+  const first = segments[0];
+
+  if (first && SUPPORTED_LANGUAGES.includes(first as SupportedLanguage)) {
+    segments[0] = language;
+  } else {
+    segments.unshift(language);
+  }
+
+  url.pathname = `/${segments.join('/')}`;
+  url.searchParams.delete('lang');
   window.location.href = url.toString();
 };
 

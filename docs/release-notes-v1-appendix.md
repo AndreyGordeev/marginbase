@@ -158,3 +158,10 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 - Added dedicated Playwright visual suite: `apps/web/tests/e2e/visual.spec.ts`.
 - Added committed baseline snapshots for 8 critical screens under `apps/web/tests/e2e/visual.spec.ts-snapshots/`.
 - Suite runs with deterministic Playwright settings (fixed viewport/locale, disabled animations) and passes against baselines.
+
+## NO MANUAL testing follow-up: i18n E2E + language switch hardening — 2026-03-04
+
+### What changed
+- Added dedicated i18n E2E suite: `apps/web/tests/e2e/i18n.spec.ts`.
+- New checks cover language switching to `pl` and `ru` plus persistence after reload.
+- Fixed language switch routing in `apps/web/src/i18n/LanguageSwitcher.ts` to rewrite URL path language prefix (`/en/...` -> `/pl/...`) instead of query-only override.
