@@ -7,6 +7,13 @@ google_client_ids         = ""
 stripe_secret_key         = ""
 stripe_webhook_secret     = ""
 stripe_mode               = "test"
+stripe_price_profit       = ""
+stripe_price_breakeven    = ""
+stripe_price_cashflow     = ""
+stripe_price_bundle       = ""
+stripe_checkout_success_url = "http://localhost:5173/?checkout=success"
+stripe_checkout_cancel_url  = "http://localhost:5173/?checkout=cancel"
+stripe_portal_return_url    = "http://localhost:5173/#/settings"
 api_cors_allowed_origins  = ["http://localhost:5173"]
 # Production example:
 # api_cors_allowed_origins = ["https://app.marginbase.com"]
@@ -15,3 +22,4 @@ api_cors_allowed_origins  = ["http://localhost:5173"]
 # In production, keep share_create_rate_limit >= 3 and share_create_burst_limit >= 6
 share_create_rate_limit   = 5
 share_create_burst_limit  = 10
+share_max_active_links_per_day = 20

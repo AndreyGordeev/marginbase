@@ -58,6 +58,10 @@ const getUserProfile = async (userId) => {
   return memoryUserStore.get(userId) ?? null;
 };
 
+const getUserBillingProfile = async (userId) => {
+  return getUserProfile(userId);
+};
+
 const putUserProfile = async (profile) => {
   if (typeof globalThis.__userPut === 'function') {
     await globalThis.__userPut({
@@ -68,6 +72,10 @@ const putUserProfile = async (profile) => {
   }
 
   memoryUserStore.set(profile.userId, profile);
+};
+
+const putUserBillingProfile = async (profile) => {
+  await putUserProfile(profile);
 };
 
 const deleteEntitlements = async (userId) => {
@@ -122,6 +130,8 @@ exports.putRecord = putRecord;
 exports.toEntitlementRecord = toEntitlementRecord;
 exports.getUserProfile = getUserProfile;
 exports.putUserProfile = putUserProfile;
+exports.getUserBillingProfile = getUserBillingProfile;
+exports.putUserBillingProfile = putUserBillingProfile;
 exports.deleteEntitlements = deleteEntitlements;
 exports.deleteUserProfile = deleteUserProfile;
 exports.getWebhookEvent = getWebhookEvent;

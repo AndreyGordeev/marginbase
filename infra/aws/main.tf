@@ -51,8 +51,16 @@ module "backend_api" {
   stripe_secret_key       = var.stripe_secret_key
   stripe_webhook_secret   = var.stripe_webhook_secret
   stripe_mode             = var.stripe_mode
+  stripe_price_profit     = var.stripe_price_profit
+  stripe_price_breakeven  = var.stripe_price_breakeven
+  stripe_price_cashflow   = var.stripe_price_cashflow
+  stripe_price_bundle     = var.stripe_price_bundle
+  stripe_checkout_success_url = var.stripe_checkout_success_url
+  stripe_checkout_cancel_url  = var.stripe_checkout_cancel_url
+  stripe_portal_return_url    = var.stripe_portal_return_url
   api_cors_allowed_origins = var.api_cors_allowed_origins
   share_create_rate_limit  = var.share_create_rate_limit
   share_create_burst_limit = var.share_create_burst_limit
+  share_max_active_links_per_day = var.share_max_active_links_per_day
   tags                    = local.common_tags
 }

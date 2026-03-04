@@ -54,6 +54,34 @@ variable "stripe_mode" {
   type = string
 }
 
+variable "stripe_price_profit" {
+  type = string
+}
+
+variable "stripe_price_breakeven" {
+  type = string
+}
+
+variable "stripe_price_cashflow" {
+  type = string
+}
+
+variable "stripe_price_bundle" {
+  type = string
+}
+
+variable "stripe_checkout_success_url" {
+  type = string
+}
+
+variable "stripe_checkout_cancel_url" {
+  type = string
+}
+
+variable "stripe_portal_return_url" {
+  type = string
+}
+
 variable "api_cors_allowed_origins" {
   type = list(string)
 }
@@ -63,6 +91,10 @@ variable "share_create_rate_limit" {
 }
 
 variable "share_create_burst_limit" {
+  type = number
+}
+
+variable "share_max_active_links_per_day" {
   type = number
 }
 

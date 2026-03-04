@@ -1,6 +1,6 @@
 const crypto = require('node:crypto');
 const { parseJsonBody, response, resolveRequesterUserId } = require('./common');
-const { encryptSnapshot, putSnapshotRecord } = require('./share-store');
+const { encryptSnapshot, putSnapshotRecord, listSnapshotRecordsByOwner } = require('./share-store');
 
 const MAX_SNAPSHOT_BYTES = 32 * 1024;
 const ALLOWED_MODULES = new Set(['profit', 'breakeven', 'cashflow']);
@@ -64,6 +64,15 @@ const hashUserId = (userId) => {
   return crypto.createHash('sha256').update(userId).digest('hex');
 };
 
+const getMaxActiveLinksPerDay = () => {
+  const configured = Number(process.env.SHARE_MAX_ACTIVE_LINKS_PER_DAY);
+  if (Number.isFinite(configured) && configured > 0) {
+    return Math.floor(configured);
+  }
+
+  return 20;
+};
+
 exports.handler = async (event) => {
   const body = parseJsonBody(event);
   const snapshot = body.snapshot;
@@ -84,14 +93,36 @@ exports.handler = async (event) => {
 
   const now = Date.now();
   const expiresAtEpoch = Math.floor((now + expiresInDays * 24 * 60 * 60 * 1000) / 1000);
+  const nowEpoch = Math.floor(now / 1000);
   const token = crypto.randomBytes(16).toString('hex');
   const encryptedBlob = encryptSnapshot(snapshot);
+
+  if (ownerUserIdHash) {
+    const dayAgoEpoch = nowEpoch - (24 * 60 * 60);
+    const existing = await listSnapshotRecordsByOwner(ownerUserIdHash);
+    const activeInLastDay = existing.filter((record) => {
+      const createdAt = Number(record?.createdAt);
+      const expiresAt = Number(record?.expiresAt);
+
+      return Number.isFinite(createdAt)
+        && Number.isFinite(expiresAt)
+        && createdAt >= dayAgoEpoch
+        && expiresAt > nowEpoch;
+    }).length;
+
+    if (activeInLastDay >= getMaxActiveLinksPerDay()) {
+      return response(429, {
+        code: 'SHARE_LIMIT_EXCEEDED',
+        message: 'daily active share link limit reached.'
+      });
+    }
+  }
 
   await putSnapshotRecord({
     pk: token,
     encryptedBlob,
     expiresAt: expiresAtEpoch,
-    createdAt: Math.floor(now / 1000),
+    createdAt: nowEpoch,
     schemaVersion: 1,
     ownerUserIdHash
   });

@@ -64,6 +64,48 @@ variable "stripe_mode" {
   }
 }
 
+variable "stripe_price_profit" {
+  type        = string
+  description = "Stripe Price ID for profit plan subscription."
+  default     = ""
+}
+
+variable "stripe_price_breakeven" {
+  type        = string
+  description = "Stripe Price ID for breakeven plan subscription."
+  default     = ""
+}
+
+variable "stripe_price_cashflow" {
+  type        = string
+  description = "Stripe Price ID for cashflow plan subscription."
+  default     = ""
+}
+
+variable "stripe_price_bundle" {
+  type        = string
+  description = "Stripe Price ID for bundle plan subscription."
+  default     = ""
+}
+
+variable "stripe_checkout_success_url" {
+  type        = string
+  description = "Absolute web URL to return after successful checkout."
+  default     = ""
+}
+
+variable "stripe_checkout_cancel_url" {
+  type        = string
+  description = "Absolute web URL to return after canceled checkout."
+  default     = ""
+}
+
+variable "stripe_portal_return_url" {
+  type        = string
+  description = "Default absolute web URL used by Stripe Billing Portal return flow."
+  default     = ""
+}
+
 variable "api_cors_allowed_origins" {
   type        = list(string)
   description = "Allowed origins for API CORS responses. Use explicit origins, not wildcard, in production."
@@ -128,5 +170,16 @@ variable "share_create_burst_limit" {
   validation {
     condition     = var.environment != "prod" || var.share_create_burst_limit >= 6
     error_message = "In prod, share_create_burst_limit must be at least 6."
+  }
+}
+
+variable "share_max_active_links_per_day" {
+  type        = number
+  description = "Maximum number of active share links created per user in a rolling 24-hour window."
+  default     = 20
+
+  validation {
+    condition     = var.share_max_active_links_per_day >= 1 && var.share_max_active_links_per_day <= 200
+    error_message = "share_max_active_links_per_day must be between 1 and 200."
   }
 }

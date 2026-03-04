@@ -114,6 +114,148 @@ test('billing verify updates persisted entitlements and entitlements endpoint re
   delete globalThis.__ddbGet;
 });
 
+test('billing checkout session creates stripe customer once and returns checkout url', async () => {
+  const userProfiles = new Map();
+  const stripeCalls = [];
+
+  process.env.STRIPE_SECRET_KEY = 'sk_test_123';
+  process.env.STRIPE_PRICE_BUNDLE = 'price_bundle_test_1';
+  process.env.STRIPE_CHECKOUT_SUCCESS_URL = 'https://app.marginbase.test/#/billing/success';
+  process.env.STRIPE_CHECKOUT_CANCEL_URL = 'https://app.marginbase.test/#/billing/cancel';
+
+  globalThis.__userGet = async ({ userId }) => {
+    return userProfiles.get(userId) ?? null;
+  };
+
+  globalThis.__userPut = async ({ profile }) => {
+    userProfiles.set(profile.userId, profile);
+  };
+
+  globalThis.fetch = async (url, init) => {
+    stripeCalls.push({ url: String(url), init });
+
+    if (String(url).endsWith('/customers')) {
+      return {
+        ok: true,
+        json: async () => ({
+          id: 'cus_test_1'
+        })
+      };
+    }
+
+    if (String(url).endsWith('/checkout/sessions')) {
+      return {
+        ok: true,
+        json: async () => ({
+          id: 'cs_test_1',
+          url: 'https://checkout.stripe.com/c/pay/cs_test_1'
+        })
+      };
+    }
+
+    throw new Error(`Unexpected Stripe call: ${url}`);
+  };
+
+  const firstResponse = await billingHandler({
+    requestContext: {
+      routeKey: 'POST /billing/checkout/session'
+    },
+    body: JSON.stringify({
+      planId: 'bundle',
+      userId: 'u_checkout_1',
+      email: 'checkout@example.com'
+    })
+  });
+
+  assert.equal(firstResponse.statusCode, 200);
+  assert.equal(parseBody(firstResponse).checkoutUrl, 'https://checkout.stripe.com/c/pay/cs_test_1');
+
+  const secondResponse = await billingHandler({
+    requestContext: {
+      routeKey: 'POST /billing/checkout-session'
+    },
+    body: JSON.stringify({
+      planId: 'bundle',
+      userId: 'u_checkout_1',
+      email: 'checkout@example.com'
+    })
+  });
+
+  assert.equal(secondResponse.statusCode, 200);
+  assert.equal(parseBody(secondResponse).checkoutUrl, 'https://checkout.stripe.com/c/pay/cs_test_1');
+
+  const customerCalls = stripeCalls.filter((call) => call.url.endsWith('/customers'));
+  const checkoutCalls = stripeCalls.filter((call) => call.url.endsWith('/checkout/sessions'));
+
+  assert.equal(customerCalls.length, 1);
+  assert.equal(checkoutCalls.length, 2);
+  assert.equal(userProfiles.get('u_checkout_1')?.stripeCustomerId, 'cus_test_1');
+
+  delete process.env.STRIPE_SECRET_KEY;
+  delete process.env.STRIPE_PRICE_BUNDLE;
+  delete process.env.STRIPE_CHECKOUT_SUCCESS_URL;
+  delete process.env.STRIPE_CHECKOUT_CANCEL_URL;
+  delete globalThis.__userGet;
+  delete globalThis.__userPut;
+  delete globalThis.fetch;
+});
+
+test('billing portal session returns portal url for linked customer', async () => {
+  process.env.STRIPE_SECRET_KEY = 'sk_test_123';
+
+  globalThis.__userGet = async ({ userId }) => {
+    if (userId === 'u_portal_1') {
+      return {
+        userId,
+        stripeCustomerId: 'cus_portal_1'
+      };
+    }
+
+    return null;
+  };
+
+  globalThis.fetch = async (url, init) => {
+    assert.equal(String(url).endsWith('/billing_portal/sessions'), true);
+    assert.equal(init.method, 'POST');
+
+    return {
+      ok: true,
+      json: async () => ({
+        id: 'bps_1',
+        url: 'https://billing.stripe.com/p/session/test_1'
+      })
+    };
+  };
+
+  const response = await billingHandler({
+    requestContext: {
+      routeKey: 'POST /billing/portal-session'
+    },
+    body: JSON.stringify({
+      userId: 'u_portal_1',
+      returnUrl: 'https://app.marginbase.test/#/settings'
+    })
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(parseBody(response).portalUrl, 'https://billing.stripe.com/p/session/test_1');
+
+  const missingProfileResponse = await billingHandler({
+    requestContext: {
+      routeKey: 'POST /billing/portal-session'
+    },
+    body: JSON.stringify({
+      userId: 'u_without_profile'
+    })
+  });
+
+  assert.equal(missingProfileResponse.statusCode, 404);
+
+  delete process.env.STRIPE_SECRET_KEY;
+  delete globalThis.__userGet;
+  delete globalThis.fetch;
+});
+
 test('stripe webhook is idempotent and persists lifecycle status for entitlements', async () => {
   const tableData = new Map();
 
@@ -394,6 +536,45 @@ test('share create stores encrypted snapshot and returns token with expiry', asy
   assert.equal(typeof stored.encryptedBlob, 'string');
 
   delete globalThis.__sharePut;
+});
+
+test('share create enforces per-user daily active link limit', async () => {
+  const nowEpoch = Math.floor(Date.now() / 1000);
+
+  process.env.SHARE_MAX_ACTIVE_LINKS_PER_DAY = '1';
+
+  globalThis.__shareList = async () => {
+    return [
+      {
+        pk: 'existing_active_1',
+        encryptedBlob: 'opaque',
+        createdAt: nowEpoch - 60,
+        expiresAt: nowEpoch + 3600,
+        ownerUserIdHash: 'hash_1'
+      }
+    ];
+  };
+
+  const response = await shareCreateHandler({
+    body: JSON.stringify({
+      snapshot: {
+        schemaVersion: 1,
+        module: 'profit',
+        inputData: {
+          unitPriceMinor: 1200,
+          quantity: 4
+        }
+      },
+      ownerUserId: 'owner_1',
+      expiresInDays: 30
+    })
+  });
+
+  assert.equal(response.statusCode, 429);
+  assert.equal(parseBody(response).code, 'SHARE_LIMIT_EXCEEDED');
+
+  delete process.env.SHARE_MAX_ACTIVE_LINKS_PER_DAY;
+  delete globalThis.__shareList;
 });
 
 test('share get returns snapshot and rejects expired token', async () => {

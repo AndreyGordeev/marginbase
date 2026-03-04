@@ -1,5 +1,13 @@
 const { parseJsonBody, response } = require('./common');
-const { getRecord, putRecord, toEntitlementRecord, getWebhookEvent, putWebhookEvent } = require('./billing-store');
+const {
+  getRecord,
+  putRecord,
+  toEntitlementRecord,
+  getWebhookEvent,
+  putWebhookEvent,
+  getUserBillingProfile,
+  putUserBillingProfile
+} = require('./billing-store');
 
 const allowedPlatforms = new Set(['ios', 'android']);
 
@@ -91,6 +99,163 @@ const verifyReceipt = ({ platform, receiptToken }) => {
   return receiptToken.startsWith(expectedPrefix);
 };
 
+const STRIPE_API_BASE_URL = 'https://api.stripe.com/v1';
+
+const planToPriceEnvName = {
+  profit: 'STRIPE_PRICE_PROFIT',
+  breakeven: 'STRIPE_PRICE_BREAKEVEN',
+  cashflow: 'STRIPE_PRICE_CASHFLOW',
+  bundle: 'STRIPE_PRICE_BUNDLE'
+};
+
+const planToFallbackPrice = {
+  profit: 'price_profit_monthly',
+  breakeven: 'price_breakeven_monthly',
+  cashflow: 'price_cashflow_monthly',
+  bundle: 'price_bundle_monthly'
+};
+
+const getPlanPriceId = (planId) => {
+  const envName = planToPriceEnvName[planId];
+  if (!envName) {
+    return '';
+  }
+
+  const envValue = process.env[envName];
+  if (typeof envValue === 'string' && envValue.trim().length > 0) {
+    return envValue.trim();
+  }
+
+  return planToFallbackPrice[planId] ?? '';
+};
+
+const getCheckoutSuccessUrl = () => {
+  const configured = process.env.STRIPE_CHECKOUT_SUCCESS_URL;
+  if (typeof configured === 'string' && configured.trim().length > 0) {
+    return configured.trim();
+  }
+
+  return 'http://localhost:5173/?checkout=success';
+};
+
+const getCheckoutCancelUrl = () => {
+  const configured = process.env.STRIPE_CHECKOUT_CANCEL_URL;
+  if (typeof configured === 'string' && configured.trim().length > 0) {
+    return configured.trim();
+  }
+
+  return 'http://localhost:5173/?checkout=cancel';
+};
+
+const getBillingPortalReturnUrl = (requestedReturnUrl) => {
+  if (typeof requestedReturnUrl === 'string' && requestedReturnUrl.trim().length > 0) {
+    return requestedReturnUrl.trim();
+  }
+
+  const configured = process.env.STRIPE_PORTAL_RETURN_URL;
+  if (typeof configured === 'string' && configured.trim().length > 0) {
+    return configured.trim();
+  }
+
+  return 'http://localhost:5173/#/settings';
+};
+
+const encodeFormBody = (payload) => {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(payload)) {
+    if (value === undefined || value === null) {
+      continue;
+    }
+
+    params.append(key, String(value));
+  }
+
+  return params.toString();
+};
+
+const postStripeForm = async (path, payload) => {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    return null;
+  }
+
+  if (typeof fetch !== 'function') {
+    throw new Error('Global fetch is not available for Stripe API call.');
+  }
+
+  const stripeResponse = await fetch(`${STRIPE_API_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${secretKey}`,
+      'content-type': 'application/x-www-form-urlencoded'
+    },
+    body: encodeFormBody(payload)
+  });
+
+  const body = await stripeResponse.json().catch(() => ({}));
+  if (!stripeResponse.ok) {
+    const message = typeof body?.error?.message === 'string' ? body.error.message : 'Stripe API request failed.';
+    throw new Error(message);
+  }
+
+  return body;
+};
+
+const upsertBillingProfile = async ({ userId, email, stripeCustomerId, stripeSubscriptionId, stripePriceId, status, currentPeriodEnd, trialEnd }) => {
+  const existing = await getUserBillingProfile(userId);
+  const now = nowIso();
+
+  const profile = {
+    ...(existing ?? {}),
+    userId,
+    email: email || existing?.email || '',
+    stripeCustomerId: stripeCustomerId || existing?.stripeCustomerId || '',
+    stripeSubscriptionId: stripeSubscriptionId || existing?.stripeSubscriptionId || '',
+    stripePriceId: stripePriceId || existing?.stripePriceId || '',
+    status: status || existing?.status || 'active',
+    currentPeriodEnd: currentPeriodEnd ?? existing?.currentPeriodEnd ?? null,
+    trialEnd: trialEnd ?? existing?.trialEnd ?? null,
+    lastVerifiedAt: now,
+    updatedAt: now
+  };
+
+  await putUserBillingProfile(profile);
+  return profile;
+};
+
+const ensureStripeCustomerId = async ({ userId, email }) => {
+  const existingProfile = await getUserBillingProfile(userId);
+  if (existingProfile?.stripeCustomerId) {
+    return existingProfile.stripeCustomerId;
+  }
+
+  const created = await postStripeForm('/customers', {
+    email,
+    'metadata[userId]': userId
+  });
+
+  const customerId = typeof created?.id === 'string' ? created.id : '';
+  if (!customerId) {
+    throw new Error('Unable to create Stripe customer.');
+  }
+
+  await upsertBillingProfile({
+    userId,
+    email,
+    stripeCustomerId: customerId
+  });
+
+  return customerId;
+};
+
+const buildFallbackCheckoutUrl = ({ planId, userId }) => {
+  return `https://checkout.stripe.com/c/pay/cs_test_${encodeURIComponent(planId)}_${encodeURIComponent(userId)}`;
+};
+
+const buildFallbackPortalUrl = (userId) => {
+  return `https://billing.stripe.com/p/session/test_${encodeURIComponent(userId)}`;
+};
+
 const parseRouteKey = (event) => {
   if (typeof event?.requestContext?.routeKey === 'string') {
     return event.requestContext.routeKey;
@@ -111,16 +276,108 @@ const handleCheckoutSession = async (event) => {
   const userId = typeof body.userId === 'string' ? body.userId : '';
   const email = typeof body.email === 'string' ? body.email : '';
 
-  if (!planId || !userId || !email) {
+  if (!planId || !userId || !email || !planToPriceEnvName[planId]) {
     return response(400, {
       code: 'INVALID_REQUEST',
-      message: 'planId, userId and email are required.'
+      message: 'planId, userId and email are required and planId must be supported.'
     });
   }
 
-  return response(200, {
-    checkoutUrl: `https://checkout.stripe.com/c/pay/cs_test_${encodeURIComponent(planId)}_${encodeURIComponent(userId)}`
-  });
+  const priceId = getPlanPriceId(planId);
+  if (!priceId) {
+    return response(500, {
+      code: 'PRICE_ID_NOT_CONFIGURED',
+      message: 'Stripe price id is not configured for selected plan.'
+    });
+  }
+
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return response(200, {
+      checkoutUrl: buildFallbackCheckoutUrl({ planId, userId })
+    });
+  }
+
+  try {
+    const customerId = await ensureStripeCustomerId({ userId, email });
+    const checkoutSession = await postStripeForm('/checkout/sessions', {
+      mode: 'subscription',
+      customer: customerId,
+      'line_items[0][price]': priceId,
+      'line_items[0][quantity]': 1,
+      success_url: getCheckoutSuccessUrl(),
+      cancel_url: getCheckoutCancelUrl(),
+      'metadata[userId]': userId,
+      'metadata[planId]': planId
+    });
+
+    const checkoutUrl = typeof checkoutSession?.url === 'string'
+      ? checkoutSession.url
+      : buildFallbackCheckoutUrl({ planId, userId });
+
+    await upsertBillingProfile({
+      userId,
+      email,
+      stripeCustomerId: customerId,
+      stripePriceId: priceId,
+      status: 'active'
+    });
+
+    return response(200, {
+      checkoutUrl
+    });
+  } catch (error) {
+    return response(502, {
+      code: 'STRIPE_CHECKOUT_ERROR',
+      message: error instanceof Error ? error.message : 'Unable to create Stripe checkout session.'
+    });
+  }
+};
+
+const handlePortalSession = async (event) => {
+  const body = parseJsonBody(event);
+  const userId = typeof body.userId === 'string' ? body.userId : '';
+  const returnUrl = getBillingPortalReturnUrl(body.returnUrl);
+
+  if (!userId) {
+    return response(400, {
+      code: 'INVALID_REQUEST',
+      message: 'userId is required.'
+    });
+  }
+
+  const profile = await getUserBillingProfile(userId);
+  if (!profile?.stripeCustomerId) {
+    return response(404, {
+      code: 'BILLING_PROFILE_NOT_FOUND',
+      message: 'Stripe customer is not linked for this user.'
+    });
+  }
+
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return response(200, {
+      portalUrl: buildFallbackPortalUrl(userId)
+    });
+  }
+
+  try {
+    const portalSession = await postStripeForm('/billing_portal/sessions', {
+      customer: profile.stripeCustomerId,
+      return_url: returnUrl
+    });
+
+    const portalUrl = typeof portalSession?.url === 'string'
+      ? portalSession.url
+      : buildFallbackPortalUrl(userId);
+
+    return response(200, {
+      portalUrl
+    });
+  } catch (error) {
+    return response(502, {
+      code: 'STRIPE_PORTAL_ERROR',
+      message: error instanceof Error ? error.message : 'Unable to create Stripe billing portal session.'
+    });
+  }
 };
 
 const handleStripeWebhook = async (event) => {
@@ -149,10 +406,10 @@ const handleStripeWebhook = async (event) => {
 
   const metadata = typeof payloadObject.metadata === 'object' && payloadObject.metadata !== null ? payloadObject.metadata : {};
   const userId =
-    (typeof metadata.userId === 'string' && metadata.userId) ||
-    (typeof body.userId === 'string' && body.userId) ||
-    (typeof payloadObject.client_reference_id === 'string' && payloadObject.client_reference_id) ||
-    '';
+    (typeof metadata.userId === 'string' && metadata.userId)
+    || (typeof body.userId === 'string' && body.userId)
+    || (typeof payloadObject.client_reference_id === 'string' && payloadObject.client_reference_id)
+    || '';
 
   const existing = userId ? await getRecord(userId) : null;
 
@@ -183,7 +440,7 @@ const handleStripeWebhook = async (event) => {
       nextTrialEnd = nextStatus === 'trialing' ? nextCurrentPeriodEnd : null;
     }
 
-    if (eventType === 'customer.subscription.updated' || eventType === 'invoice.paid') {
+    if (eventType === 'customer.subscription.created' || eventType === 'customer.subscription.updated' || eventType === 'invoice.paid') {
       nextStatus = objectStatus;
       nextTrialEnd = nextStatus === 'trialing' ? nextCurrentPeriodEnd : null;
     }
@@ -220,6 +477,19 @@ const handleStripeWebhook = async (event) => {
     });
 
     await putRecord(nextRecord);
+
+    await upsertBillingProfile({
+      userId,
+      email: '',
+      stripeCustomerId: typeof payloadObject.customer === 'string' ? payloadObject.customer : undefined,
+      stripeSubscriptionId: typeof payloadObject.subscription === 'string'
+        ? payloadObject.subscription
+        : (typeof payloadObject.id === 'string' && eventType.startsWith('customer.subscription.') ? payloadObject.id : undefined),
+      stripePriceId: typeof payloadObject?.plan?.id === 'string' ? payloadObject.plan.id : undefined,
+      status: nextStatus,
+      currentPeriodEnd: nextCurrentPeriodEnd,
+      trialEnd: nextTrialEnd
+    });
   }
 
   await putWebhookEvent({
@@ -239,8 +509,12 @@ const handleStripeWebhook = async (event) => {
 exports.handler = async (event) => {
   const routeKey = parseRouteKey(event);
 
-  if (routeKey === 'POST /billing/checkout/session') {
+  if (routeKey === 'POST /billing/checkout/session' || routeKey === 'POST /billing/checkout-session') {
     return handleCheckoutSession(event);
+  }
+
+  if (routeKey === 'POST /billing/portal-session') {
+    return handlePortalSession(event);
   }
 
   if (routeKey === 'POST /billing/webhook/stripe') {
