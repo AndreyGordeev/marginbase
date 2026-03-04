@@ -62,6 +62,7 @@ const SIGNED_IN_STORAGE_KEY = 'marginbase_signed_in';
 const SIGNED_IN_USER_ID_STORAGE_KEY = 'marginbase_signed_in_user_id';
 const TELEMETRY_CONSENT_STORAGE_KEY = 'marginbase_telemetry_consent';
 const FIRST_RUN_DEMO_SCENARIOS_KEY = 'marginbase_first_run_demo_scenarios_seeded';
+const FREE_PLAN_SCENARIO_LIMIT = 3;
 
 const nowIso = (): string => new Date().toISOString();
 
@@ -342,6 +343,15 @@ export class WebAppService {
 
   public async listAllScenarios(): Promise<ScenarioV1[]> {
     return this.scenarioRepository.listScenarios();
+  }
+
+  public async canCreateScenarioForCurrentPlan(): Promise<boolean> {
+    if (hasPaidEntitlement(this.entitlementCache)) {
+      return true;
+    }
+
+    const scenarios = await this.scenarioRepository.listScenarios();
+    return scenarios.length < FREE_PLAN_SCENARIO_LIMIT;
   }
 
   public async deleteScenario(scenarioId: string): Promise<void> {

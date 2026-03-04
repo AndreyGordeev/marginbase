@@ -145,6 +145,7 @@
   "workspace.results": "Результаты",
   "workspace.shareScenario": "Поделиться сценарием",
   "workspace.createScenarioBeforeShare": "Сначала создайте сценарий, затем поделитесь им.",
+  "workspace.scenarioLimitReached": "Достигнут лимит сценариев бесплатного плана. Обновите план, чтобы добавить больше.",
   "workspace.shareLinkCopied": "Ссылка скопирована.",
   "workspace.shareLinkCreateFailed": "Не удалось создать ссылку для общего доступа.",
   "workspace.showDebugJson": "Показать debug JSON",

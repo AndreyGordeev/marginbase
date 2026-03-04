@@ -145,6 +145,7 @@
   "workspace.results": "Ergebnisse",
   "workspace.shareScenario": "Szenario teilen",
   "workspace.createScenarioBeforeShare": "Erstellen Sie zuerst ein Szenario, bevor Sie es teilen.",
+  "workspace.scenarioLimitReached": "Limit der Free-Plan-Szenarien erreicht. Upgrade für weitere Szenarien.",
   "workspace.shareLinkCopied": "Share-Link kopiert.",
   "workspace.shareLinkCreateFailed": "Erstellung des Share-Links fehlgeschlagen.",
   "workspace.showDebugJson": "Debug-JSON anzeigen",

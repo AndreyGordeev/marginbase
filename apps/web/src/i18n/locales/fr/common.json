@@ -145,6 +145,7 @@
   "workspace.results": "Résultats",
   "workspace.shareScenario": "Partager le scénario",
   "workspace.createScenarioBeforeShare": "Créez d'abord un scénario avant de le partager.",
+  "workspace.scenarioLimitReached": "Limite de scénarios du plan gratuit atteinte. Passez à une offre supérieure pour en ajouter.",
   "workspace.shareLinkCopied": "Lien partagé copié.",
   "workspace.shareLinkCreateFailed": "Échec de la création du lien de partage.",
   "workspace.showDebugJson": "Afficher le JSON de debug",

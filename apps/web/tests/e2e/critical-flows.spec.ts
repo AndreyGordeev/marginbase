@@ -28,6 +28,21 @@ test('soft gate blocks locked module and routes to subscription', async ({ page 
   await expect(page.getByRole('heading', { name: 'Subscription' })).toBeVisible();
 });
 
+test('upgrade flow unlocks locked module via local bundle activation', async ({ page }) => {
+  await loginAndContinueToDashboard(page);
+
+  await page.goto('/en/login#/cashflow');
+  await expect(page.getByText('This module requires an active subscription.')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Go to Subscription' }).click();
+  await page.getByRole('button', { name: 'Activate Bundle (Local Mock)' }).click();
+  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+
+  await page.goto('/en/login#/cashflow');
+  await expect(page.getByRole('heading', { name: 'Cashflow Editor' })).toBeVisible();
+  await expect(page.getByText('This module requires an active subscription.')).toHaveCount(0);
+});
+
 test('data export triggers local JSON download', async ({ page }) => {
   await loginAndContinueToDashboard(page);
 
@@ -37,6 +52,31 @@ test('data export triggers local JSON download', async ({ page }) => {
   const download = await downloadPromise;
 
   expect(download.suggestedFilename()).toBe('marginbase-export.json');
+});
+
+test('share scenario flow creates and renders local share dialog', async ({ page }) => {
+  await page.route('**/share/create', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        token: 'share_token_e2e',
+        expiresAt: '2026-04-03T10:00:00.000Z'
+      })
+    });
+  });
+
+  await loginAndContinueToDashboard(page);
+
+  const profitCard = page.locator('.card', { hasText: 'Profit Calculator' }).first();
+  await profitCard.getByRole('button', { name: 'Open' }).click();
+  await expect(page.getByRole('heading', { name: 'Profit Editor' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Calculate Scenario' }).click();
+  await page.getByRole('button', { name: 'Share Scenario' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Shared Scenario' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy link' })).toBeVisible();
 });
 
 test('legal center navigation works from login screen', async ({ page }) => {

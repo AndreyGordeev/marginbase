@@ -94,4 +94,38 @@ describe('WebAppService repository + core scenarios', () => {
     const secondRunScenarios = await service.listAllScenarios();
     expect(secondRunScenarios.length).toBe(3);
   });
+
+  it('enforces free-plan scenario limit and unlocks after bundle activation', async () => {
+    const service = createService();
+
+    await service.saveProfitScenario({
+      scenarioName: 'S1',
+      unitPriceMinor: 1000,
+      quantity: 1,
+      variableCostPerUnitMinor: 500,
+      fixedCostsMinor: 100
+    });
+    await service.saveBreakEvenScenario({
+      scenarioName: 'S2',
+      unitPriceMinor: 1000,
+      variableCostPerUnitMinor: 500,
+      fixedCostsMinor: 100,
+      targetProfitMinor: 0,
+      plannedQuantity: 1
+    });
+    await service.saveCashflowScenario({
+      scenarioName: 'S3',
+      startingCashMinor: 1000,
+      baseMonthlyRevenueMinor: 1000,
+      fixedMonthlyCostsMinor: 500,
+      variableMonthlyCostsMinor: 200,
+      forecastMonths: 3,
+      monthlyGrowthRate: 0
+    });
+
+    expect(await service.canCreateScenarioForCurrentPlan()).toBe(false);
+
+    service.activateBundle();
+    expect(await service.canCreateScenarioForCurrentPlan()).toBe(true);
+  });
 });

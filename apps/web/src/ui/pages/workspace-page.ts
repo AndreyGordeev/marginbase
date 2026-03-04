@@ -76,6 +76,13 @@ export const renderWorkspacePage = async (
   listPanel.className = 'card scenario-list';
   listPanel.innerHTML = `<h3>${moduleTitle} ${translate('workspace.scenarios')}</h3>`;
   listPanel.appendChild(createActionButton(translate('workspace.newScenario'), async () => {
+    const canCreateScenario = await service.canCreateScenarioForCurrentPlan();
+    if (!canCreateScenario) {
+      showFormError(translate('workspace.scenarioLimitReached'));
+      goTo('/subscription');
+      return;
+    }
+
     await service.createDefaultScenario(moduleId);
     await render();
   }, 'primary scenario-create'));

@@ -145,6 +145,7 @@
   "workspace.results": "Wyniki",
   "workspace.shareScenario": "Udostępnij scenariusz",
   "workspace.createScenarioBeforeShare": "Najpierw utwórz scenariusz przed udostępnieniem.",
+  "workspace.scenarioLimitReached": "Osiągnięto limit scenariuszy w planie darmowym. Ulepsz plan, aby dodać więcej.",
   "workspace.shareLinkCopied": "Skopiowano link udostępniania.",
   "workspace.shareLinkCreateFailed": "Nie udało się utworzyć linku udostępniania.",
   "workspace.showDebugJson": "Pokaż debug JSON",

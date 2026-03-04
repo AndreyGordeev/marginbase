@@ -107,6 +107,7 @@
   "workspace.results": "Results",
   "workspace.shareScenario": "Share Scenario",
   "workspace.createScenarioBeforeShare": "Create a scenario first before sharing.",
+  "workspace.scenarioLimitReached": "Free plan scenario limit reached. Upgrade to add more scenarios.",
   "workspace.shareLinkCopied": "Share link copied.",
   "workspace.shareLinkCreateFailed": "Share link creation failed.",
   "workspace.showDebugJson": "Show debug JSON",

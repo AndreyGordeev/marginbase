@@ -41,6 +41,8 @@ templates
 
 ### 3. Upgrade UX
 
+Status: IMPLEMENTED (2026-03-04)
+
 Trigger upgrade when: - locked calculator opened - export attempted -
 limits exceeded
 
@@ -65,6 +67,8 @@ Forbidden: revenue costs margins financial inputs
 
 ### 5. Local Report Export
 
+Status: IMPLEMENTED (2026-03-04)
+
 Formats: PDF XLSX
 
 Generated locally only.
@@ -74,6 +78,8 @@ Libraries: pdf-lib exceljs
 ------------------------------------------------------------------------
 
 ### 6. Shareable Scenario Links
+
+Status: IMPLEMENTED (2026-03-04)
 
 Flow: scenario → sanitize → encrypt → upload snapshot → expiring link
 
@@ -85,6 +91,8 @@ Route: /share/:token
 
 ### 7. Embeddable Calculators
 
+Status: IMPLEMENTED (2026-03-04)
+
 Routes: /embed/profit /embed/breakeven /embed/cashflow
 
 Requirements: - stateless - responsive - no login
@@ -95,6 +103,8 @@ Example:
 ------------------------------------------------------------------------
 
 ### 8. End‑to‑End Tests
+
+Status: IMPLEMENTED (2026-03-04)
 
 Add Playwright tests:
 
