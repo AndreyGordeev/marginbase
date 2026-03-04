@@ -60,10 +60,30 @@ type WebApiClient = Pick<MarginbaseApiClient, 'refreshEntitlements' | 'deleteAcc
 
 const SIGNED_IN_STORAGE_KEY = 'marginbase_signed_in';
 const SIGNED_IN_USER_ID_STORAGE_KEY = 'marginbase_signed_in_user_id';
+const TELEMETRY_CONSENT_STORAGE_KEY = 'marginbase_telemetry_consent';
 
 const nowIso = (): string => new Date().toISOString();
 
 const VAULT_SALT_STORAGE_KEY = 'marginbase_vault_salt';
+
+export type TelemetryConsentState = 'enabled' | 'disabled' | 'not_decided';
+
+const isTelemetryConsentState = (value: string): value is TelemetryConsentState => {
+  return value === 'enabled' || value === 'disabled' || value === 'not_decided';
+};
+
+const loadTelemetryConsentState = (): TelemetryConsentState => {
+  if (typeof localStorage === 'undefined') {
+    return 'disabled';
+  }
+
+  const value = localStorage.getItem(TELEMETRY_CONSENT_STORAGE_KEY);
+  if (!value || !isTelemetryConsentState(value)) {
+    return 'disabled';
+  }
+
+  return value;
+};
 
 export interface ProfitInputState {
   scenarioName: string;
@@ -102,6 +122,7 @@ export class WebAppService {
   private entitlementCache: EntitlementCache;
   private lastRefreshAt: string | null;
   private vaultEnabled: boolean;
+  private telemetryConsentState: TelemetryConsentState;
   private readonly apiClient: WebApiClient;
 
   public constructor(
@@ -115,6 +136,7 @@ export class WebAppService {
     this.entitlementCache = loadEntitlementCache(nowIso);
     this.lastRefreshAt = null;
     this.vaultEnabled = false;
+    this.telemetryConsentState = loadTelemetryConsentState();
     this.apiClient = apiClient;
   }
 
@@ -210,6 +232,20 @@ export class WebAppService {
 
   public isVaultEnabled(): boolean {
     return this.vaultEnabled;
+  }
+
+  public getTelemetryConsentState(): TelemetryConsentState {
+    return this.telemetryConsentState;
+  }
+
+  public setTelemetryConsentState(state: TelemetryConsentState): void {
+    this.telemetryConsentState = state;
+
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
+
+    localStorage.setItem(TELEMETRY_CONSENT_STORAGE_KEY, state);
   }
 
   public async enableLocalVault(passphrase: string): Promise<void> {
@@ -631,6 +667,10 @@ export class WebAppService {
 
   private async emitTelemetryEvent(name: TelemetryEventName, attributes: Record<string, string | boolean>): Promise<void> {
     if (!this.apiClient.sendTelemetryBatch) {
+      return;
+    }
+
+    if (this.telemetryConsentState !== 'enabled') {
       return;
     }
 

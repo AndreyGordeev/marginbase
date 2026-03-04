@@ -2,6 +2,23 @@ import { describe, expect, it, vi } from 'vitest';
 import { createService } from './helpers/web-app-service-fixtures';
 
 describe('WebAppService reports + telemetry', () => {
+  it('does not emit telemetry events when consent is disabled by default', async () => {
+    const sendTelemetryBatch = vi.fn(async () => {
+      return {
+        accepted: true,
+        count: 1,
+        objectKey: '2026/03/04/anonymous/test.json'
+      };
+    });
+
+    const service = createService({ sendTelemetryBatch });
+
+    await service.trackEmbedOpened('profit', true);
+    await service.trackEmbedCtaClicked('profit');
+
+    expect(sendTelemetryBatch).not.toHaveBeenCalled();
+  });
+
   it('emits embed telemetry events with allowlisted attributes only', async () => {
     const sendTelemetryBatch = vi.fn(async () => {
       return {
@@ -12,6 +29,7 @@ describe('WebAppService reports + telemetry', () => {
     });
 
     const service = createService({ sendTelemetryBatch });
+  service.setTelemetryConsentState('enabled');
 
     await service.trackEmbedOpened('profit', true);
     await service.trackEmbedCtaClicked('profit');

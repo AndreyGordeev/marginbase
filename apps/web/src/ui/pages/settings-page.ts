@@ -32,6 +32,34 @@ export const renderSettingsPage = async (
 
   card.appendChild(deleteAccountButton);
 
+  const telemetryCard = document.createElement('div');
+  telemetryCard.className = 'card';
+  telemetryCard.innerHTML = `<h3>${translate('settings.telemetry.title')}</h3><p>${translate('settings.telemetry.subtitle')}</p>`;
+
+  const telemetryState = document.createElement('p');
+  telemetryState.textContent = `${translate('settings.telemetry.state')}: ${translate(`settings.telemetry.${service.getTelemetryConsentState()}`)}`;
+  telemetryCard.appendChild(telemetryState);
+
+  const telemetryActions = document.createElement('div');
+  telemetryActions.className = 'button-row';
+
+  telemetryActions.appendChild(createActionButton(translate('settings.telemetry.enable'), () => {
+    service.setTelemetryConsentState('enabled');
+    telemetryState.textContent = `${translate('settings.telemetry.state')}: ${translate('settings.telemetry.enabled')}`;
+  }, 'primary'));
+
+  telemetryActions.appendChild(createActionButton(translate('settings.telemetry.disable'), () => {
+    service.setTelemetryConsentState('disabled');
+    telemetryState.textContent = `${translate('settings.telemetry.state')}: ${translate('settings.telemetry.disabled')}`;
+  }));
+
+  telemetryActions.appendChild(createActionButton(translate('settings.telemetry.reset'), () => {
+    service.setTelemetryConsentState('not_decided');
+    telemetryState.textContent = `${translate('settings.telemetry.state')}: ${translate('settings.telemetry.not_decided')}`;
+  }));
+
+  telemetryCard.appendChild(telemetryActions);
+
   const legalCard = document.createElement('div');
   legalCard.className = 'card';
   legalCard.innerHTML = `<h3>${translate('settings.legal')}</h3>`;
@@ -63,6 +91,7 @@ export const renderSettingsPage = async (
 
   legalCard.appendChild(legalLinks);
   main.appendChild(card);
+  main.appendChild(telemetryCard);
   main.appendChild(legalCard);
 
   shell.appendChild(main);
