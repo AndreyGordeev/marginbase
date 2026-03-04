@@ -48,6 +48,7 @@ module "backend_api" {
   telemetry_bucket_name   = module.data.telemetry_bucket_name
   telemetry_bucket_arn    = module.data.telemetry_bucket_arn
   google_client_ids       = var.google_client_ids
+  google_tokeninfo_url    = var.google_tokeninfo_url
   stripe_secret_key       = var.stripe_secret_key
   stripe_webhook_secret   = var.stripe_webhook_secret
   stripe_mode             = var.stripe_mode

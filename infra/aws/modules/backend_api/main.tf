@@ -229,6 +229,7 @@ resource "aws_lambda_function" "auth" {
     variables = {
       ENVIRONMENT       = var.environment
       GOOGLE_CLIENT_IDS = var.google_client_ids
+      GOOGLE_TOKENINFO_URL = var.google_tokeninfo_url
     }
   }
 

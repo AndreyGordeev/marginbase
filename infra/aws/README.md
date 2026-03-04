@@ -49,6 +49,10 @@ This folder contains Terraform modules to provision the Step 10 dev environment 
    - add Stripe webhook endpoint `${api_base_url}/billing/webhook/stripe`
    - subscribe webhook events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`
 
+   Optional auth override:
+
+   - set `google_tokeninfo_url` only if Google token verification endpoint must be overridden (default is `https://oauth2.googleapis.com/tokeninfo`)
+
 5. Apply:
 
    - `terraform apply dev.tfplan`

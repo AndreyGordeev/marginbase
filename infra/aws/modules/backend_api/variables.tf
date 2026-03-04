@@ -42,6 +42,10 @@ variable "google_client_ids" {
   type = string
 }
 
+variable "google_tokeninfo_url" {
+  type = string
+}
+
 variable "stripe_secret_key" {
   type = string
 }

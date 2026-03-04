@@ -39,6 +39,12 @@ variable "google_client_ids" {
   default     = ""
 }
 
+variable "google_tokeninfo_url" {
+  type        = string
+  description = "Optional override URL for Google tokeninfo endpoint used by /auth/verify."
+  default     = ""
+}
+
 variable "stripe_secret_key" {
   type        = string
   description = "Stripe secret key used by billing handlers."
