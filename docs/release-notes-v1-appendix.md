@@ -151,3 +151,10 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 - Added `@marginbase/reporting` Vitest coverage thresholds and package-level `test:coverage` script.
 - Expanded reporting exporter unit tests to cover PDF export (including watermark option path) in addition to XLSX assertions.
 - Root `test:coverage` now runs both `@marginbase/domain-core` and `@marginbase/reporting` coverage gates.
+
+## NO MANUAL testing follow-up: visual regression baseline — 2026-03-04
+
+### What changed
+- Added dedicated Playwright visual suite: `apps/web/tests/e2e/visual.spec.ts`.
+- Added committed baseline snapshots for 8 critical screens under `apps/web/tests/e2e/visual.spec.ts-snapshots/`.
+- Suite runs with deterministic Playwright settings (fixed viewport/locale, disabled animations) and passes against baselines.
