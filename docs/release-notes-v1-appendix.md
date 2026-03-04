@@ -165,3 +165,9 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 - Added dedicated i18n E2E suite: `apps/web/tests/e2e/i18n.spec.ts`.
 - New checks cover language switching to `pl` and `ru` plus persistence after reload.
 - Fixed language switch routing in `apps/web/src/i18n/LanguageSwitcher.ts` to rewrite URL path language prefix (`/en/...` -> `/pl/...`) instead of query-only override.
+
+## NO MANUAL testing follow-up: offline persistence E2E — 2026-03-04
+
+### What changed
+- Added dedicated offline critical-path E2E: `apps/web/tests/e2e/offline.spec.ts`.
+- New check validates: scenario saved online -> browser offline mode -> dashboard/workspace navigation -> recalculation still works from local data.
