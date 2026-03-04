@@ -27,6 +27,9 @@ If code changes but docs are not updated, the work is considered incomplete.
   - `docs/release-notes-v1.md`
 - Compliance/legal baseline changes:
   - `docs/compliance/*.md`
+- UI text / localization changes:
+  - `apps/web/src/i18n/locales/*/common.json` (keep key parity with `en/common.json`)
+  - `apps/web/tests/i18n-parity.test.ts` (must pass in same PR)
 
 ## .docx and .md Consistency
 If `.docx` files are used (for legal/commercial handoff), maintain an equivalent authoritative `.md` file under `docs/` and update both in the same change cycle.
@@ -41,6 +44,7 @@ Recommended convention:
 - [ ] If `.docx` exists for affected material, I updated it too (or documented why not).
 - [ ] `docs/INDEX.md` still points to the correct docs.
 - [ ] Product/architecture/API statements are consistent across `README.md`, `PROJECT_CONTEXT.md`, and domain docs.
+- [ ] If any i18n key changed in `en/common.json`, all other locale files were updated to keep exact key parity.
 
 ## Enforcement Guidance
 - Reject PRs that modify implementation without corresponding documentation updates when docs are impacted.
