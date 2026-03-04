@@ -880,6 +880,11 @@ export const renderDataBackupPage = async (
   exportCard.appendChild(reportPreviewButton);
   exportCard.appendChild(reportExportButton);
   exportCard.appendChild(reportExportExcelButton);
+  if (service.isExportWatermarked()) {
+    const exportRestriction = document.createElement('p');
+    exportRestriction.textContent = `${translate('data.exportWatermarkFree')} ${translate('data.exportWatermarkUpgrade')}`;
+    exportCard.appendChild(exportRestriction);
+  }
   exportCard.appendChild(reportPreview);
 
   const importCard = document.createElement('section');

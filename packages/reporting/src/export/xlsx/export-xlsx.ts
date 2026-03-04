@@ -11,7 +11,11 @@ const pct = (value: number | null): number | null => {
   return Number(value);
 };
 
-export const exportReportXlsx = (report: ReportModel): Uint8Array => {
+export interface ReportXlsxExportOptions {
+  watermarkText?: string;
+}
+
+export const exportReportXlsx = (report: ReportModel, options: ReportXlsxExportOptions = {}): Uint8Array => {
   const workbook = utils.book_new();
 
   const summaryRows: Array<Record<string, string | number>> = [
@@ -27,6 +31,14 @@ export const exportReportXlsx = (report: ReportModel): Uint8Array => {
       key: `Risk:${risk.code}`,
       value: `${risk.severity}:${risk.message}`
     })));
+  }
+
+  const watermarkText = options.watermarkText?.trim();
+  if (watermarkText) {
+    summaryRows.push({
+      key: 'Watermark',
+      value: watermarkText
+    });
   }
 
   utils.book_append_sheet(workbook, utils.json_to_sheet(summaryRows), 'Summary');
