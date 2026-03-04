@@ -58,3 +58,11 @@ export {
   type ScenarioValidationErrorCode,
   type ScenarioValidationResult
 } from './scenario-schema';
+
+export {
+  CURRENT_SNAPSHOT_SCHEMA_VERSION,
+  migrateSnapshot,
+  sanitizeScenarioForShare,
+  type SharedSnapshotAnyVersion,
+  type SharedSnapshotV1
+} from './snapshot-schema';

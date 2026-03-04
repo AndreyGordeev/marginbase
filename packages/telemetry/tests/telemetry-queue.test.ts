@@ -17,6 +17,9 @@ describe('telemetry queue', () => {
     );
     expect(rejected.accepted).toBe(false);
     expect(rejected.reason).toMatch(/not allowed|forbidden/i);
+
+    const embedAccepted = queue.enqueue(createTelemetryEvent('embed_opened', { moduleId: 'cashflow', poweredBy: true }));
+    expect(embedAccepted.accepted).toBe(true);
   });
 
   it('rejects disallowed payload field types', () => {
@@ -62,6 +65,8 @@ describe('telemetry queue', () => {
       expect.arrayContaining([
         'auth_login_success',
         'auth_login_failure',
+        'embed_opened',
+        'embed_cta_clicked',
         'scenario_saved',
         'export_completed',
         'import_failed'

@@ -1,4 +1,7 @@
 import type { ModuleId } from '@marginbase/domain-core';
+import type { ReportModel } from '@marginbase/reporting';
+import { getPrefillFromSearch } from '../../features/embed/prefill';
+import { renderShareScenarioDialog } from '../../features/share/ShareScenarioDialog';
 import { type BreakEvenInputState, type CashflowInputState, type ProfitInputState, WebAppService } from '../../web-app-service';
 import { type LegalBackTarget, type LegalRoute } from '../legal/legal-render';
 import { renderModuleResults } from '../results/module-results';
@@ -107,6 +110,92 @@ const toUserFriendlyValidationMessage = (message: string): string => {
     .replace(/must be an integer in minor units\.?/gi, 'must be a whole number in minor units.');
 
   return formattedMessage;
+};
+
+const formatReportMoney = (minor: number, currencyCode: string, locale: string): string => {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: currencyCode,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(minor / 100);
+};
+
+const formatReportPct = (value: number | null, locale: string): string => {
+  if (value === null) {
+    return '—';
+  }
+
+  return new Intl.NumberFormat(locale, {
+    style: 'percent',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  }).format(value);
+};
+
+const renderBusinessReportPreview = (report: ReportModel): HTMLElement => {
+  const container = document.createElement('div');
+  container.className = 'modal';
+
+  const summary = document.createElement('div');
+  summary.innerHTML = `<h3>${report.summary.title}</h3><p>Generated locally: ${report.summary.generatedAtLocal}</p>`;
+  container.appendChild(summary);
+
+  if (report.profitability) {
+    const section = document.createElement('div');
+    section.innerHTML = `
+      <h4>Profitability</h4>
+      <p>Revenue: ${formatReportMoney(report.profitability.revenueTotalMinor, report.summary.currencyCode, report.summary.locale)}</p>
+      <p>Total Cost: ${formatReportMoney(report.profitability.totalCostMinor, report.summary.currencyCode, report.summary.locale)}</p>
+      <p>Gross Profit: ${formatReportMoney(report.profitability.grossProfitMinor, report.summary.currencyCode, report.summary.locale)}</p>
+      <p>Net Profit: ${formatReportMoney(report.profitability.netProfitMinor, report.summary.currencyCode, report.summary.locale)}</p>
+      <p>Contribution Margin: ${formatReportPct(report.profitability.contributionMarginPct, report.summary.locale)}</p>
+      <p>Net Margin: ${formatReportPct(report.profitability.netProfitPct, report.summary.locale)}</p>
+      <p>Markup: ${formatReportPct(report.profitability.markupPct, report.summary.locale)}</p>
+    `;
+    container.appendChild(section);
+  }
+
+  if (report.breakeven) {
+    const section = document.createElement('div');
+    section.innerHTML = `
+      <h4>Break-even</h4>
+      <p>Break-even Quantity: ${report.breakeven.breakEvenQuantity ?? '—'}</p>
+      <p>Break-even Revenue: ${report.breakeven.breakEvenRevenueMinor === null ? '—' : formatReportMoney(report.breakeven.breakEvenRevenueMinor, report.summary.currencyCode, report.summary.locale)}</p>
+      <p>Required Quantity (Target): ${report.breakeven.requiredQuantityForTargetProfit ?? '—'}</p>
+      <p>Required Revenue (Target): ${report.breakeven.requiredRevenueForTargetProfitMinor === null ? '—' : formatReportMoney(report.breakeven.requiredRevenueForTargetProfitMinor, report.summary.currencyCode, report.summary.locale)}</p>
+      <p>Margin of Safety: ${report.breakeven.marginOfSafetyUnits ?? '—'} (${formatReportPct(report.breakeven.marginOfSafetyPct, report.summary.locale)})</p>
+    `;
+    container.appendChild(section);
+  }
+
+  if (report.cashflow) {
+    const section = document.createElement('div');
+    const projectionRows = report.cashflow.monthlyProjection.slice(0, 12).map((entry) => {
+      return `<li>Month ${entry.monthIndex}: ${formatReportMoney(entry.revenueMinor, report.summary.currencyCode, report.summary.locale)} | ${formatReportMoney(entry.expensesMinor, report.summary.currencyCode, report.summary.locale)} | ${formatReportMoney(entry.netCashflowMinor, report.summary.currencyCode, report.summary.locale)} | ${formatReportMoney(entry.cashBalanceMinor, report.summary.currencyCode, report.summary.locale)}</li>`;
+    }).join('');
+
+    section.innerHTML = `
+      <h4>Cashflow</h4>
+      <p>Final Balance: ${formatReportMoney(report.cashflow.finalBalanceMinor, report.summary.currencyCode, report.summary.locale)}</p>
+      <p>First Negative Month: ${report.cashflow.firstNegativeMonth ?? '—'}</p>
+      <ul>${projectionRows}</ul>
+    `;
+    container.appendChild(section);
+  }
+
+  if (report.riskIndicators.length > 0) {
+    const section = document.createElement('div');
+    const risks = report.riskIndicators.map((risk) => `<li>${risk.severity.toUpperCase()}: ${risk.message}</li>`).join('');
+    section.innerHTML = `<h4>Risk Indicators</h4><ul>${risks}</ul>`;
+    container.appendChild(section);
+  }
+
+  const disclaimer = document.createElement('p');
+  disclaimer.textContent = report.disclaimer;
+  container.appendChild(disclaimer);
+
+  return container;
 };
 
 export const renderSidebar = (
@@ -280,6 +369,27 @@ export const renderWorkspacePage = async (
   const allowed = service.canOpenModule(moduleId);
   const scenarios = await service.listScenarios(moduleId);
   const selectedScenario = scenarios[0] ?? null;
+  const prefill = typeof window !== 'undefined' ? getPrefillFromSearch(window.location.search) : null;
+
+  const prefillInputData = (() => {
+    if (!prefill) {
+      return undefined;
+    }
+
+    if (moduleId === 'profit' && prefill.module === 'profit') {
+      return prefill.inputData;
+    }
+
+    if (moduleId === 'breakeven' && prefill.module === 'breakeven') {
+      return prefill.inputData;
+    }
+
+    if (moduleId === 'cashflow' && prefill.module === 'cashflow') {
+      return prefill.inputData;
+    }
+
+    return undefined;
+  })();
 
   const shell = document.createElement('div');
   shell.className = 'shell';
@@ -354,7 +464,7 @@ export const renderWorkspacePage = async (
   };
 
   if (moduleId === 'profit') {
-    const state: ProfitInputState = service.getProfitInputState(selectedScenario?.inputData);
+    const state: ProfitInputState = service.getProfitInputState(selectedScenario?.inputData ?? prefillInputData);
     form.innerHTML = `
       <label>Scenario Name<input name="scenarioName" value="${selectedScenario?.scenarioName ?? state.scenarioName}" /></label>
       <label>Unit price (minor)<input name="unitPriceMinor" type="number" value="${state.unitPriceMinor}" /></label>
@@ -365,7 +475,7 @@ export const renderWorkspacePage = async (
   }
 
   if (moduleId === 'breakeven') {
-    const state: BreakEvenInputState = service.getBreakEvenInputState(selectedScenario?.inputData);
+    const state: BreakEvenInputState = service.getBreakEvenInputState(selectedScenario?.inputData ?? prefillInputData);
     form.innerHTML = `
       <label>Scenario Name<input name="scenarioName" value="${selectedScenario?.scenarioName ?? state.scenarioName}" /></label>
       <label>Unit price (minor)<input name="unitPriceMinor" type="number" value="${state.unitPriceMinor}" /></label>
@@ -377,7 +487,7 @@ export const renderWorkspacePage = async (
   }
 
   if (moduleId === 'cashflow') {
-    const state: CashflowInputState = service.getCashflowInputState(selectedScenario?.inputData);
+    const state: CashflowInputState = service.getCashflowInputState(selectedScenario?.inputData ?? prefillInputData);
     form.innerHTML = `
       <label>Scenario Name<input name="scenarioName" value="${selectedScenario?.scenarioName ?? state.scenarioName}" /></label>
       <label>Starting cash<input name="startingCashMinor" type="number" value="${state.startingCashMinor}" /></label>
@@ -452,6 +562,43 @@ export const renderWorkspacePage = async (
   const results = document.createElement('section');
   results.className = 'card';
   results.innerHTML = '<h3>Results</h3>';
+
+  const shareDialogHost = document.createElement('div');
+  shareDialogHost.className = 'modal';
+
+  const shareButton = createActionButton('Share Scenario', async () => {
+    if (!selectedScenario) {
+      showFormError('Create a scenario first before sharing.');
+      return;
+    }
+
+    try {
+      const share = await service.createShareSnapshotFromScenario(selectedScenario, 30);
+      const shareUrl = `${window.location.origin}/s/${encodeURIComponent(share.token)}`;
+
+      const dialog = renderShareScenarioDialog({
+        shareUrl,
+        expiresAt: share.expiresAt,
+        onCopy: async () => {
+          await navigator.clipboard.writeText(shareUrl);
+          window.alert('Share link copied.');
+        },
+        onClose: () => {
+          shareDialogHost.replaceChildren();
+        },
+        createActionButton
+      });
+
+      shareDialogHost.replaceChildren(dialog);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Share link creation failed.';
+      showFormError(message);
+    }
+  });
+
+  results.appendChild(shareButton);
+  results.appendChild(shareDialogHost);
+
   if (selectedScenario?.calculatedData) {
     results.appendChild(renderModuleResults(moduleId, selectedScenario.calculatedData, selectedScenario.inputData));
 
@@ -599,12 +746,101 @@ export const renderDataBackupPage = async (
     window.alert('Export completed.');
   }, 'primary');
 
+  const reportExportButton = createActionButton('Export business report (PDF)', async () => {
+    try {
+      const payload = await service.exportBusinessReportPdf();
+      const pdfBytes = new Uint8Array(payload);
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'marginbase-business-report.pdf';
+      anchor.click();
+      URL.revokeObjectURL(url);
+      window.alert('Business report exported.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Report export failed.';
+      window.alert(message);
+    }
+  });
+
+  const reportExportExcelButton = createActionButton('Export business report (Excel)', async () => {
+    try {
+      const payload = await service.exportBusinessReportXlsx();
+      const xlsxBytes = new Uint8Array(payload);
+      const blob = new Blob([xlsxBytes], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'marginbase-business-report.xlsx';
+      anchor.click();
+      URL.revokeObjectURL(url);
+      window.alert('Business report exported.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Report export failed.';
+      window.alert(message);
+    }
+  });
+
+  const reportPreview = document.createElement('div');
+  reportPreview.className = 'modal';
+
+  const reportPreviewButton = createActionButton('Preview business report', async () => {
+    try {
+      const report = await service.getBusinessReportModel();
+      const closeButton = createActionButton('Close preview', () => {
+        reportPreview.replaceChildren();
+      });
+
+      const content = renderBusinessReportPreview(report);
+      reportPreview.replaceChildren(content, closeButton);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Report preview failed.';
+      window.alert(message);
+    }
+  });
+
   const importInput = document.createElement('textarea');
   importInput.placeholder = 'Paste import JSON here';
   importInput.rows = 10;
 
   const importSummary = document.createElement('div');
   importSummary.className = 'modal';
+
+  const shareLinksSummary = document.createElement('div');
+  shareLinksSummary.className = 'modal';
+
+  const refreshSharedLinks = async (): Promise<void> => {
+    try {
+      const items = await service.listMyShareSnapshots();
+      if (items.length === 0) {
+        shareLinksSummary.innerHTML = '<p>No shared links yet.</p>';
+        return;
+      }
+
+      shareLinksSummary.replaceChildren();
+      const list = document.createElement('div');
+      list.className = 'space-y-6';
+
+      for (const item of items) {
+        const row = document.createElement('div');
+        row.className = 'card';
+        row.innerHTML = `<p><strong>${item.module}</strong></p><p>Token: ${item.token}</p><p>Created: ${item.createdAt}</p><p>Expires: ${item.expiresAt}</p>`;
+        row.appendChild(createActionButton('Revoke', async () => {
+          await service.revokeMyShareSnapshot(item.token);
+          await refreshSharedLinks();
+        }));
+        list.appendChild(row);
+      }
+
+      shareLinksSummary.appendChild(list);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to load shared links.';
+      shareLinksSummary.innerHTML = `<div class="inline-error">${message}</div>`;
+    }
+  };
 
   const previewButton = createActionButton('Preview Import', () => {
     const preview = service.previewImport(importInput.value);
@@ -639,6 +875,10 @@ export const renderDataBackupPage = async (
   exportCard.className = 'card';
   exportCard.innerHTML = '<h3>Export</h3><p>Export all local scenarios to a JSON file.</p>';
   exportCard.appendChild(exportButton);
+  exportCard.appendChild(reportPreviewButton);
+  exportCard.appendChild(reportExportButton);
+  exportCard.appendChild(reportExportExcelButton);
+  exportCard.appendChild(reportPreview);
 
   const importCard = document.createElement('section');
   importCard.className = 'card';
@@ -651,8 +891,17 @@ export const renderDataBackupPage = async (
   importCard.appendChild(importActions);
   importCard.appendChild(importSummary);
 
+  const shareCard = document.createElement('section');
+  shareCard.className = 'card';
+  shareCard.innerHTML = '<h3>My Shared Links</h3><p>Review and revoke your shared scenario links.</p>';
+  shareCard.appendChild(createActionButton('Refresh Shared Links', () => {
+    void refreshSharedLinks();
+  }, 'primary'));
+  shareCard.appendChild(shareLinksSummary);
+
   sections.appendChild(exportCard);
   sections.appendChild(importCard);
+  sections.appendChild(shareCard);
 
   main.appendChild(title);
   main.appendChild(sections);

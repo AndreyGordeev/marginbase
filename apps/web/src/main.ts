@@ -1,4 +1,8 @@
 import { WebAppService } from './web-app-service';
+import { renderEmbedBreakevenRoute } from './routes/embedBreakeven';
+import { renderEmbedCashflowRoute } from './routes/embedCashflow';
+import { renderEmbedProfitRoute } from './routes/embedProfit';
+import { renderSharedScenarioRoute } from './routes/sharedScenario';
 import { renderLoginPage } from './ui/auth/login-page';
 import { type LegalRoute, renderLegalCenter, renderLegalDocument, setLegalBackTarget } from './ui/legal/legal-render';
 import { LEGAL_DOCS } from './ui/legal/legal-docs';
@@ -30,6 +34,41 @@ const ROUTES: RoutePath[] = [
   '/legal/privacy',
   '/legal/terms'
 ];
+
+const getSharedToken = (): string | null => {
+  const hash = window.location.hash.replace('#', '');
+  if (hash.startsWith('/s/')) {
+    const token = hash.slice('/s/'.length).trim();
+    return token ? decodeURIComponent(token) : null;
+  }
+
+  const path = window.location.pathname;
+  if (path.startsWith('/s/')) {
+    const token = path.slice('/s/'.length).trim();
+    return token ? decodeURIComponent(token) : null;
+  }
+
+  return null;
+};
+
+const getEmbedRoute = (): '/embed/profit' | '/embed/breakeven' | '/embed/cashflow' | null => {
+  const hash = window.location.hash.replace('#', '');
+  const path = hash || window.location.pathname;
+
+  if (path === '/embed/profit') {
+    return '/embed/profit';
+  }
+
+  if (path === '/embed/breakeven' || path === '/embed/break-even') {
+    return '/embed/breakeven';
+  }
+
+  if (path === '/embed/cashflow') {
+    return '/embed/cashflow';
+  }
+
+  return null;
+};
 
 const getRoute = (): RoutePath => {
   const hash = window.location.hash.replace('#', '') as RoutePath;
@@ -78,6 +117,28 @@ const render = async (): Promise<void> => {
   }
 
   addBaseStyles();
+  const embedRoute = getEmbedRoute();
+  if (embedRoute === '/embed/profit') {
+    renderEmbedProfitRoute(root, service);
+    return;
+  }
+
+  if (embedRoute === '/embed/breakeven') {
+    renderEmbedBreakevenRoute(root, service);
+    return;
+  }
+
+  if (embedRoute === '/embed/cashflow') {
+    renderEmbedCashflowRoute(root, service);
+    return;
+  }
+
+  const sharedToken = getSharedToken();
+  if (sharedToken) {
+    await renderSharedScenarioRoute(root, service, sharedToken, { createActionButton, goTo });
+    return;
+  }
+
   const route = getRoute();
 
   if (route === '/' || route === '/login') {

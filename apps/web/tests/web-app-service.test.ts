@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   WebVaultAccessError,
   SqlitePlaceholderConnection,
@@ -274,5 +274,350 @@ describe('WebAppService', () => {
     });
 
     expect((await service.listScenarios('profit')).length).toBe(1);
+  });
+
+  it('emits embed telemetry events with allowlisted attributes only', async () => {
+    const sendTelemetryBatch = vi.fn(async () => {
+      return {
+        accepted: true,
+        count: 1,
+        objectKey: '2026/03/04/anonymous/test.json'
+      };
+    });
+
+    const service = new WebAppService(
+      new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection()),
+      {
+        refreshEntitlements: async () => {
+          throw new Error('not used');
+        },
+        deleteAccount: async () => {
+          throw new Error('not used');
+        },
+        sendTelemetryBatch
+      }
+    );
+
+    await service.trackEmbedOpened('profit', true);
+    await service.trackEmbedCtaClicked('profit');
+
+    expect(sendTelemetryBatch).toHaveBeenCalledTimes(2);
+    expect(sendTelemetryBatch).toHaveBeenNthCalledWith(1, {
+      userId: 'anonymous',
+      events: [
+        expect.objectContaining({
+          name: 'embed_opened',
+          attributes: {
+            moduleId: 'profit',
+            poweredBy: true
+          }
+        })
+      ]
+    });
+    expect(sendTelemetryBatch).toHaveBeenNthCalledWith(2, {
+      userId: 'anonymous',
+      events: [
+        expect.objectContaining({
+          name: 'embed_cta_clicked',
+          attributes: {
+            moduleId: 'profit'
+          }
+        })
+      ]
+    });
+  });
+
+  it('exports business report PDF locally from saved scenarios', async () => {
+    const service = new WebAppService(
+      new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection())
+    );
+
+    await service.saveProfitScenario({
+      scenarioName: 'Report Profit',
+      unitPriceMinor: 1200,
+      quantity: 12,
+      variableCostPerUnitMinor: 600,
+      fixedCostsMinor: 1000
+    });
+
+    await service.saveBreakEvenScenario({
+      scenarioName: 'Report BE',
+      unitPriceMinor: 1200,
+      variableCostPerUnitMinor: 600,
+      fixedCostsMinor: 1000,
+      targetProfitMinor: 500,
+      plannedQuantity: 10
+    });
+
+    await service.saveCashflowScenario({
+      scenarioName: 'Report CF',
+      startingCashMinor: 10_000,
+      baseMonthlyRevenueMinor: 4_000,
+      fixedMonthlyCostsMinor: 2_000,
+      variableMonthlyCostsMinor: 800,
+      forecastMonths: 6,
+      monthlyGrowthRate: 0.01
+    });
+
+    const pdfBytes = await service.exportBusinessReportPdf();
+
+    expect(pdfBytes.byteLength).toBeGreaterThan(500);
+    expect(String.fromCharCode(pdfBytes[0], pdfBytes[1], pdfBytes[2], pdfBytes[3])).toBe('%PDF');
+  });
+
+  it('builds business report model for local preview', async () => {
+    const service = new WebAppService(
+      new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection())
+    );
+
+    await service.saveProfitScenario({
+      scenarioName: 'Preview Profit',
+      unitPriceMinor: 2000,
+      quantity: 5,
+      variableCostPerUnitMinor: 800,
+      fixedCostsMinor: 1000
+    });
+
+    const report = await service.getBusinessReportModel();
+
+    expect(report.summary.title).toBe('Business Report');
+    expect(report.profitability?.netProfitMinor).toBe(5000);
+    expect(report.disclaimer).toMatch(/locally/i);
+  });
+
+  it('exports business report xlsx locally from saved scenarios', async () => {
+    const service = new WebAppService(
+      new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection())
+    );
+
+    await service.saveProfitScenario({
+      scenarioName: 'Xlsx Profit',
+      unitPriceMinor: 1200,
+      quantity: 12,
+      variableCostPerUnitMinor: 600,
+      fixedCostsMinor: 1000
+    });
+
+    const xlsxBytes = await service.exportBusinessReportXlsx();
+
+    expect(xlsxBytes.byteLength).toBeGreaterThan(200);
+    expect(String.fromCharCode(xlsxBytes[0], xlsxBytes[1])).toBe('PK');
+  });
+
+  it('creates share snapshot from sanitized scenario data', async () => {
+    const createShareSnapshot = vi.fn(async ({ snapshot }: { snapshot: { schemaVersion: number; module: string; inputData: Record<string, unknown> } }) => {
+      expect(snapshot.schemaVersion).toBe(1);
+      expect(snapshot.module).toBe('profit');
+      expect('scenarioName' in snapshot).toBe(false);
+      return {
+        token: 'share_123',
+        expiresAt: '2026-04-03T10:00:00.000Z'
+      };
+    });
+
+    const service = new WebAppService(
+      new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection()),
+      {
+        refreshEntitlements: async () => {
+          throw new Error('not used');
+        },
+        deleteAccount: async () => {
+          throw new Error('not used');
+        },
+        createShareSnapshot
+      }
+    );
+
+    await service.saveProfitScenario({
+      scenarioName: 'Share me',
+      unitPriceMinor: 1000,
+      quantity: 4,
+      variableCostPerUnitMinor: 500,
+      fixedCostsMinor: 300
+    });
+
+    const scenario = (await service.listScenarios('profit'))[0];
+    const result = await service.createShareSnapshotFromScenario(scenario);
+
+    expect(result.token).toBe('share_123');
+    expect(createShareSnapshot).toHaveBeenCalledTimes(1);
+  });
+
+  it('loads shared scenario and computes results locally', async () => {
+    const service = new WebAppService(
+      new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection()),
+      {
+        refreshEntitlements: async () => {
+          throw new Error('not used');
+        },
+        deleteAccount: async () => {
+          throw new Error('not used');
+        },
+        getShareSnapshot: async () => {
+          return {
+            snapshot: {
+              schemaVersion: 1,
+              module: 'breakeven',
+              inputData: {
+                unitPriceMinor: 1000,
+                variableCostPerUnitMinor: 600,
+                fixedCostsMinor: 1000,
+                targetProfitMinor: 0,
+                plannedQuantity: 10
+              }
+            }
+          };
+        }
+      }
+    );
+
+    const shared = await service.getSharedScenarioView('token_1');
+
+    expect(shared.module).toBe('breakeven');
+    expect(shared.calculatedData.breakEvenQuantity).toBeDefined();
+  });
+
+  it('requires sign-in to import shared scenarios', async () => {
+    installLocalStorage();
+
+    const service = new WebAppService(
+      new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection()),
+      {
+        refreshEntitlements: async () => {
+          throw new Error('not used');
+        },
+        deleteAccount: async () => {
+          throw new Error('not used');
+        },
+        getShareSnapshot: async () => {
+          return {
+            snapshot: {
+              schemaVersion: 1,
+              module: 'profit',
+              inputData: {
+                unitPriceMinor: 1000,
+                quantity: 10,
+                variableCostPerUnitMinor: 600,
+                fixedCostsMinor: 1000
+              }
+            }
+          };
+        }
+      }
+    );
+
+    await expect(service.importSharedScenario('token_1')).rejects.toThrow(/sign in/i);
+  });
+
+  it('imports and saves shared scenarios with sign-in and entitlement policy', async () => {
+    const localStorageMock = installLocalStorage();
+    localStorageMock.setItem('marginbase_signed_in', 'true');
+
+    const service = new WebAppService(
+      new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection()),
+      {
+        refreshEntitlements: async () => {
+          throw new Error('not used');
+        },
+        deleteAccount: async () => {
+          throw new Error('not used');
+        },
+        getShareSnapshot: async () => {
+          return {
+            snapshot: {
+              schemaVersion: 1,
+              module: 'breakeven',
+              inputData: {
+                unitPriceMinor: 1000,
+                variableCostPerUnitMinor: 600,
+                fixedCostsMinor: 1000,
+                plannedQuantity: 10,
+                targetProfitMinor: 0
+              }
+            }
+          };
+        }
+      }
+    );
+
+    await service.importSharedScenario('token_2');
+    expect((await service.listScenarios('breakeven')).length).toBe(1);
+
+    await expect(service.saveSharedScenario('token_2')).rejects.toThrow(/entitlement/i);
+
+    service.activateBundle();
+    await service.saveSharedScenario('token_2');
+    expect((await service.listScenarios('breakeven')).length).toBe(2);
+  });
+
+  it('deletes share snapshot via api client when available', async () => {
+    const deleteShareSnapshot = vi.fn(async () => {
+      return { revoked: true, token: 'token_del' };
+    });
+
+    const service = new WebAppService(
+      new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection()),
+      {
+        refreshEntitlements: async () => {
+          throw new Error('not used');
+        },
+        deleteAccount: async () => {
+          throw new Error('not used');
+        },
+        deleteShareSnapshot
+      }
+    );
+
+    const deleted = await service.deleteShareSnapshot('token_del');
+    expect(deleted).toBe(true);
+    expect(deleteShareSnapshot).toHaveBeenCalledWith('token_del', undefined);
+  });
+
+  it('lists and revokes my share snapshots when signed in', async () => {
+    const localStorageMock = installLocalStorage();
+    localStorageMock.setItem('marginbase_signed_in', 'true');
+    localStorageMock.setItem('marginbase_signed_in_user_id', 'local_web_user');
+
+    const listShareSnapshots = vi.fn(async () => {
+      return {
+        items: [
+          {
+            token: 'share_1',
+            module: 'profit',
+            createdAt: '2026-03-04T10:00:00.000Z',
+            expiresAt: '2026-04-03T10:00:00.000Z'
+          }
+        ]
+      };
+    });
+
+    const deleteShareSnapshot = vi.fn(async () => {
+      return {
+        revoked: true,
+        token: 'share_1'
+      };
+    });
+
+    const service = new WebAppService(
+      new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection()),
+      {
+        refreshEntitlements: async () => {
+          throw new Error('not used');
+        },
+        deleteAccount: async () => {
+          throw new Error('not used');
+        },
+        listShareSnapshots,
+        deleteShareSnapshot
+      }
+    );
+
+    const items = await service.listMyShareSnapshots();
+    expect(items).toHaveLength(1);
+    expect(listShareSnapshots).toHaveBeenCalledWith('local_web_user');
+
+    const revoked = await service.revokeMyShareSnapshot('share_1');
+    expect(revoked).toBe(true);
+    expect(deleteShareSnapshot).toHaveBeenCalledWith('share_1', undefined);
   });
 });

@@ -1,6 +1,6 @@
 # MarginBase — PROJECT_CONTEXT
 
-Date: 2026-03-01
+Date: 2026-03-04
 
 This file is the **primary Copilot anchor**. Keep it short and authoritative.
 
@@ -10,10 +10,15 @@ MarginBase is an offline-first finance toolkit for SMB with 3 calculators:
 - Break-even
 - Cashflow forecast
 
+Current scope also includes:
+- Local Business Report export (PDF + XLSX)
+- Shareable scenario links via sanitized snapshots (`/s/:token`)
+- Embeddable stateless calculators (`/embed/profit`, `/embed/breakeven`, `/embed/cashflow`)
+
 ## Non-negotiable Principles
 1. **Offline-first:** create/edit/calc/export works fully offline.
 2. **Thin backend:** backend is only for auth verification, entitlements, and telemetry ingest.
-3. **No scenario values in cloud:** scenario numeric values are local-only in V1.
+3. **No raw scenario values in cloud:** scenario numeric values are local-only by default; only explicit user-initiated **sanitized share snapshots** may be stored server-side (encrypted at rest + TTL).
 4. **Shared domain-core:** all formulas + schema + migrations live in `packages/domain-core` as pure functions.
 5. **Numeric safety:** money uses minor units (e.g., cents) + explicit rounding; never float-math for money.
 6. **EU-first hosting:** AWS resources in an EU region.
@@ -24,7 +29,22 @@ MarginBase is an offline-first finance toolkit for SMB with 3 calculators:
 - UI must not implement formulas.
 - UI must not access DB directly (use repositories).
 - Telemetry must not include monetary values.
+- Telemetry event names/properties must stay in allowlist (including embed analytics without financial fields).
 - Never log tokens/receipts/payloads with sensitive fields.
+
+## Package Boundaries (authoritative)
+- `packages/domain-core`: formulas, scenario/snapshot schema, migrations, numeric policy (pure functions only)
+- `packages/storage`: local repositories/adapters only
+- `packages/entitlements`: policy + gating decisions
+- `packages/telemetry`: event allowlist + local queue/batching
+- `packages/api-client`: typed minimal API endpoints
+- `packages/reporting`: local report model builder + PDF/XLSX exporters
+
+## Growth Features Status
+- Report export: implemented and tested (local-only)
+- Share links: implemented and tested (sanitize/migrate, create/get/list/revoke, owner checks)
+- Embeds: implemented and tested (query options, CTA prefill, embed CSP)
+- Optional embed analytics: implemented with allowlist-safe events
 
 ## Delivery Workflow (Mandatory)
 - Each roadmap step is implemented in a dedicated git branch.

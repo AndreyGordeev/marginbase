@@ -5,6 +5,10 @@ import { handler as authHandler } from '../modules/backend_api/lambda_stubs/auth
 import { handler as accountDeleteHandler } from '../modules/backend_api/lambda_stubs/account-delete.js';
 import { handler as billingHandler } from '../modules/backend_api/lambda_stubs/billing.js';
 import { handler as entitlementsHandler } from '../modules/backend_api/lambda_stubs/entitlements.js';
+import { handler as shareCreateHandler } from '../modules/backend_api/lambda_stubs/share-create.js';
+import { handler as shareDeleteHandler } from '../modules/backend_api/lambda_stubs/share-delete.js';
+import { handler as shareGetHandler } from '../modules/backend_api/lambda_stubs/share-get.js';
+import { handler as shareListHandler } from '../modules/backend_api/lambda_stubs/share-list.js';
 import { handler as telemetryHandler } from '../modules/backend_api/lambda_stubs/telemetry.js';
 
 const parseBody = (response) => JSON.parse(response.body);
@@ -358,6 +362,274 @@ test('account delete removes entitlements and minimal user profile data', async 
   delete globalThis.__userDelete;
 });
 
+test('share create stores encrypted snapshot and returns token with expiry', async () => {
+  const store = new Map();
+
+  globalThis.__sharePut = async ({ record }) => {
+    store.set(record.pk, record);
+  };
+
+  const createResponse = await shareCreateHandler({
+    body: JSON.stringify({
+      snapshot: {
+        schemaVersion: 1,
+        module: 'profit',
+        inputData: {
+          unitPriceMinor: 1000,
+          quantity: 10
+        }
+      },
+      expiresInDays: 30
+    })
+  });
+
+  assert.equal(createResponse.statusCode, 200);
+  const body = parseBody(createResponse);
+  assert.equal(typeof body.token, 'string');
+  assert.equal(body.token.length, 32);
+  assert.equal(typeof body.expiresAt, 'string');
+
+  const stored = store.get(body.token);
+  assert.ok(stored);
+  assert.equal(typeof stored.encryptedBlob, 'string');
+
+  delete globalThis.__sharePut;
+});
+
+test('share get returns snapshot and rejects expired token', async () => {
+  const store = new Map();
+  const nowEpoch = Math.floor(Date.now() / 1000);
+
+  process.env.SHARE_ENCRYPTION_KEY = 'test-share-key';
+
+  globalThis.__sharePut = async ({ record }) => {
+    store.set(record.pk, record);
+  };
+
+  globalThis.__shareGet = async ({ token }) => {
+    if (token === 'expired') {
+      return {
+        pk: 'expired',
+        encryptedBlob: store.get(createdBody.token)?.encryptedBlob,
+        expiresAt: nowEpoch - 10,
+        createdAt: nowEpoch - 100,
+        schemaVersion: 1
+      };
+    }
+
+    return store.get(token) ?? null;
+  };
+
+  const created = await shareCreateHandler({
+    body: JSON.stringify({
+      snapshot: {
+        schemaVersion: 1,
+        module: 'breakeven',
+        inputData: {
+          unitPriceMinor: 1000,
+          variableCostPerUnitMinor: 700,
+          fixedCostsMinor: 5000
+        }
+      },
+      expiresInDays: 30
+    })
+  });
+
+  const createdBody = parseBody(created);
+
+  const getResponse = await shareGetHandler({
+    pathParameters: {
+      token: createdBody.token
+    }
+  });
+
+  assert.equal(getResponse.statusCode, 200);
+  const getBody = parseBody(getResponse);
+  assert.equal(getBody.snapshot.schemaVersion, 1);
+  assert.equal(getBody.snapshot.module, 'breakeven');
+
+  const expiredResponse = await shareGetHandler({
+    pathParameters: {
+      token: 'expired'
+    }
+  });
+
+  assert.equal(expiredResponse.statusCode, 404);
+  assert.equal(parseBody(expiredResponse).code, 'EXPIRED');
+
+  delete process.env.SHARE_ENCRYPTION_KEY;
+  delete globalThis.__sharePut;
+  delete globalThis.__shareGet;
+});
+
+test('share delete revokes token and subsequent get returns not found', async () => {
+  const store = new Map();
+
+  globalThis.__sharePut = async ({ record }) => {
+    store.set(record.pk, record);
+  };
+
+  globalThis.__shareGet = async ({ token }) => {
+    return store.get(token) ?? null;
+  };
+
+  globalThis.__shareDelete = async ({ token }) => {
+    return store.delete(token);
+  };
+
+  const created = await shareCreateHandler({
+    body: JSON.stringify({
+      snapshot: {
+        schemaVersion: 1,
+        module: 'profit',
+        inputData: {
+          unitPriceMinor: 1000,
+          quantity: 10
+        }
+      },
+      ownerUserId: 'owner_1',
+      expiresInDays: 30
+    })
+  });
+
+  const token = parseBody(created).token;
+
+  const deleted = await shareDeleteHandler({
+    pathParameters: {
+      token
+    },
+    queryStringParameters: {
+      userId: 'owner_1'
+    }
+  });
+
+  assert.equal(deleted.statusCode, 200);
+  assert.equal(parseBody(deleted).revoked, true);
+
+  const fetched = await shareGetHandler({
+    pathParameters: {
+      token
+    }
+  });
+
+  assert.equal(fetched.statusCode, 404);
+
+  delete globalThis.__sharePut;
+  delete globalThis.__shareGet;
+  delete globalThis.__shareDelete;
+});
+
+test('share delete rejects non-owner revoke when owner hash exists', async () => {
+  const store = new Map();
+
+  globalThis.__sharePut = async ({ record }) => {
+    store.set(record.pk, record);
+  };
+
+  globalThis.__shareGet = async ({ token }) => {
+    return store.get(token) ?? null;
+  };
+
+  globalThis.__shareDelete = async ({ token }) => {
+    return store.delete(token);
+  };
+
+  const created = await shareCreateHandler({
+    body: JSON.stringify({
+      snapshot: {
+        schemaVersion: 1,
+        module: 'profit',
+        inputData: {
+          unitPriceMinor: 1500,
+          quantity: 5
+        }
+      },
+      ownerUserId: 'owner_2',
+      expiresInDays: 30
+    })
+  });
+
+  const token = parseBody(created).token;
+
+  const forbiddenDelete = await shareDeleteHandler({
+    pathParameters: {
+      token
+    },
+    queryStringParameters: {
+      userId: 'intruder_1'
+    }
+  });
+
+  assert.equal(forbiddenDelete.statusCode, 403);
+  assert.equal(parseBody(forbiddenDelete).code, 'FORBIDDEN');
+
+  const fetched = await shareGetHandler({
+    pathParameters: {
+      token
+    }
+  });
+
+  assert.equal(fetched.statusCode, 200);
+
+  delete globalThis.__sharePut;
+  delete globalThis.__shareGet;
+  delete globalThis.__shareDelete;
+});
+
+test('share list returns owner-scoped active links', async () => {
+  const store = new Map();
+  const nowEpoch = Math.floor(Date.now() / 1000);
+
+  process.env.SHARE_ENCRYPTION_KEY = 'test-share-key';
+
+  globalThis.__sharePut = async ({ record }) => {
+    store.set(record.pk, record);
+  };
+
+  globalThis.__shareList = async ({ ownerUserIdHash }) => {
+    return [...store.values()].filter((record) => record.ownerUserIdHash === ownerUserIdHash);
+  };
+
+  await shareCreateHandler({
+    body: JSON.stringify({
+      snapshot: {
+        schemaVersion: 1,
+        module: 'cashflow',
+        inputData: {
+          forecastMonths: 12
+        }
+      },
+      ownerUserId: 'user_1',
+      expiresInDays: 30
+    })
+  });
+
+  store.set('expired_token', {
+    pk: 'expired_token',
+    encryptedBlob: [...store.values()][0].encryptedBlob,
+    ownerUserIdHash: [...store.values()][0].ownerUserIdHash,
+    createdAt: nowEpoch - 200,
+    expiresAt: nowEpoch - 10,
+    schemaVersion: 1
+  });
+
+  const listed = await shareListHandler({
+    queryStringParameters: {
+      userId: 'user_1'
+    }
+  });
+
+  assert.equal(listed.statusCode, 200);
+  const body = parseBody(listed);
+  assert.equal(Array.isArray(body.items), true);
+  assert.equal(body.items.length, 1);
+  assert.equal(body.items[0].module, 'cashflow');
+
+  delete process.env.SHARE_ENCRYPTION_KEY;
+  delete globalThis.__sharePut;
+  delete globalThis.__shareList;
+});
+
 test('telemetry batch validates payload and writes allowlisted events', async () => {
   process.env.TELEMETRY_BUCKET_NAME = 'bucket-name';
 
@@ -375,6 +647,14 @@ test('telemetry batch validates payload and writes allowlisted events', async ()
           timestamp: '2026-03-02T10:00:00.000Z',
           attributes: {
             moduleId: 'profit'
+          }
+        },
+        {
+          name: 'embed_opened',
+          timestamp: '2026-03-02T10:00:01.000Z',
+          attributes: {
+            moduleId: 'profit',
+            poweredBy: true
           }
         }
       ]

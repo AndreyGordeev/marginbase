@@ -22,6 +22,14 @@ variable "entitlements_table_arn" {
   type = string
 }
 
+variable "share_snapshots_table_name" {
+  type = string
+}
+
+variable "share_snapshots_table_arn" {
+  type = string
+}
+
 variable "telemetry_bucket_name" {
   type = string
 }
@@ -44,6 +52,18 @@ variable "stripe_webhook_secret" {
 
 variable "stripe_mode" {
   type = string
+}
+
+variable "api_cors_allowed_origins" {
+  type = list(string)
+}
+
+variable "share_create_rate_limit" {
+  type = number
+}
+
+variable "share_create_burst_limit" {
+  type = number
 }
 
 variable "tags" {

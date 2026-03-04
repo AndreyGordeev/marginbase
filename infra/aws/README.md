@@ -8,12 +8,16 @@ This folder contains Terraform modules to provision the Step 10 dev environment 
 - API layer: HTTP API Gateway with routes:
   - `POST /auth/verify`
   - `GET /entitlements`
+   - `POST /share/create`
+   - `GET /share/list`
+   - `GET /share/{token}`
+   - `DELETE /share/{token}`
    - `POST /billing/verify`
    - `POST /billing/checkout/session`
    - `POST /billing/webhook/stripe`
   - `POST /telemetry/batch`
-- Compute: 4 Lambda stubs (`auth`, `entitlements`, `billing`, `telemetry`)
-- Data: DynamoDB entitlements table + S3 telemetry raw bucket with lifecycle retention
+- Compute: Lambda stubs (`auth`, `entitlements`, `billing`, `telemetry`, `account-delete`, `share-create`, `share-get`, `share-delete`, `share-list`)
+- Data: DynamoDB entitlements table + DynamoDB share snapshots table (TTL on `expiresAt`, owner listing GSI `ownerUserIdHash-createdAt-index`) + S3 telemetry raw bucket with lifecycle retention
 - Observability: CloudWatch log groups with configurable retention
 
 ## Region policy
@@ -56,6 +60,12 @@ This folder contains Terraform modules to provision the Step 10 dev environment 
 ## Notes
 
 - Lambda handlers are deployment stubs under `modules/backend_api/lambda_stubs`.
+- API CORS allowlist is configured via `api_cors_allowed_origins` (use explicit domains in production).
+- In `environment=prod`, CORS validation enforces non-empty `api_cors_allowed_origins`, forbids `*`, and requires `https://` origins.
+- `POST /share/create` has dedicated throttling via `share_create_rate_limit` and `share_create_burst_limit`.
+- Throttling validation enforces `share_create_rate_limit` in `1..100`, `share_create_burst_limit` in `1..500`, and `burst >= rate`.
+- Throttling validation also enforces `share_create_burst_limit <= 5 * share_create_rate_limit`.
+- In `environment=prod`, throttling validation also enforces `share_create_rate_limit >= 3` and `share_create_burst_limit >= 6`.
 - Stripe integration uses Terraform variables `stripe_secret_key`, `stripe_webhook_secret`, and `stripe_mode`.
 - Stripe test-mode E2E checklist is documented in `docs/testing/stripe-test-mode-e2e.md`.
 - Production sign-off evidence template is documented in `docs/testing/stripe-production-readiness-evidence.md`.
