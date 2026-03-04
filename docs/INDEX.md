@@ -3,12 +3,11 @@
 ## Start Here
 - ../PROJECT_CONTEXT.md
 - ../README.md
-- ../GROWTH_FEATURES_IMPLEMENTATION.md
 - ../.github/copilot-instructions.md
 - release-notes-v1.md
 
 ## Current Delivery Status
-- ../GROWTH_FEATURES_IMPLEMENTATION.md (all current growth-scope items completed)
+- ../PROJECT_CONTEXT.md (all current growth-scope items completed)
 
 ## Architecture
 - architecture/overview.md
