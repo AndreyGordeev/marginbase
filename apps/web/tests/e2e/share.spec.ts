@@ -9,8 +9,6 @@ test('share link can be opened and imported back into app', async ({ page }) => 
   });
 
   await page.route('**/share/create', async (route) => {
-    const body = route.request().postDataJSON() as Record<string, unknown>;
-
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
