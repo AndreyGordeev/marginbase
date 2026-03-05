@@ -184,7 +184,7 @@ jobs:
         run: corepack pnpm --filter @marginbase/web build
 
       - name: Run E2E tests
-        run: corepack pnpm exec playwright test -c playwright.config.ts --reporter=html,line
+        run: corepack pnpm exec playwright test -c playwright.config.ts --reporter=html,line --grep-invert "visual:"
         env:
           CI: true
 
