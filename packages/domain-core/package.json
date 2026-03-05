@@ -9,6 +9,7 @@
     "lint": "eslint src tests --ext .ts",
     "test": "vitest run --passWithNoTests",
     "test:coverage": "vitest run --coverage --passWithNoTests",
+    "test:property": "vitest run tests/property-based-phase2.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

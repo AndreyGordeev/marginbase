@@ -4,6 +4,14 @@
 
 Complete enhancement cycle from bug fixes to production-ready testing infrastructure with comprehensive developer tooling. **All 255 tests passing** ✅. CI pipeline optimized for **~30% faster execution**.
 
+### Phase 2 Extension (2026-03-05)
+
+- Added visual regression suite scaffold at `apps/web/tests/e2e/visual-regression.spec.ts` with multi-viewport coverage and hardened optional selectors.
+- Added API contract suite at `packages/api-client/tests/contract.test.ts` and package script `test:contract`.
+- Added property-based + fuzz suite at `packages/domain-core/tests/property-based-phase2.test.ts` and package script `test:property`.
+- Added CI jobs in `.github/workflows/ci.yml`: `visual-regression`, `contract-tests`, `property-based-tests`, and `ci-status` aggregator.
+- Added web script `test:visual` in `apps/web/package.json`.
+
 | Metric | Before | After | Change |
 |--------|--------|-------|--------|
 | Tests Passing | 251/255 (4 failing) | 255/255 | ✅ +4 fixed |

@@ -484,3 +484,184 @@ jobs:
           path: playwright-report
           if-no-files-found: ignore
           retention-days: 7
+
+  # ============================================================================
+  # Phase 2: Extended Coverage Tests
+  # ============================================================================
+
+  visual-regression:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pnpm/store
+            node_modules/.cache
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(corepack pnpm list @playwright/test --json | jq -r '.[0].devDependencies["@playwright/test"].version')" >> $GITHUB_OUTPUT
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: corepack pnpm exec playwright install --with-deps chromium
+
+      - name: Install Playwright system deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: corepack pnpm exec playwright install-deps chromium
+
+      - name: Build web app for E2E
+        run: corepack pnpm --filter @marginbase/web build
+
+      - name: 🎨 Visual Regression Tests
+        run: corepack pnpm exec playwright test visual-regression.spec.ts --reporter=html,line
+        env:
+          CI: true
+        continue-on-error: true
+
+      - name: Upload Visual Regression Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-regression-report
+          path: playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
+
+  contract-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pnpm/store
+            node_modules/.cache
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: |
+          corepack pnpm --filter @marginbase/api-client build
+          corepack pnpm --filter @marginbase/domain-core build
+
+      - name: 📋 Contract Tests
+        run: corepack pnpm --filter @marginbase/api-client run test:contract
+
+  property-based-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pnpm/store
+            node_modules/.cache
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Build domain-core
+        run: corepack pnpm --filter @marginbase/domain-core build
+
+      - name: 🧪 Property-Based & Fuzz Tests
+        run: corepack pnpm --filter @marginbase/domain-core run test:property
+        continue-on-error: true
+
+  ci-status:
+    runs-on: ubuntu-latest
+    needs: [lint_typecheck, build, tests, e2e, privacy-hard-gate, offline-hard-gate, layout-guards-hard-gate, accessibility-hard-gate, visual-regression, contract-tests, property-based-tests]
+    if: always()
+    steps:
+      - name: Check all critical jobs passed
+        run: |
+          if [[ "${{ needs.lint_typecheck.result }}" != "success" ]]; then
+            echo "❌ Lint & TypeCheck failed"
+            exit 1
+          fi
+          if [[ "${{ needs.build.result }}" != "success" ]]; then
+            echo "❌ Build failed"
+            exit 1
+          fi
+          if [[ "${{ needs.tests.result }}" != "success" ]]; then
+            echo "❌ Unit tests failed"
+            exit 1
+          fi
+          if [[ "${{ needs.e2e.result }}" != "success" ]]; then
+            echo "❌ E2E tests failed"
+            exit 1
+          fi
+          if [[ "${{ needs.privacy-hard-gate.result }}" != "success" ]]; then
+            echo "❌ Privacy hard gate failed"
+            exit 1
+          fi
+          if [[ "${{ needs.offline-hard-gate.result }}" != "success" ]]; then
+            echo "❌ Offline hard gate failed"
+            exit 1
+          fi
+          if [[ "${{ needs.layout-guards-hard-gate.result }}" != "success" ]]; then
+            echo "❌ Layout guards hard gate failed"
+            exit 1
+          fi
+          if [[ "${{ needs.accessibility-hard-gate.result }}" != "success" ]]; then
+            echo "❌ Accessibility hard gate failed"
+            exit 1
+          fi
+          echo "✅ All critical jobs passed!"
