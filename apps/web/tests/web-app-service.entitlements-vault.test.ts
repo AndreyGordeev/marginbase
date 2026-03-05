@@ -91,7 +91,7 @@ describe('WebAppService entitlements + vault', () => {
         refreshCalls += 1;
         return {
           userId: 'user_1',
-          lastVerifiedAt: '2026-03-02T10:00:00.000Z',
+          lastVerifiedAt: '2026-03-05T10:00:00.000Z',
           entitlements: {
             bundle: true,
             profit: true,
@@ -128,7 +128,7 @@ describe('WebAppService entitlements + vault', () => {
         refreshCalls += 1;
         return {
           userId: 'user_1',
-          lastVerifiedAt: '2026-03-02T10:00:00.000Z',
+          lastVerifiedAt: '2026-03-05T10:00:00.000Z',
           entitlements: {
             bundle: true,
             profit: true,

@@ -16,6 +16,7 @@ describe('mobile screen coverage', () => {
 
 describe('MobileAppService offline workflow', () => {
   it('supports iOS and Android purchase flows and unlocks subscription gating', async () => {
+    const now = new Date('2026-03-02T10:00:00.000Z');
     const service = new MobileAppService(
       new SqlitePlaceholderScenarioRepository(new SqlitePlaceholderConnection()),
       {
@@ -44,7 +45,8 @@ describe('MobileAppService offline workflow', () => {
         deleteAccount: async () => {
           return { deleted: true };
         }
-      }
+      },
+      () => now
     );
 
     const iosResult = await service.verifyPurchaseOnDevice({

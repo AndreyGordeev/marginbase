@@ -181,7 +181,7 @@ export class MobileAppService {
   }
 
   public canOpenModule(moduleId: MobileModuleId): boolean {
-    return canUseModule(moduleId, this.entitlementCache, new Date());
+    return canUseModule(moduleId, this.entitlementCache, this.nowProvider());
   }
 
   public activateBundle(): void {
