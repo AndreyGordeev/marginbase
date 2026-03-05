@@ -1,0 +1,87 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - heading "MarginBase" [level=3] [ref=e5]
+    - generic [ref=e6]:
+      - text: "Language:"
+      - combobox "Language:" [ref=e7]:
+        - option "English" [selected]
+        - option "Deutsch"
+        - option "Français"
+        - option "Español"
+        - option "Polski"
+        - option "Italiano"
+        - option "Русский"
+    - button "Dashboard" [ref=e8] [cursor=pointer]
+    - button "Profit" [ref=e9] [cursor=pointer]
+    - button "Break-even" [ref=e10] [cursor=pointer]
+    - button "Cashflow" [ref=e11] [cursor=pointer]
+    - button "Subscription" [ref=e12] [cursor=pointer]
+    - button "Data & Backup" [ref=e13] [cursor=pointer]
+    - button "Settings" [ref=e14] [cursor=pointer]
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - heading "Profit Scenarios" [level=3] [ref=e18]
+        - button "+ New Scenario" [ref=e19] [cursor=pointer]
+        - generic [ref=e20]:
+          - generic [ref=e21]: Demo Profit Scenario
+          - button "Delete" [ref=e22] [cursor=pointer]
+      - generic [ref=e23]:
+        - heading "Profit Editor" [level=3] [ref=e24]
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - text: Scenario Name
+            - textbox "Scenario Name" [ref=e27]: Demo Profit Scenario
+          - generic [ref=e28]:
+            - text: Unit price (minor)
+            - spinbutton "Unit price (minor)" [ref=e29]: "2000"
+          - generic [ref=e30]:
+            - text: Quantity
+            - spinbutton "Quantity" [ref=e31]: "100"
+          - generic [ref=e32]:
+            - text: Variable cost / unit
+            - spinbutton "Variable cost / unit" [ref=e33]: "1200"
+          - generic [ref=e34]:
+            - text: Fixed costs
+            - spinbutton "Fixed costs" [ref=e35]: "30000"
+          - button "Calculate Scenario" [ref=e36] [cursor=pointer]
+        - generic [ref=e37]: Ad block placeholder
+      - generic [ref=e38]:
+        - heading "Results" [level=3] [ref=e39]
+        - button "Share Scenario" [active] [ref=e40] [cursor=pointer]
+        - generic [ref=e42]:
+          - heading "Shared Scenario" [level=3] [ref=e43]
+          - paragraph [ref=e44]: "Expires: 2026-04-03T10:00:00.000Z"
+          - textbox [ref=e45]: http://127.0.0.1:4173/s/share_visual_token#k=jltE57pqARklR2OO-HV1mPg_CGvzOPXysRxWslcMDek
+          - generic [ref=e46]:
+            - button "Copy link" [ref=e47] [cursor=pointer]
+            - button "Close" [ref=e48] [cursor=pointer]
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - generic [ref=e51]: Net Profit
+            - generic [ref=e52]: €500.00
+            - generic [ref=e53]: Profitable
+            - generic [ref=e54]:
+              - generic [ref=e55]:
+                - generic [ref=e56]: Revenue
+                - strong [ref=e57]: €2,000.00
+              - generic [ref=e58]:
+                - generic [ref=e59]: Total Cost
+                - strong [ref=e60]: €1,500.00
+              - generic [ref=e61]:
+                - generic [ref=e62]: Gross Profit
+                - strong [ref=e63]: €800.00
+          - generic [ref=e64]:
+            - article [ref=e65]:
+              - generic [ref=e66]: Contribution Margin %
+              - generic [ref=e67]: 40%
+            - article [ref=e68]:
+              - generic [ref=e69]: Net Profit Margin %
+              - generic [ref=e70]: 25%
+            - article [ref=e71]:
+              - generic [ref=e72]: Markup %
+              - generic [ref=e73]: 33.33%
+```

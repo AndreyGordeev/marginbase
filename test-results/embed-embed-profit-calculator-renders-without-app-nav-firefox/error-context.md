@@ -1,0 +1,65 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - heading "SMB Finance Toolkit" [level=1] [ref=e7]
+      - paragraph [ref=e8]: Financial clarity for small businesses.
+      - list [ref=e9]:
+        - listitem [ref=e10]: Profit & margin analysis in seconds
+        - listitem [ref=e11]: Break-even modeling for smarter pricing
+        - listitem [ref=e12]: Cashflow forecasting without spreadsheets
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - text: "Language:"
+          - combobox "Language:" [ref=e15]:
+            - option "English" [selected]
+            - option "Deutsch"
+            - option "Français"
+            - option "Español"
+            - option "Polski"
+            - option "Italiano"
+            - option "Русский"
+        - button "Continue with Google" [ref=e16] [cursor=pointer]
+        - button "Continue as Guest" [ref=e17] [cursor=pointer]
+      - generic [ref=e18]:
+        - generic [ref=e19]: 🔒 Offline-first. Your data stays on your device.
+        - generic [ref=e20]: 🇪🇺 EU-hosted infrastructure
+        - generic [ref=e21]: No spreadsheets required
+    - generic [ref=e22]:
+      - heading "Product Preview" [level=3] [ref=e23]
+      - paragraph [ref=e24]: Live calculations, structured insights, no spreadsheet chaos.
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - generic [ref=e27]:
+            - generic [ref=e28]: Margin
+            - generic [ref=e29]: 31.8%
+            - generic [ref=e30]: ↑ 2.1%
+          - generic [ref=e31]:
+            - generic [ref=e32]: Break-even
+            - generic [ref=e33]: "174"
+            - generic [ref=e34]: units
+          - generic [ref=e35]:
+            - generic [ref=e36]: Cash Runway
+            - generic [ref=e37]: "5.4"
+            - generic [ref=e38]: months
+        - img [ref=e40]
+        - generic [ref=e46]:
+          - generic [ref=e47]:
+            - generic [ref=e48]: Revenue
+            - strong [ref=e49]: 120,000
+          - generic [ref=e50]:
+            - generic [ref=e51]: Costs
+            - strong [ref=e52]: 82,000
+          - generic [ref=e53]:
+            - generic [ref=e54]: Margin
+            - strong [ref=e55]: 31.8%
+          - generic [ref=e56]: Open Profit Calculator
+  - generic [ref=e57]:
+    - button "Privacy Policy" [ref=e58] [cursor=pointer]
+    - generic [ref=e59]: ·
+    - button "Terms of Service" [ref=e60] [cursor=pointer]
+    - generic [ref=e61]: ·
+    - button "Legal Center" [ref=e62] [cursor=pointer]
+```

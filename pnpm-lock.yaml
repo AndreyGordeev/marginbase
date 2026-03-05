@@ -84,6 +84,9 @@ importers:
         specifier: ^8.2.1
         version: 8.2.1
     devDependencies:
+      '@marginbase/testkit':
+        specifier: workspace:*
+        version: link:../../packages/testkit
       fake-indexeddb:
         specifier: ^6.2.2
         version: 6.2.5
