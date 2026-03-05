@@ -11,6 +11,8 @@
     "test": "vitest run --passWithNoTests --exclude tests/e2e/**",
     "test:e2e": "playwright test -c ../../playwright.config.ts",
     "test:visual": "playwright test tests/e2e/visual-regression.spec.ts -c ../../playwright.config.ts",
+    "test:performance": "playwright test tests/e2e/performance.spec.ts -c ../../playwright.config.ts",
+    "test:chaos": "playwright test tests/e2e/chaos.spec.ts -c ../../playwright.config.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "boot": "node dist/main.js"
   },
