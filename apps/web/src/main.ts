@@ -272,14 +272,8 @@ if (typeof document !== 'undefined' && typeof window !== 'undefined') {
   });
 
   if (!window.location.hash) {
-    const path = getPathnameLanguageContext().normalizedPath;
-    const isLegacyPublicPath =
-      path === '/s' ||
-      path.startsWith('/s/') ||
-      path === '/embed' ||
-      path.startsWith('/embed/');
-
-    if (!ROUTES.includes(path as RoutePath) && !isLegacyPublicPath) {
+    const path = getPathnameLanguageContext().normalizedPath as RoutePath;
+    if (!ROUTES.includes(path)) {
       goTo('/login');
     }
   }

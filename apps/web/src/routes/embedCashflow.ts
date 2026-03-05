@@ -3,7 +3,6 @@ import { createEmbedShell, createPoweredByFooter, parseEmbedOptions } from '../f
 import { downloadEmbedInputsJson } from '../features/embed/export-inputs';
 import { encodePrefill } from '../features/embed/prefill';
 import { translate } from '../i18n';
-import { TEST_IDS } from '../ui/test-ids';
 import { renderModuleResults } from '../ui/results/module-results';
 import { type WebAppService } from '../web-app-service';
 
@@ -56,7 +55,6 @@ export const renderEmbedCashflowRoute = (root: HTMLElement, service: WebAppServi
 
   const results = document.createElement('section');
   results.className = 'card';
-  results.setAttribute('data-testid', TEST_IDS.EMBED_RESULTS);
 
   const recalc = (): void => {
     const data = new FormData(form);
@@ -79,7 +77,6 @@ export const renderEmbedCashflowRoute = (root: HTMLElement, service: WebAppServi
     const cta = document.createElement('a');
     cta.href = `/cashflow?prefill=${encodeURIComponent(encodePrefill({ module: 'cashflow', inputData: { ...state } }))}`;
     cta.textContent = translate('embed.openInApp');
-    cta.setAttribute('data-testid', TEST_IDS.EMBED_OPEN_IN_APP_BUTTON);
     cta.onclick = () => {
       void service.trackEmbedCtaClicked('cashflow');
     };
@@ -87,7 +84,6 @@ export const renderEmbedCashflowRoute = (root: HTMLElement, service: WebAppServi
     const exportInputsButton = document.createElement('button');
     exportInputsButton.type = 'button';
     exportInputsButton.textContent = translate('embed.exportInputs');
-    exportInputsButton.setAttribute('data-testid', TEST_IDS.EMBED_EXPORT_INPUTS_BUTTON);
     exportInputsButton.onclick = () => {
       downloadEmbedInputsJson('cashflow', { ...state });
     };
