@@ -9,10 +9,16 @@
     "test:unit": "corepack pnpm -r --filter ./packages/* run test",
     "test:coverage": "corepack pnpm --filter @marginbase/domain-core run test:coverage && corepack pnpm --filter @marginbase/reporting run test:coverage",
     "test:e2e": "playwright test",
+    "test:e2e:all": "corepack pnpm --filter @marginbase/testkit build && playwright test",
+    "test:deterministic": "corepack pnpm test && corepack pnpm test && corepack pnpm test",
     "i18n:parity": "corepack pnpm exec tsx scripts/i18n-key-parity.ts",
     "typecheck": "corepack pnpm -r run typecheck",
     "boot:web": "corepack pnpm --filter @marginbase/web boot",
-    "boot:mobile": "corepack pnpm --filter @marginbase/mobile boot"
+    "boot:mobile": "corepack pnpm --filter @marginbase/mobile boot",
+    "check:console-logs": "tsx scripts/check-console-logs.ts",
+    "check:bundle-size": "corepack pnpm --filter @marginbase/web build && du -sh apps/web/dist",
+    "audit:security": "corepack pnpm audit --audit-level moderate",
+    "validate:all": "corepack pnpm lint && corepack pnpm typecheck && corepack pnpm i18n:parity && corepack pnpm test && corepack pnpm test:coverage"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.1",

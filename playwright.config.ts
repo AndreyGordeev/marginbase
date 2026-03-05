@@ -4,17 +4,27 @@ export default defineConfig({
   testDir: './apps/web/tests/e2e',
   timeout: 30_000,
   retries: process.env.CI ? 0 : 1,
+  workers: process.env.CI ? 2 : undefined,
+  forbidOnly: !!process.env.CI,
   expect: {
     timeout: 10_000
   },
-  reporter: [['line'], ['html', { open: 'never' }]],
+  reporter: process.env.CI
+    ? [['line'], ['html', { open: 'never', outputFolder: 'playwright-report' }], ['json', { outputFile: 'test-results.json' }]]
+    : [['line'], ['html', { open: 'on-failure' }]],
   use: {
     baseURL: 'http://127.0.0.1:4173',
     trace: 'on-first-retry',
     video: 'retain-on-failure',
     screenshot: 'only-on-failure',
     locale: 'en-US',
-    colorScheme: 'light'
+    colorScheme: 'light',
+    navigationTimeout: 15_000,
+    actionTimeout: 10_000,
+    launchOptions: {
+      // Disable animations for deterministic testing
+      args: ['--disable-blink-features=AutomationControlled']
+    }
   },
   projects: [
     {
@@ -24,7 +34,9 @@ export default defineConfig({
         viewport: {
           width: 1365,
           height: 768
-        }
+        },
+        // Reduce motion for stable visual tests
+        reducedMotion: 'reduce'
       }
     },
     {
@@ -34,7 +46,8 @@ export default defineConfig({
         viewport: {
           width: 1365,
           height: 768
-        }
+        },
+        reducedMotion: 'reduce'
       }
     },
     {
@@ -44,7 +57,8 @@ export default defineConfig({
         viewport: {
           width: 1365,
           height: 768
-        }
+        },
+        reducedMotion: 'reduce'
       }
     }
   ],
@@ -53,6 +67,8 @@ export default defineConfig({
       'corepack pnpm --filter @marginbase/web build && corepack pnpm --filter @marginbase/web exec vite preview --host 127.0.0.1 --port 4173',
     url: 'http://127.0.0.1:4173',
     reuseExistingServer: true,
-    timeout: 120_000
+    timeout: 120_000,
+    stdout: 'ignore',
+    stderr: 'pipe'
   }
 });
