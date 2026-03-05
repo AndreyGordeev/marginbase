@@ -3,6 +3,7 @@ import { createEmbedShell, createPoweredByFooter, parseEmbedOptions } from '../f
 import { downloadEmbedInputsJson } from '../features/embed/export-inputs';
 import { encodePrefill } from '../features/embed/prefill';
 import { translate } from '../i18n';
+import { TEST_IDS } from '../ui/test-ids';
 import { renderModuleResults } from '../ui/results/module-results';
 import { type WebAppService } from '../web-app-service';
 
@@ -53,6 +54,7 @@ export const renderEmbedBreakevenRoute = (root: HTMLElement, service: WebAppServ
 
   const results = document.createElement('section');
   results.className = 'card';
+  results.setAttribute('data-testid', TEST_IDS.EMBED_RESULTS);
 
   const recalc = (): void => {
     const data = new FormData(form);
@@ -73,6 +75,7 @@ export const renderEmbedBreakevenRoute = (root: HTMLElement, service: WebAppServ
     const cta = document.createElement('a');
     cta.href = `/break-even?prefill=${encodeURIComponent(encodePrefill({ module: 'breakeven', inputData: { ...state } }))}`;
     cta.textContent = translate('embed.openInApp');
+    cta.setAttribute('data-testid', TEST_IDS.EMBED_OPEN_IN_APP_BUTTON);
     cta.onclick = () => {
       void service.trackEmbedCtaClicked('breakeven');
     };
@@ -80,6 +83,7 @@ export const renderEmbedBreakevenRoute = (root: HTMLElement, service: WebAppServ
     const exportInputsButton = document.createElement('button');
     exportInputsButton.type = 'button';
     exportInputsButton.textContent = translate('embed.exportInputs');
+    exportInputsButton.setAttribute('data-testid', TEST_IDS.EMBED_EXPORT_INPUTS_BUTTON);
     exportInputsButton.onclick = () => {
       downloadEmbedInputsJson('breakeven', { ...state });
     };

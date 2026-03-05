@@ -93,7 +93,12 @@ const isIsoDate = (value: string): boolean => {
 };
 
 const toBytes = (value: unknown): number => {
-	return Buffer.byteLength(JSON.stringify(value), 'utf8');
+	const str = JSON.stringify(value);
+	if (typeof Buffer !== 'undefined') {
+		return Buffer.byteLength(str, 'utf8');
+	}
+	// Browser: estimate byte length using TextEncoder
+	return new TextEncoder().encode(str).length;
 };
 
 const containsForbiddenMonetaryKey = (key: string): boolean => {
