@@ -118,7 +118,7 @@ variable "api_cors_allowed_origins" {
   default     = ["http://localhost:5173"]
 
   validation {
-    condition = length(var.api_cors_allowed_origins) > 0
+    condition     = length(var.api_cors_allowed_origins) > 0
     error_message = "api_cors_allowed_origins must include at least one origin."
   }
 

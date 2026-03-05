@@ -227,8 +227,8 @@ resource "aws_lambda_function" "auth" {
 
   environment {
     variables = {
-      ENVIRONMENT       = var.environment
-      GOOGLE_CLIENT_IDS = var.google_client_ids
+      ENVIRONMENT          = var.environment
+      GOOGLE_CLIENT_IDS    = var.google_client_ids
       GOOGLE_TOKENINFO_URL = var.google_tokeninfo_url
     }
   }
@@ -282,15 +282,15 @@ resource "aws_lambda_function" "billing" {
 
   environment {
     variables = {
-      ENVIRONMENT             = var.environment
-      ENTITLEMENTS_TABLE_NAME = var.entitlements_table_name
-      STRIPE_SECRET_KEY       = var.stripe_secret_key
-      STRIPE_WEBHOOK_SECRET   = var.stripe_webhook_secret
-      STRIPE_MODE             = var.stripe_mode
-      STRIPE_PRICE_PROFIT     = var.stripe_price_profit
-      STRIPE_PRICE_BREAKEVEN  = var.stripe_price_breakeven
-      STRIPE_PRICE_CASHFLOW   = var.stripe_price_cashflow
-      STRIPE_PRICE_BUNDLE     = var.stripe_price_bundle
+      ENVIRONMENT                 = var.environment
+      ENTITLEMENTS_TABLE_NAME     = var.entitlements_table_name
+      STRIPE_SECRET_KEY           = var.stripe_secret_key
+      STRIPE_WEBHOOK_SECRET       = var.stripe_webhook_secret
+      STRIPE_MODE                 = var.stripe_mode
+      STRIPE_PRICE_PROFIT         = var.stripe_price_profit
+      STRIPE_PRICE_BREAKEVEN      = var.stripe_price_breakeven
+      STRIPE_PRICE_CASHFLOW       = var.stripe_price_cashflow
+      STRIPE_PRICE_BUNDLE         = var.stripe_price_bundle
       STRIPE_CHECKOUT_SUCCESS_URL = var.stripe_checkout_success_url
       STRIPE_CHECKOUT_CANCEL_URL  = var.stripe_checkout_cancel_url
       STRIPE_PORTAL_RETURN_URL    = var.stripe_portal_return_url
@@ -328,8 +328,8 @@ resource "aws_lambda_function" "share_create" {
 
   environment {
     variables = {
-      ENVIRONMENT                = var.environment
-      SHARE_SNAPSHOTS_TABLE_NAME = var.share_snapshots_table_name
+      ENVIRONMENT                    = var.environment
+      SHARE_SNAPSHOTS_TABLE_NAME     = var.share_snapshots_table_name
       SHARE_MAX_ACTIVE_LINKS_PER_DAY = tostring(var.share_max_active_links_per_day)
     }
   }
@@ -403,7 +403,7 @@ resource "aws_apigatewayv2_api" "http" {
     max_age       = 3600
   }
 
-  tags          = var.tags
+  tags = var.tags
 }
 
 resource "aws_apigatewayv2_stage" "default" {

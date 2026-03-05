@@ -124,7 +124,7 @@ export const expectNoForbiddenKeys = (
 /**
  * Helper to deeply compare two objects (shallow equality check)
  */
-export const expectObjectShapeMatch = (actual: any, expected: any, path = '$'): void => {
+export const expectObjectShapeMatch = (actual: Record<string, unknown>, expected: Record<string, unknown>, path = '$'): void => {
   const actualKeys = Object.keys(actual).sort();
   const expectedKeys = Object.keys(expected).sort();
 
@@ -142,7 +142,7 @@ export interface MutationTestCase<T> {
   changedFields: (keyof T)[];
 }
 
-export const expectMutationFields = <T extends Record<string, any>>(
+export const expectMutationFields = <T extends Record<string, unknown>>(
   testCase: MutationTestCase<T>,
   relaxAllowList: (keyof T)[] = []
 ): void => {

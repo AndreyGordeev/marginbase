@@ -29,18 +29,20 @@ export const DEFAULT_CONSOLE_BUDGET: ConsoleErrorBudgetConfig = {
 /**
  * Attach console error tracking to a Playwright page.
  * Fails the test if console errors/warnings exceed budget or contain forbidden keys.
- * 
+ *
  * @param page Playwright page object
  * @param budget Console error budget (defaults to strict 0 errors, 0 warnings)
  * @returns Helper to assert no errors occurred
  */
 export const attachConsoleErrorTracking = (
-  page: any, // would be Page type from @playwright/test, but avoiding direct dep
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  page: any,
   budget: ConsoleErrorBudgetConfig = DEFAULT_CONSOLE_BUDGET
 ) => {
   const errors: string[] = [];
   const warnings: string[] = [];
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   page.on('console', (msg: any) => {
     const text = msg.text();
     const type = msg.type();
@@ -57,7 +59,7 @@ export const attachConsoleErrorTracking = (
     }
   });
 
-  page.on('pageerror', (error: any) => {
+  page.on('pageerror', (error: Error) => {
     errors.push(`Uncaught error: ${error.toString()}`);
   });
 
@@ -81,6 +83,7 @@ export const attachConsoleErrorTracking = (
  * - set fixed viewport
  * - set fixed timezone
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const configurePageForVisualTesting = async (page: any) => {
   // Disable CSS animations and transitions for snapshots
   await page.addStyleTag({
@@ -102,14 +105,14 @@ export const configurePageForVisualTesting = async (page: any) => {
   await page.evaluate(() => {
     // Hide elements with data-testid="dynamic-timestamp"
     const timestamps = document.querySelectorAll('[data-testid="dynamic-timestamp"]');
-    timestamps.forEach((el: any) => {
-      el.style.visibility = 'hidden';
+    timestamps.forEach((el: Element) => {
+      (el as HTMLElement).style.visibility = 'hidden';
     });
 
     // Hide elements with data-testid="random-id"
     const randomIds = document.querySelectorAll('[data-testid="random-id"]');
-    randomIds.forEach((el: any) => {
-      el.textContent = '[HIDDEN]';
+    randomIds.forEach((el: Element) => {
+      (el as HTMLElement).textContent = '[HIDDEN]';
     });
   });
 };
@@ -122,12 +125,18 @@ export interface NetworkInterceptorConfig {
   forbiddenKeys: string[];
 }
 
-export const trackNetworkPayloads = (page: any, config: NetworkInterceptorConfig) => {
+export const trackNetworkPayloads = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  page: any,
+  config: NetworkInterceptorConfig
+) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const interceptedRequests: Array<{ url: string; method: string; body: any }> = [];
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   page.on('request', (request: any) => {
     const url = request.url();
-    
+
     if (config.allowedEndpoints.some((endpoint) => url.includes(endpoint))) {
       try {
         const postData = request.postDataJSON();

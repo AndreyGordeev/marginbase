@@ -99,4 +99,131 @@ describe('buildReportModel', () => {
     expect(String.fromCharCode(plainPdf[0], plainPdf[1], plainPdf[2], plainPdf[3])).toBe('%PDF');
     expect(String.fromCharCode(watermarkedPdf[0], watermarkedPdf[1], watermarkedPdf[2], watermarkedPdf[3])).toBe('%PDF');
   });
+
+  describe('edge cases and risk indicators', () => {
+    it('handles all three modules with risk indicators', () => {
+      const report = buildReportModel({
+        generatedAtLocal: '2026-03-05T14:30:00.000Z',
+        profitabilityInput: {
+          mode: 'unit',
+          unitPriceMinor: 500,
+          quantity: 0,
+          variableCostPerUnitMinor: 300,
+          fixedCostsMinor: 2000
+        },
+        breakEvenInput: {
+          unitPriceMinor: 500,
+          variableCostPerUnitMinor: 300,
+          fixedCostsMinor: 2000,
+          plannedQuantity: 1
+        },
+        cashflowInput: {
+          startingCashMinor: 1000,
+          baseMonthlyRevenueMinor: 500,
+          fixedMonthlyCostsMinor: 600,
+          variableMonthlyCostsMinor: 100,
+          forecastMonths: 6,
+          monthlyGrowthRate: 0.05
+        }
+      });
+
+      expect(report.riskIndicators.length).toBeGreaterThan(0);
+      expect(report.profitability?.netProfitMinor).toBeLessThan(0);
+    });
+
+    it('generates deterministic xlsx with null values', () => {
+      const report = buildReportModel({
+        generatedAtLocal: '2026-03-04T10:00:00.000Z',
+        breakEvenInput: {
+          unitPriceMinor: 1000,
+          variableCostPerUnitMinor: 600,
+          fixedCostsMinor: 1000,
+          plannedQuantity: 10,
+          targetProfitMinor: null
+        }
+      });
+
+      const xlsxBytes = exportReportXlsx(report);
+      const workbook = read(xlsxBytes, { type: 'array' });
+      const beSheet = workbook.Sheets['Break-even'];
+      const rows = utils.sheet_to_json<Record<string, unknown>>(beSheet);
+
+      expect(rows.length).toBeGreaterThan(0);
+      expect(rows[0]).toBeDefined();
+    });
+
+    it('exports long cashflow projections (12+ months)', () => {
+      const report = buildReportModel({
+        generatedAtLocal: '2026-03-04T10:00:00.000Z',
+        cashflowInput: {
+          startingCashMinor: 10000,
+          baseMonthlyRevenueMinor: 2000,
+          fixedMonthlyCostsMinor: 800,
+          variableMonthlyCostsMinor: 400,
+          forecastMonths: 24,
+          monthlyGrowthRate: 0.02
+        }
+      });
+
+      expect(report.cashflow?.monthlyProjection.length).toBe(24);
+
+      const pdfBytes = exportReportPdf(report);
+      expect(pdfBytes.byteLength).toBeGreaterThan(800);
+    });
+
+    it('handles empty watermark text gracefully', () => {
+      const report = buildReportModel({
+        generatedAtLocal: '2026-03-04T10:00:00.000Z',
+        profitabilityInput: {
+          mode: 'unit',
+          unitPriceMinor: 1000,
+          quantity: 5,
+          variableCostPerUnitMinor: 600,
+          fixedCostsMinor: 1000
+        }
+      });
+
+      const xlsxWithEmptyWatermark = exportReportXlsx(report, { watermarkText: '   ' });
+      const workbook = read(xlsxWithEmptyWatermark, { type: 'array' });
+      const summarySheet = workbook.Sheets.Summary;
+      const rows = utils.sheet_to_json<Array<string | number>>(summarySheet, { header: 1 });
+      const watermarkRow = rows.find((row) => row[0] === 'Watermark');
+
+      expect(watermarkRow).toBeUndefined();
+    });
+
+    it('exports all three calculator results with mixed input', () => {
+      const report = buildReportModel({
+        generatedAtLocal: '2026-03-04T12:00:00.000Z',
+        profitabilityInput: {
+          mode: 'revenue',
+          revenueMinor: 5000,
+          fixedCostsMinor: 1000,
+          variableCostPct: 0.4
+        },
+        breakEvenInput: {
+          unitPriceMinor: 100,
+          variableCostPerUnitMinor: 40,
+          fixedCostsMinor: 1000,
+          plannedQuantity: 100
+        },
+        cashflowInput: {
+          startingCashMinor: 2000,
+          baseMonthlyRevenueMinor: 500,
+          fixedMonthlyCostsMinor: 200,
+          variableMonthlyCostsMinor: 150,
+          forecastMonths: 4,
+          monthlyGrowthRate: 0.1
+        }
+      });
+
+      const xlsxBytes = exportReportXlsx(report);
+      const workbook = read(xlsxBytes, { type: 'array' });
+
+      expect(workbook.SheetNames).toContain('Summary');
+      expect(workbook.SheetNames).toContain('Profitability');
+      expect(workbook.SheetNames).toContain('Break-even');
+      expect(workbook.SheetNames).toContain('Cashflow');
+    });
+  });
 });

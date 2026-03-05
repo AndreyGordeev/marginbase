@@ -1,4 +1,3 @@
-import Decimal from 'decimal.js';
 import { type ModuleId, type ScenarioV1 } from '@marginbase/domain-core';
 
 /**
