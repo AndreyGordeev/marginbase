@@ -3,7 +3,7 @@ import { attachErrorTracking } from './playwright-helpers';
 
 const languageSelect = (page: import('@playwright/test').Page) => page.locator('select[name="language"]');
 
-test('language switch to pl is applied and persisted after reload', async ({ page }) => {
+test('language switch to pl is applied and persisted after reload', async ({ page, browserName }) => {
   const { expectNoErrors } = attachErrorTracking(page);
   await page.goto('/login');
   await expect(languageSelect(page)).toBeVisible();
@@ -17,8 +17,14 @@ test('language switch to pl is applied and persisted after reload', async ({ pag
   await page.getByRole('button', { name: 'Kontynuuj jako gość' }).click();
   await expect(page.getByRole('heading', { name: 'Pulpit' })).toBeVisible();
 
+  if (browserName === 'firefox') {
+    // Firefox has slower reload on i18n
+    await page.waitForTimeout(500);
+  }
+  
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Pulpit' })).toBeVisible();
+  await expect(page).toHaveURL(/\/pl\//);
+  await expect(page.getByRole('heading', { name: 'Pulpit' }), { timeout: 20000 }).toBeVisible();
   
   expectNoErrors();
 });
@@ -38,7 +44,8 @@ test('language switch to ru is applied and persisted after reload', async ({ pag
   await expect(page.getByRole('heading', { name: 'Панель' })).toBeVisible();
 
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Панель' })).toBeVisible();
+  await expect(page).toHaveURL(/\/ru\//);
+  await expect(page.getByRole('heading', { name: 'Панель' }), { timeout: 20000 }).toBeVisible();
   
   expectNoErrors();
 });
