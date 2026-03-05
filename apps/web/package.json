@@ -13,6 +13,10 @@
     "test:visual": "playwright test tests/e2e/visual-regression.spec.ts -c ../../playwright.config.ts",
     "test:performance": "playwright test tests/e2e/performance.spec.ts -c ../../playwright.config.ts",
     "test:chaos": "playwright test tests/e2e/chaos.spec.ts -c ../../playwright.config.ts",
+    "test:load": "playwright test tests/e2e/load-test.spec.ts -c ../../playwright.config.ts",
+    "test:security": "playwright test tests/e2e/security.spec.ts -c ../../playwright.config.ts",
+    "test:a11y": "playwright test tests/e2e/a11y.spec.ts -c ../../playwright.config.ts",
+    "test:lighthouse": "playwright test tests/e2e/lighthouse-audit.spec.ts -c ../../playwright.config.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "boot": "node dist/main.js"
   },

@@ -1,0 +1,207 @@
+rules:
+  - id: marginbase-no-console-sensitive
+    pattern-either:
+      - patterns:
+          - pattern: console.log(...)
+          - metavariable-regex:
+              metavariable: $ARGS
+              regex: (?i).*(revenue|cost|profit|cashflow|money|price|amount|salary|expense|balance|account|credit|debit|financial|password|secret|token|key|credential|auth|api_key|secret_key).*
+      - pattern: console.warn(...)
+        metavariable-regex:
+          metavariable: $ARGS
+          regex: (?i).*(revenue|cost|profit|money|password|token|secret).*
+      - pattern: console.error(...)
+        metavariable-regex:
+          metavariable: $ARGS
+          regex: (?i).*(password|token|secret|key|credential).*
+    message: |
+      ⚠️ SECURITY: console.log/warn/error contains sensitive financial or authentication data
+      - Never log: revenue, cost, profit, money amounts, passwords, tokens, secrets
+      - Use: logger.error(sanitized_message) instead with PII redaction
+    languages: [typescript, javascript]
+    severity: ERROR
+    fix: Remove sensitive data or use logger with .redacted() utility
+
+  - id: marginbase-no-plaintext-secrets
+    patterns:
+      - pattern-either:
+          - pattern: |
+              const $KEY = "..."
+              ...
+              $KEY
+          - pattern: |
+              $KEY: "..."
+          - pattern: password = "..."
+          - pattern: token = "..."
+          - pattern: secret = "..."
+          - pattern: api_key = "..."
+      - metavariable-regex:
+          metavariable: $KEY
+          regex: (?i).*(password|token|secret|api_key|private_key|key|credential|bearer|auth).*
+      - not:
+          metavariable-regex:
+            metavariable: $VALUE
+            regex: '^\$\{.*\}$|process\.env\.|process\.environment|import\.meta\.env'
+    message: |
+      🔐 SECURITY: Hardcoded secrets/passwords detected
+      - Use environment variables: process.env.* or import.meta.env.*
+      - Or use vault/secrets manager for runtime
+      - Never commit secrets to source control
+    languages: [typescript, javascript]
+    severity: ERROR
+
+  - id: marginbase-financial-rounding-validation
+    patterns:
+      - pattern-either:
+          - pattern: |
+              new Decimal($X) / 100
+          - pattern: |
+              $AMOUNT / 100
+          - pattern: |
+              toFixed(...)
+    message: |
+      ⚠️ FINANCIAL: Division without explicit rounding policy
+      - Use Decimal.js with ROUNDING_MODE explicitly set
+      - Use: new Decimal($X).dividedBy(100).toDecimalPlaces(2, Decimal.ROUND_DOWN)
+      - Or: useRoundingPolicy($X, 'ROUND_DOWN')
+    languages: [typescript, javascript]
+    severity: WARNING
+    fix: Wrap division in Decimal.js with explicit rounding mode
+
+  - id: marginbase-no-eval-or-function
+    patterns:
+      - pattern-either:
+          - pattern: eval(...)
+          - pattern: new Function(...)
+          - pattern: $OBJ[eval(...)]
+    message: |
+      🚨 SECURITY: eval() or dynamic Function() constructor detected
+      - These allow arbitrary code execution
+      - Use: JSON.parse() for data, or predefined functions for logic
+      - If formulaic evaluation needed, use: jexl or math.js with sandboxing
+    languages: [typescript, javascript]
+    severity: ERROR
+
+  - id: marginbase-xss-unescaped-html
+    patterns:
+      - pattern-either:
+          - pattern: dangerouslySetInnerHTML
+          - pattern: innerHTML = ...
+          - pattern: $OBJ.innerHTML = $VAL
+      - not:
+          metavariable-regex:
+            metavariable: $VAL
+            regex: '^\{\s*__html:\s*DOMPurify\.sanitize\(.*\)\s*\}$|sanitize\(|xss\(|escape\('
+    message: |
+      🚨 SECURITY: Unescaped HTML injection risk
+      - Use: dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
+      - Or: textContent instead of innerHTML for plain text
+      - Audit: XSS vectors in user input from scenarios/imports
+    languages: [typescript, javascript, jsx, tsx]
+    severity: ERROR
+
+  - id: marginbase-sql-injection-risk
+    patterns:
+      - pattern-either:
+          - pattern: |
+              `... ${$INPUT} ...`
+          - pattern: |
+              "..." + $INPUT + "..."
+      - metavariable-regex:
+          metavariable: $INPUT
+          regex: (?i).*(query|sql|where|select|insert|delete|from|command).*
+    message: |
+      ⚠️ SECURITY: Potential SQL/query injection
+      - If using SQL: use parameterized queries, never string interpolation
+      - If using IndexedDB: use keyPath and queries, not constructed strings
+      - Current system (Dexie) is safe, but flag for future SQL migrations
+    languages: [typescript, javascript]
+    severity: WARNING
+
+  - id: marginbase-no-unverified-math
+    patterns:
+      - pattern-either:
+          - pattern: Math.random()
+          - pattern: Math.floor(...)
+          - pattern: toFixed(...)
+      - not:
+          metavariable-regex:
+            metavariable: $CONTEXT
+            regex: (?i).*(test|spec|mock|fake|random).*
+    message: |
+      ⚠️ FINANCIAL: Math functions may lose precision on financial values
+      - Use: Decimal.js for all financial calculations
+      - Math.random() is OK for non-financial (e.g., animation delays)
+      - toFixed() does NOT preserve precision; use Decimal.toString/toFormat
+    languages: [typescript, javascript]
+    severity: WARNING
+
+  - id: marginbase-missing-error-boundary
+    patterns:
+      - pattern-either:
+          - pattern: |
+              <CalculatorComponent ... />
+          - pattern: |
+              <Workspace ... />
+          - pattern: |
+              <Dashboard ... />
+      - not:
+          metavariable-regex:
+            metavariable: $PARENT
+            regex: ErrorBoundary|try.*catch|Suspense
+    message: |
+      ⚠️ QUALITY: Component not wrapped in error boundary
+      - Wrap: <ErrorBoundary><Component /></ErrorBoundary>
+      - Prevents component crash from freezing entire app
+      - Required for production stability
+    languages: [jsx, tsx]
+    severity: WARNING
+
+  - id: marginbase-accessible-form-inputs
+    patterns:
+      - pattern-either:
+          - pattern: <input ... />
+          - pattern: <textarea ... />
+      - not:
+          metavariable-regex:
+            metavariable: $ATTRS
+            regex: (id=|aria-label=|aria-labelledby=|label.*htmlFor)
+    message: |
+      ♿ ACCESSIBILITY: Form input missing accessibility label
+      - Add: id="field_name" + <label htmlFor="field_name">
+      - Or: aria-label="Clear description"
+      - Required for WCAG 2.1 AA compliance
+    languages: [jsx, tsx]
+    severity: WARNING
+
+  - id: marginbase-no-hardcoded-urls
+    patterns:
+      - pattern: |
+          "https://..."
+      - not:
+          metavariable-regex:
+            metavariable: $URL
+            regex: (docs\.|example\.|localhost|127\.0\.0\.1|github\.com/marginbase|next\.example)
+    message: |
+      ⚠️ CONFIG: Hardcoded external URL may vary by environment
+      - Use: import { API_BASE } from '@config' or process.env
+      - Or: import.meta.env.VITE_API_BASE
+      - Prevents deployments secrets leakage
+    languages: [typescript, javascript]
+    severity: WARNING
+
+  - id: marginbase-unused-dependencies
+    patterns:
+      - pattern: |
+          import ... from "$MODULE"
+      - not:
+          metavariable-regex:
+            metavariable: $MODULE
+            regex: (react|react-dom|vitest|@testing-library|@playwright|typescript)
+    message: |
+      ⚠️ HYGIENE: Unused import or dependency
+      - Remove: import ... from "$MODULE" if not used in file
+      - Run: eslint --fix to auto-remove
+      - Reduces bundle size and attack surface
+    languages: [typescript, javascript]
+    severity: WARNING
