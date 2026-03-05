@@ -152,7 +152,7 @@ describe('buildReportModel', () => {
       expect(rows[0]).toBeDefined();
     });
 
-    it('exports long cashflow projections (12+ months)', () => {
+    it('exports long cashflow projections (12+ months)', async () => {
       const report = buildReportModel({
         generatedAtLocal: '2026-03-04T10:00:00.000Z',
         cashflowInput: {
@@ -167,7 +167,7 @@ describe('buildReportModel', () => {
 
       expect(report.cashflow?.monthlyProjection.length).toBe(24);
 
-      const pdfBytes = exportReportPdf(report);
+      const pdfBytes = await exportReportPdf(report);
       expect(pdfBytes.byteLength).toBeGreaterThan(800);
     });
 
@@ -197,9 +197,9 @@ describe('buildReportModel', () => {
         generatedAtLocal: '2026-03-04T12:00:00.000Z',
         profitabilityInput: {
           mode: 'revenue',
-          revenueMinor: 5000,
+          totalRevenueMinor: 5000,
           fixedCostsMinor: 1000,
-          variableCostPct: 0.4
+          totalVariableCostsMinor: 2000
         },
         breakEvenInput: {
           unitPriceMinor: 100,

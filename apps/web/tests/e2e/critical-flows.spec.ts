@@ -12,13 +12,13 @@ test('profit compute flow works end-to-end', async ({ page }) => {
   const { expectNoErrors } = attachErrorTracking(page);
   await loginAndContinueToDashboard(page);
 
-  const profitCard = page.locator('.card', { hasText: 'Profit Calculator' }).first();
+  const profitCard = page.locator('.card').filter({ hasText: 'Profit Calculator' }).first();
   await profitCard.getByRole('button', { name: 'Open' }).click();
   await expect(page.getByRole('heading', { name: 'Profit Editor' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Calculate Scenario' }).click();
-  await expect(page.locator('.results-summary-label', { hasText: 'Net Profit' })).toBeVisible();
-  
+  await expect(page.locator('.results-summary-label').filter({ hasText: 'Net Profit' })).toBeVisible();
+
   expectNoErrors();
 });
 
@@ -31,7 +31,7 @@ test('soft gate blocks locked module and routes to subscription', async ({ page 
 
   await page.getByRole('button', { name: 'Go to Subscription' }).click();
   await expect(page.getByRole('heading', { name: 'Subscription' })).toBeVisible();
-  
+
   expectNoErrors();
 });
 
@@ -49,7 +49,7 @@ test('upgrade flow unlocks locked module via local bundle activation', async ({ 
   await page.goto('/en/login#/cashflow');
   await expect(page.getByRole('heading', { name: 'Cashflow Editor' })).toBeVisible();
   await expect(page.getByText('This module requires an active subscription.')).toHaveCount(0);
-  
+
   expectNoErrors();
 });
 
@@ -81,7 +81,7 @@ test('share scenario flow creates and renders local share dialog', async ({ page
 
   await loginAndContinueToDashboard(page);
 
-  const profitCard = page.locator('.card', { hasText: 'Profit Calculator' }).first();
+  const profitCard = page.locator('.card').filter({ hasText: 'Profit Calculator' }).first();
   await profitCard.getByRole('button', { name: 'Open' }).click();
   await expect(page.getByRole('heading', { name: 'Profit Editor' })).toBeVisible();
 
@@ -90,7 +90,7 @@ test('share scenario flow creates and renders local share dialog', async ({ page
 
   await expect(page.getByRole('heading', { name: 'Shared Scenario' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Copy link' })).toBeVisible();
-  
+
   expectNoErrors();
 });
 

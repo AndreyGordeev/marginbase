@@ -26,7 +26,7 @@ test('share link can be opened and imported back into app', async ({ page }) => 
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
   // Open calculator
-  const profitCard = page.locator('.card', { hasText: 'Profit Calculator' }).first();
+  const profitCard = page.locator('.card').filter({ hasText: 'Profit Calculator' }).first();
   await profitCard.getByRole('button', { name: 'Open' }).click();
   await expect(page.getByRole('heading', { name: 'Profit Editor' })).toBeVisible();
 
@@ -40,6 +40,6 @@ test('share link can be opened and imported back into app', async ({ page }) => 
   expect(shareUrl).toContain('/s/');
   expect(shareUrl).toContain('#k=');
   expect(shareUrl).toContain('share_e2e_test_token');
-  
+
   expectNoErrors();
 });

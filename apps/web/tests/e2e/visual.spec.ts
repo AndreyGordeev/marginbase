@@ -24,7 +24,7 @@ test('visual: dashboard module cards', async ({ page }) => {
 test('visual: profit workspace filled', async ({ page }) => {
   const { expectNoErrors } = attachErrorTracking(page);
   await loginAndContinueToDashboard(page);
-  const profitCard = page.locator('.card', { hasText: 'Profit Calculator' }).first();
+  const profitCard = page.locator('.card').filter({ hasText: 'Profit Calculator' }).first();
   await profitCard.getByRole('button', { name: 'Open' }).click();
 
   await expect(page.getByRole('heading', { name: 'Profit Editor' })).toBeVisible();
@@ -69,13 +69,13 @@ test('visual: share dialog after link creation', async ({ page }) => {
   });
 
   await loginAndContinueToDashboard(page);
-  const profitCard = page.locator('.card', { hasText: 'Profit Calculator' }).first();
+  const profitCard = page.locator('.card').filter({ hasText: 'Profit Calculator' }).first();
   await profitCard.getByRole('button', { name: 'Open' }).click();
   await page.getByRole('button', { name: 'Calculate Scenario' }).click();
   await page.getByRole('button', { name: 'Share Scenario' }).click();
 
   await expect(page.getByRole('heading', { name: 'Shared Scenario' })).toBeVisible();
-  await expect(page.locator('.card', { hasText: 'Shared Scenario' }).first()).toHaveScreenshot('visual-share-dialog.png', {
+  await expect(page.locator('.card').filter({ hasText: 'Shared Scenario' }).first()).toHaveScreenshot('visual-share-dialog.png', {
     ...screenshotOptions,
     maxDiffPixelRatio: 0.02
   });
