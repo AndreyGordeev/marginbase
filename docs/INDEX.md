@@ -1,12 +1,16 @@
 # MarginBase — Documentation Index
 
 ## Start Here
-- ../PROJECT_CONTEXT.md
-- ../README.md
-- ../.github/copilot-instructions.md
-- documentation-sync-policy.md
-- release-notes-v1.md
-- release-notes-v1-appendix.md
+- ../PROJECT_CONTEXT.md (project overview, boundaries, decisions)
+- ../README.md (quick start, test status, workspace structure)
+- ../DEVELOPMENT.md (complete developer guide with scripts and testing)
+- ../CONTRIBUTING.md (contribution workflow and code standards)
+- ../CHANGELOG.md (version history and improvements)
+- ../IMPROVEMENTS_SUMMARY.md (session improvements and metrics)
+- ../.github/copilot-instructions.md (copilot boundaries)
+- documentation-sync-policy.md (how to keep docs in sync)
+- release-notes-v1.md (v1 release announcement)
+- release-notes-v1-appendix.md (v1 detailed changes)
 
 ## Current Delivery Status
 - ../PROJECT_CONTEXT.md (all current growth-scope items completed)
@@ -50,3 +54,8 @@
 ## Testing
 - testing/stripe-test-mode-e2e.md
 - testing/stripe-production-readiness-evidence.md
+
+## Development Process
+- ../DEVELOPMENT.md (scripts, workflows, debugging)
+- ../CONTRIBUTING.md (code style, PR workflow, quality standards)
+- ../.githooks/README.md (pre-commit hook setup)
