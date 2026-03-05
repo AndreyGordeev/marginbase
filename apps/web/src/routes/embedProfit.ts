@@ -4,6 +4,7 @@ import { downloadEmbedInputsJson } from '../features/embed/export-inputs';
 import { encodePrefill } from '../features/embed/prefill';
 import { translate } from '../i18n';
 import { renderModuleResults } from '../ui/results/module-results';
+import { TEST_IDS } from '../ui/test-ids';
 import { type WebAppService } from '../web-app-service';
 
 const toPlainJson = (value: unknown): unknown => {
@@ -51,6 +52,7 @@ export const renderEmbedProfitRoute = (root: HTMLElement, service: WebAppService
 
   const results = document.createElement('section');
   results.className = 'card';
+  results.setAttribute('data-testid', TEST_IDS.EMBED_RESULTS);
 
   const recalc = (): void => {
     const data = new FormData(form);
@@ -70,6 +72,7 @@ export const renderEmbedProfitRoute = (root: HTMLElement, service: WebAppService
     const cta = document.createElement('a');
     cta.href = `/profit?prefill=${encodeURIComponent(encodePrefill({ module: 'profit', inputData: { ...state } }))}`;
     cta.textContent = translate('embed.openInApp');
+    cta.setAttribute('data-testid', TEST_IDS.EMBED_OPEN_IN_APP_BUTTON);
     cta.onclick = () => {
       void service.trackEmbedCtaClicked('profit');
     };
@@ -77,6 +80,7 @@ export const renderEmbedProfitRoute = (root: HTMLElement, service: WebAppService
     const exportInputsButton = document.createElement('button');
     exportInputsButton.type = 'button';
     exportInputsButton.textContent = translate('embed.exportInputs');
+    exportInputsButton.setAttribute('data-testid', TEST_IDS.EMBED_EXPORT_INPUTS_BUTTON);
     exportInputsButton.onclick = () => {
       downloadEmbedInputsJson('profit', { ...state });
     };

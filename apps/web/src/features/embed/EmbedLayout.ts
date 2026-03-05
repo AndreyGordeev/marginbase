@@ -1,4 +1,5 @@
 import { translate } from '../../i18n';
+import { TEST_IDS } from '../../ui/test-ids';
 
 export interface EmbedOptions {
   theme: 'light' | 'dark';
@@ -32,6 +33,7 @@ export const createEmbedShell = (title: string, options: EmbedOptions): HTMLElem
   const shell = document.createElement('div');
   shell.className = 'page';
   shell.setAttribute('data-embed-theme', options.theme);
+  shell.setAttribute('data-testid', TEST_IDS.EMBED_SHELL);
 
   const card = document.createElement('section');
   card.className = 'card';
@@ -52,6 +54,7 @@ export const createPoweredByFooter = (options: EmbedOptions): HTMLElement | null
   const link = document.createElement('a');
   link.href = '/login';
   link.textContent = translate('embed.poweredBy');
+  link.setAttribute('data-testid', TEST_IDS.EMBED_POWERED_BY);
 
   footer.appendChild(link);
   return footer;
