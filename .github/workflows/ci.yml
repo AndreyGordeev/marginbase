@@ -6,10 +6,6 @@ on:
       - main
   pull_request:
 
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
   lint_typecheck:
     runs-on: ubuntu-latest
