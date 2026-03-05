@@ -1,0 +1,36 @@
+#!/bin/sh
+# Pre-commit hook for MarginBase
+# Place this in .git/hooks/pre-commit and make executable
+
+echo "🔍 Running pre-commit checks..."
+
+# Check for console.log in production code
+echo "  → Checking for console.log..."
+if ! corepack pnpm run check:console-logs > /dev/null 2>&1; then
+  echo "❌ Found console.log in production code. Please remove before committing."
+  exit 1
+fi
+
+# Run linter
+echo "  → Running ESLint..."
+if ! corepack pnpm run lint > /dev/null 2>&1; then
+  echo "❌ ESLint failed. Please fix errors before committing."
+  exit 1
+fi
+
+# Run type checker
+echo "  → Running TypeScript..."
+if ! corepack pnpm run typecheck > /dev/null 2>&1; then
+  echo "❌ TypeScript errors found. Please fix before committing."
+  exit 1
+fi
+
+# Check i18n parity
+echo "  → Checking i18n parity..."
+if ! corepack pnpm run i18n:parity > /dev/null 2>&1; then
+  echo "❌ i18n keys are not in sync. Please update all locales."
+  exit 1
+fi
+
+echo "✅ Pre-commit checks passed!"
+exit 0

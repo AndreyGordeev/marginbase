@@ -17,6 +17,8 @@
     "boot:mobile": "corepack pnpm --filter @marginbase/mobile boot",
     "check:console-logs": "tsx scripts/check-console-logs.ts",
     "check:bundle-size": "corepack pnpm --filter @marginbase/web build && du -sh apps/web/dist",
+    "quality:report": "tsx scripts/quality-report.ts",
+    "hooks:install": "git config core.hooksPath .githooks && echo Git hooks installed successfully!",
     "audit:security": "corepack pnpm audit --audit-level moderate",
     "validate:all": "corepack pnpm lint && corepack pnpm typecheck && corepack pnpm i18n:parity && corepack pnpm test && corepack pnpm test:coverage"
   },
