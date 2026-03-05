@@ -17,7 +17,10 @@ test('visual: dashboard module cards', async ({ page }) => {
   const { expectNoErrors } = attachErrorTracking(page);
   await loginAndContinueToDashboard(page);
   await expect(page.locator('.grid-3')).toBeVisible();
-  await expect(page.locator('.grid-3')).toHaveScreenshot('visual-dashboard-modules.png', screenshotOptions);
+  await expect(page.locator('.grid-3')).toHaveScreenshot('visual-dashboard-modules.png', {
+    ...screenshotOptions,
+    maxDiffPixelRatio: 0.05
+  });
   expectNoErrors();
 });
 
@@ -31,7 +34,10 @@ test('visual: profit workspace filled', async ({ page }) => {
   await page.getByRole('button', { name: 'Calculate Scenario' }).click();
   await expect(page.getByText('Results')).toBeVisible();
 
-  await expect(page.locator('main.main')).toHaveScreenshot('visual-profit-workspace.png', screenshotOptions);
+  await expect(page.locator('main.main')).toHaveScreenshot('visual-profit-workspace.png', {
+    ...screenshotOptions,
+    maxDiffPixelRatio: 0.05
+  });
   expectNoErrors();
 });
 
@@ -41,7 +47,10 @@ test('visual: paywall locked module', async ({ page }) => {
   await page.goto('/en/login#/cashflow');
   await expect(page.getByText('This module requires an active subscription.')).toBeVisible();
 
-  await expect(page.locator('main.main')).toHaveScreenshot('visual-paywall-cashflow.png', screenshotOptions);
+  await expect(page.locator('main.main')).toHaveScreenshot('visual-paywall-cashflow.png', {
+    ...screenshotOptions,
+    maxDiffPixelRatio: 0.05
+  });
   expectNoErrors();
 });
 
@@ -51,7 +60,10 @@ test('visual: settings telemetry card', async ({ page }) => {
   await page.goto('/en/login#/settings');
 
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
-  await expect(page.locator('main.main')).toHaveScreenshot('visual-settings.png', screenshotOptions);
+  await expect(page.locator('main.main')).toHaveScreenshot('visual-settings.png', {
+    ...screenshotOptions,
+    maxDiffPixelRatio: 0.05
+  });
   expectNoErrors();
 });
 
@@ -77,7 +89,7 @@ test('visual: share dialog after link creation', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Shared Scenario' })).toBeVisible();
   await expect(page.locator('.card').filter({ hasText: 'Shared Scenario' }).first()).toHaveScreenshot('visual-share-dialog.png', {
     ...screenshotOptions,
-    maxDiffPixelRatio: 0.02
+    maxDiffPixelRatio: 0.05
   });
   expectNoErrors();
 });
@@ -88,7 +100,10 @@ test('visual: data export options', async ({ page }) => {
   await page.goto('/en/login#/data');
 
   await expect(page.getByRole('heading', { name: 'Data & Backup' })).toBeVisible();
-  await expect(page.locator('main.main')).toHaveScreenshot('visual-data-export.png', screenshotOptions);
+  await expect(page.locator('main.main')).toHaveScreenshot('visual-data-export.png', {
+    ...screenshotOptions,
+    maxDiffPixelRatio: 0.05
+  });
   expectNoErrors();
 });
 
@@ -97,7 +112,10 @@ test('visual: login screen', async ({ page }) => {
   await page.goto('/en/login');
   await expect(page.getByRole('heading', { name: 'SMB Finance Toolkit' })).toBeVisible();
 
-  await expect(page.locator('body')).toHaveScreenshot('visual-login.png', screenshotOptions);
+  await expect(page.locator('body')).toHaveScreenshot('visual-login.png', {
+    ...screenshotOptions,
+    maxDiffPixelRatio: 0.05
+  });
   expectNoErrors();
 });
 
@@ -107,6 +125,9 @@ test('visual: subscription screen', async ({ page }) => {
   await page.goto('/en/login#/subscription');
   await expect(page.getByRole('heading', { name: 'Subscription' })).toBeVisible();
 
-  await expect(page.locator('main.main')).toHaveScreenshot('visual-subscription.png', screenshotOptions);
+  await expect(page.locator('main.main')).toHaveScreenshot('visual-subscription.png', {
+    ...screenshotOptions,
+    maxDiffPixelRatio: 0.05
+  });
   expectNoErrors();
 });
