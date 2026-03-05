@@ -55,10 +55,14 @@ export const addBaseStyles = (): void => {
   .auth-copy p { font-size: 16px; line-height: 1.4; color: #374151; max-width: 460px; }
   .auth-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .auth-actions button { min-height: 42px; padding: 0 14px; font-size: 14px; }
-  .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
-  .sidebar { background: #111827; color: #f9fafb; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .app-header { grid-column: 1 / -1; background: #fff; border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .app-logo { font-weight: 600; font-size: 18px; color: #111827; }
+  .app-header-controls { display: flex; gap: 12px; align-items: center; }
+  .app-header select { padding: 6px 10px; font-size: 14px; }
+  .shell { display: grid; grid-template-columns: 220px 1fr; grid-template-rows: auto 1fr; min-height: 100vh; }
+  .sidebar { background: #111827; color: #f9fafb; padding: 16px; display: flex; flex-direction: column; gap: 8px; grid-row: 2; }
   .sidebar button { text-align: left; background: #1f2937; color: #f9fafb; border: 0; padding: 10px; border-radius: 8px; }
-  .main { padding: 24px; display: grid; gap: 16px; align-content: start; }
+  .main { padding: 24px; display: grid; gap: 16px; align-content: start; grid-row: 2; }
   .card { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 16px; }
   .workspace { display: grid; grid-template-columns: 260px 1fr 320px; gap: 16px; align-items: start; }
   .scenario-list { display: flex; flex-direction: column; gap: 8px; }
@@ -67,6 +71,7 @@ export const addBaseStyles = (): void => {
   .scenario-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; }
   .scenario-item span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .scenario-item button { padding: 6px 10px; flex-shrink: 0; }
+  .scenario-item-active { background: #eff6ff; border-color: #3b82f6; }
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .form-grid label { display: grid; gap: 6px; }
   .form-inline-error { grid-column: 1 / -1; margin: 0; overflow-wrap: anywhere; }

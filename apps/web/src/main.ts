@@ -68,7 +68,8 @@ const ensureLanguagePrefixedPath = async (): Promise<void> => {
   }
 
   const detectedLanguage = getCurrentLanguage();
-  const targetPath = normalizedPath === '/' ? '/dashboard' : normalizedPath;
+  // Redirect to login for root path if not authenticated, otherwise to dashboard
+  const targetPath = normalizedPath === '/' ? (service.isSignedIn() ? '/dashboard' : '/login') : normalizedPath;
   const query = window.location.search ?? '';
   const hash = window.location.hash ?? '';
   const localizedUrl = `/${detectedLanguage}${targetPath}${query}${hash}`;
@@ -191,6 +192,15 @@ const render = async (): Promise<void> => {
     return;
   }
 
+  // Protected routes - require authentication
+  const protectedRoutes = ['/dashboard', '/profit', '/break-even', '/cashflow', '/subscription', '/data', '/settings'];
+  if (protectedRoutes.includes(route)) {
+    if (!service.isSignedIn()) {
+      goTo('/login');
+      return;
+    }
+  }
+
   if (route === '/dashboard') {
     await renderDashboardPage(root, service, { createActionButton, emptyState, goTo });
     return;
@@ -279,7 +289,13 @@ if (typeof document !== 'undefined' && typeof window !== 'undefined') {
       path === '/embed' ||
       path.startsWith('/embed/');
 
+    const protectedRoutes = ['/dashboard', '/profit', '/break-even', '/cashflow', '/subscription', '/data', '/settings'];
+    const isProtectedRoute = protectedRoutes.includes(path as RoutePath);
+
+    // Redirect to login if: invalid route OR protected route without authentication
     if (!ROUTES.includes(path as RoutePath) && !isLegacyPublicPath) {
+      goTo('/login');
+    } else if (isProtectedRoute && !service.isSignedIn()) {
       goTo('/login');
     }
   }

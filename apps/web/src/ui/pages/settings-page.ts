@@ -1,6 +1,7 @@
 import { translate } from '../../i18n';
 import { WebAppService } from '../../web-app-service';
 import type { LegalRoute } from '../legal/legal-render';
+import { renderAppHeader } from './app-header';
 import { renderSidebar } from './page-shared';
 import type { CommonDeps } from './page-types';
 
@@ -13,6 +14,7 @@ export const renderSettingsPage = async (
 
   const shell = document.createElement('div');
   shell.className = 'shell';
+  shell.appendChild(renderAppHeader());
   shell.appendChild(renderSidebar('/settings', { createActionButton, goTo }));
 
   const main = document.createElement('main');

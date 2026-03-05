@@ -4,6 +4,7 @@ import { renderShareScenarioDialog } from '../../features/share/ShareScenarioDia
 import { translate } from '../../i18n';
 import { type BreakEvenInputState, type CashflowInputState, type ProfitInputState, WebAppService } from '../../web-app-service';
 import { renderModuleResults } from '../results/module-results';
+import { renderAppHeader } from './app-header';
 import { normalizeScenarioName, parseRequiredNumber, renderSidebar, toUserFriendlyValidationMessage } from './page-shared';
 import type { WorkspaceDeps } from './page-types';
 
@@ -46,7 +47,14 @@ export const renderWorkspacePage = async (
   }
 
   const scenarios = await service.listScenarios(moduleId);
-  const selectedScenario = scenarios[0] ?? null;
+
+  // Get selected scenario from URL hash parameter or use first scenario
+  const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+  const selectedScenarioId = urlParams.get('scenario');
+  const selectedScenario = selectedScenarioId
+    ? scenarios.find(s => s.scenarioId === selectedScenarioId) ?? scenarios[0] ?? null
+    : scenarios[0] ?? null;
+
   const prefill = typeof window !== 'undefined' ? getPrefillFromSearch(window.location.search) : null;
 
   const prefillInputData = (() => {
@@ -71,6 +79,7 @@ export const renderWorkspacePage = async (
 
   const shell = document.createElement('div');
   shell.className = 'shell';
+  shell.appendChild(renderAppHeader());
   shell.appendChild(renderSidebar(route, { createActionButton, goTo }));
 
   const main = document.createElement('main');
@@ -100,8 +109,18 @@ export const renderWorkspacePage = async (
   } else {
     for (const scenario of scenarios) {
       const row = document.createElement('div');
-      row.className = 'scenario-item';
-      row.innerHTML = `<span>${scenario.scenarioName}</span>`;
+      const isSelected = selectedScenario?.scenarioId === scenario.scenarioId;
+      row.className = isSelected ? 'scenario-item scenario-item-active' : 'scenario-item';
+
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = scenario.scenarioName;
+      nameSpan.style.cursor = 'pointer';
+      nameSpan.onclick = () => {
+        const currentHash = window.location.hash.split('?')[0];
+        window.location.hash = `${currentHash}?scenario=${scenario.scenarioId}`;
+      };
+
+      row.appendChild(nameSpan);
       row.appendChild(createActionButton(translate('workspace.delete'), async () => {
         await service.deleteScenario(scenario.scenarioId);
         await render();

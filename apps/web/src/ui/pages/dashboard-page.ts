@@ -1,6 +1,7 @@
 import type { ModuleId } from '@marginbase/domain-core';
 import { translate } from '../../i18n';
 import { WebAppService } from '../../web-app-service';
+import { renderAppHeader } from './app-header';
 import { renderSidebar } from './page-shared';
 import type { AppRoutePath, CommonDeps } from './page-types';
 
@@ -13,6 +14,7 @@ export const renderDashboardPage = async (
 
   const shell = document.createElement('div');
   shell.className = 'shell';
+  shell.appendChild(renderAppHeader());
   shell.appendChild(renderSidebar('/dashboard', { createActionButton, goTo }));
 
   const main = document.createElement('main');

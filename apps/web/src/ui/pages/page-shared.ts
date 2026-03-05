@@ -1,4 +1,4 @@
-import { createLanguageSwitcher, translate } from '../../i18n';
+import { translate } from '../../i18n';
 import type { CommonDeps, AppRoutePath } from './page-types';
 
 const MAX_SCENARIO_NAME_LENGTH = 120;
@@ -89,7 +89,6 @@ export const renderSidebar = (
   const title = document.createElement('h3');
   title.textContent = translate('sidebar.title');
   sidebar.appendChild(title);
-  sidebar.appendChild(createLanguageSwitcher());
 
   for (const link of links) {
     sidebar.appendChild(
