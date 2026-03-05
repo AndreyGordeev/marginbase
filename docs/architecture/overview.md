@@ -1,5 +1,5 @@
 # MarginBase Architecture Overview (v1)
-Date: 2026-03-04  |  Scope: Web + iOS + Android (offline-first, minimal backend)
+Date: 2026-03-05  |  Scope: Web + iOS + Android (offline-first, minimal backend)
 
 ## Decisions locked
 - Data: scenarios stored locally-first; cloud sync is out of V1 scope.
@@ -13,7 +13,9 @@ Date: 2026-03-04  |  Scope: Web + iOS + Android (offline-first, minimal backend)
 - Localized application UI across login, dashboard, workspace, subscription, settings, data/backup, reports, legal navigation, and result panels.
 - Language-aware app routes (`/:lang/*`) with detection/canonicalization for non-localized app routes.
 - Share snapshot route support (`/s/:token`) and stateless embed calculators (`/embed/:calculator` and `/embed/:lang/:calculator`).
+- Bootstrap routing preserves canonical public routes (`/s/*`, `/embed/*`) and does not force login redirect for these entry points.
 - Embed UI texts localized via shared translation keys.
+- Embed prefill encoding/decoding and telemetry queue sizing are browser-safe (no hard dependency on Node-only `Buffer`).
 
 ## Recommended defaults
 - Entitlement cache TTL (offline grace): 72 hours since last successful verification. After that: keep dashboard accessible, lock modules, allow export.

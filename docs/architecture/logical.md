@@ -237,6 +237,7 @@ State --> Crash
 - No monetary values.
 - Batch flush when network available.
 - Drop/compact if queue exceeds size cap (to protect storage and cost).
+- Runtime compatibility: queue byte-size accounting must work in browser and Node environments (do not rely on Node-only globals such as `Buffer` without fallback).
 
 ---
 

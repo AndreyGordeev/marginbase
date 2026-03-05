@@ -1,6 +1,6 @@
 # MarginBase Release Notes — V1
 
-Date: 2026-03-04
+Date: 2026-03-05
 Scope: production increments delivered to `main` during V1.
 
 ## Delivery Baseline
@@ -19,6 +19,7 @@ Scope: production increments delivered to `main` during V1.
 | 2026-03-04 | PR-5 Local Export Watermark | Free exports watermark, paid exports clean, offline export behavior preserved. |
 | 2026-03-04 | PR-6 Encrypted Share Links | Encrypted snapshot transport/storage and fragment key flow (`#k=`). |
 | 2026-03-04 | PR-7 Stateless Embed Routes | Added `/embed/:lang/:calculator` route shape and local JSON input export for embed flows. |
+| 2026-03-05 | E2E Stabilization Follow-up | Restored public-route bootstrap behavior for `/embed/*` and `/s/*`, added browser-safe `Buffer` fallbacks in telemetry/prefill, refreshed visual baselines. |
 
 ## Detailed History
 

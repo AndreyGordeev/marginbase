@@ -55,6 +55,7 @@ Source of truth: `packages/telemetry/src/index.ts` (`TELEMETRY_EVENT_ALLOWLIST` 
 - `moduleId`, when present, must be one of: `profit`, `breakeven`, `cashflow`.
 - Monetary-like keys are forbidden across all events (case-insensitive patterns): `amount`, `revenue`, `cost`, `price`, `money`, `profit`, `margin`, `cash`.
 - Non-allowlisted property keys are rejected.
+- Queue/batch byte-size accounting uses UTF-8 length and must support both Node and browser runtimes (Node `Buffer` when available, `TextEncoder` fallback in browser).
 
 ### Change checklist (new telemetry event)
 1. Add event name to `TELEMETRY_EVENT_ALLOWLIST` in `packages/telemetry/src/index.ts`.

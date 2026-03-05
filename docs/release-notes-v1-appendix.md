@@ -207,3 +207,24 @@ Stripe production-launch scope is delivered in incremental PR slices and merged 
 - Provides flexible configuration for tracking specific error types and excluding expected failures (e.g., 404s).
 - Integrated error tracking into all 8 E2E test suites: `critical-flows`, `offline`, `i18n`, `privacy`, `share`, `export`, `accessibility`, and `visual`.
 - All functional E2E tests (21/24) pass with error tracking enabled; 3 visual regression tests show minor screenshot differences unrelated to error tracking.
+
+## E2E stabilization follow-up: embed/runtime compatibility + visual baseline refresh — 2026-03-05
+
+### What changed
+- Restored bootstrap handling so canonical public routes `/embed/*` and `/s/*` are not redirected to `/login` when app starts without hash routing.
+- Restored browser-safe telemetry queue byte counting by using UTF-8 `TextEncoder` fallback when Node `Buffer` is unavailable.
+- Restored browser-safe embed prefill base64url encode/decode fallback for non-Node runtimes.
+- Refreshed visual baseline snapshots for changed layouts:
+  - `visual-profit-workspace-win32.png`
+  - `visual-paywall-cashflow-win32.png`
+  - `visual-share-dialog-win32.png`
+
+### Validation
+- `corepack pnpm --filter @marginbase/telemetry build`
+- `corepack pnpm --filter @marginbase/web build`
+- `corepack pnpm exec playwright test apps/web/tests/e2e/embed.spec.ts --reporter=line` (8/8)
+- `corepack pnpm exec playwright test apps/web/tests/e2e/visual.spec.ts --update-snapshots --reporter=line` (8/8)
+- `corepack pnpm exec playwright test -c playwright.config.ts --reporter=line` (32/32)
+
+### Notes
+- Share and embed public entry points remain canonical as documented in `PROJECT_CONTEXT.md` and `docs/INDEX.md`.
