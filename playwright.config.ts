@@ -20,11 +20,7 @@ export default defineConfig({
     locale: 'en-US',
     colorScheme: 'light',
     navigationTimeout: 15_000,
-    actionTimeout: 10_000,
-    launchOptions: {
-      // Disable animations for deterministic testing
-      args: ['--disable-blink-features=AutomationControlled']
-    }
+    actionTimeout: 10_000
   },
   projects: [
     {
