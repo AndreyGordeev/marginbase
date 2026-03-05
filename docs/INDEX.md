@@ -38,6 +38,13 @@
 ## Decisions
 - decisions/adr.md
 
+## Testing & Quality
+- testing-principles.md (maximum coverage strategy, hard gates, 20 test types)
+- ../TESTING_IMPLEMENTATION_ROADMAP.md (4-week implementation plan, priorities, metrics)
+- ../PHASE_1A_COMPLETION.md (hard gates implementation details)
+- ../PHASE_1A_READY.md (Phase 1A summary - quick start, file locations, next steps)
+- ../PHASE_1_COMPLETE.md (Phase 1 complete - all hard gates + CI setup ready for merge)
+
 ## UI
 - ui/web/
 - ui/mobile/

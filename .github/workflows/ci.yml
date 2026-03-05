@@ -219,3 +219,268 @@ jobs:
           path: test-results
           if-no-files-found: ignore
           retention-days: 7
+
+  # ============================================================================
+  # Hard Gate Tests — Phase 1A (Critical Compliance Tests)
+  # ============================================================================
+  # These must PASS to unblock PR merge. They validate:
+  # - Privacy (financial data never leaves device)
+  # - Offline (app works without network)
+  # - Layout Guards (forms never overlap/collapse)
+  # - Accessibility (WCAG 2.1 AA minimum compliance)
+
+  privacy-hard-gate:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pnpm/store
+            node_modules/.cache
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(corepack pnpm list @playwright/test --json | jq -r '.[0].devDependencies["@playwright/test"].version')" >> $GITHUB_OUTPUT
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: corepack pnpm exec playwright install --with-deps chromium
+
+      - name: Install Playwright system deps (if browsers cached)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: corepack pnpm exec playwright install-deps chromium
+
+      - name: Build web app for E2E
+        run: corepack pnpm --filter @marginbase/web build
+
+      - name: 🔒 Privacy Hard Gate Test
+        run: corepack pnpm exec playwright test privacy-hard-gate.spec.ts --reporter=html,line
+        env:
+          CI: true
+
+      - name: Upload Privacy Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: privacy-hard-gate-report
+          path: playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
+  offline-hard-gate:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pnpm/store
+            node_modules/.cache
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(corepack pnpm list @playwright/test --json | jq -r '.[0].devDependencies["@playwright/test"].version')" >> $GITHUB_OUTPUT
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: corepack pnpm exec playwright install --with-deps chromium
+
+      - name: Install Playwright system deps (if browsers cached)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: corepack pnpm exec playwright install-deps chromium
+
+      - name: Build web app for E2E
+        run: corepack pnpm --filter @marginbase/web build
+
+      - name: 🌐 Offline Hard Gate Test
+        run: corepack pnpm exec playwright test offline-hard-gate.spec.ts --reporter=html,line
+        env:
+          CI: true
+
+      - name: Upload Offline Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-hard-gate-report
+          path: playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
+  layout-guards-hard-gate:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pnpm/store
+            node_modules/.cache
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(corepack pnpm list @playwright/test --json | jq -r '.[0].devDependencies["@playwright/test"].version')" >> $GITHUB_OUTPUT
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: corepack pnpm exec playwright install --with-deps chromium
+
+      - name: Install Playwright system deps (if browsers cached)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: corepack pnpm exec playwright install-deps chromium
+
+      - name: Build web app for E2E
+        run: corepack pnpm --filter @marginbase/web build
+
+      - name: 📐 Layout Guards Hard Gate Test
+        run: corepack pnpm exec playwright test layout-guards-hard-gate.spec.ts --reporter=html,line
+        env:
+          CI: true
+
+      - name: Upload Layout Guards Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: layout-guards-hard-gate-report
+          path: playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
+  accessibility-hard-gate:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pnpm/store
+            node_modules/.cache
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(corepack pnpm list @playwright/test --json | jq -r '.[0].devDependencies["@playwright/test"].version')" >> $GITHUB_OUTPUT
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: corepack pnpm exec playwright install --with-deps chromium
+
+      - name: Install Playwright system deps (if browsers cached)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: corepack pnpm exec playwright install-deps chromium
+
+      - name: Build web app for E2E
+        run: corepack pnpm --filter @marginbase/web build
+
+      - name: ♿ Accessibility Hard Gate Test (WCAG 2.1 AA)
+        run: corepack pnpm exec playwright test accessibility.spec.ts --reporter=html,line
+        env:
+          CI: true
+
+      - name: Upload Accessibility Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-hard-gate-report
+          path: playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
