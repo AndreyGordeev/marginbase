@@ -1,0 +1,80 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - heading "MarginBase" [level=3] [ref=e5]
+    - generic [ref=e6]:
+      - text: "Language:"
+      - combobox "Language:" [ref=e7]:
+        - option "English" [selected]
+        - option "Deutsch"
+        - option "Français"
+        - option "Español"
+        - option "Polski"
+        - option "Italiano"
+        - option "Русский"
+    - button "Dashboard" [ref=e8] [cursor=pointer]
+    - button "Profit" [ref=e9] [cursor=pointer]
+    - button "Break-even" [ref=e10] [cursor=pointer]
+    - button "Cashflow" [ref=e11] [cursor=pointer]
+    - button "Subscription" [ref=e12] [cursor=pointer]
+    - button "Data & Backup" [ref=e13] [cursor=pointer]
+    - button "Settings" [ref=e14] [cursor=pointer]
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - heading "Profit Scenarios" [level=3] [ref=e18]
+        - button "+ New Scenario" [ref=e19] [cursor=pointer]
+        - generic [ref=e20]:
+          - generic [ref=e21]: Demo Profit Scenario
+          - button "Delete" [ref=e22] [cursor=pointer]
+      - generic [ref=e23]:
+        - heading "Profit Editor" [level=3] [ref=e24]
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - text: Scenario Name
+            - textbox "Scenario Name" [ref=e27]: Demo Profit Scenario
+          - generic [ref=e28]:
+            - text: Unit price (minor)
+            - spinbutton "Unit price (minor)" [ref=e29]: "2000"
+          - generic [ref=e30]:
+            - text: Quantity
+            - spinbutton "Quantity" [ref=e31]: "100"
+          - generic [ref=e32]:
+            - text: Variable cost / unit
+            - spinbutton "Variable cost / unit" [ref=e33]: "1200"
+          - generic [ref=e34]:
+            - text: Fixed costs
+            - spinbutton "Fixed costs" [ref=e35]: "30000"
+          - button "Calculate Scenario" [ref=e36] [cursor=pointer]
+        - generic [ref=e37]: Ad block placeholder
+      - generic [ref=e38]:
+        - heading "Results" [level=3] [ref=e39]
+        - button "Share Scenario" [ref=e40] [cursor=pointer]
+        - generic [ref=e41]:
+          - generic [ref=e42]:
+            - generic [ref=e43]: Net Profit
+            - generic [ref=e44]: €500.00
+            - generic [ref=e45]: Profitable
+            - generic [ref=e46]:
+              - generic [ref=e47]:
+                - generic [ref=e48]: Revenue
+                - strong [ref=e49]: €2,000.00
+              - generic [ref=e50]:
+                - generic [ref=e51]: Total Cost
+                - strong [ref=e52]: €1,500.00
+              - generic [ref=e53]:
+                - generic [ref=e54]: Gross Profit
+                - strong [ref=e55]: €800.00
+          - generic [ref=e56]:
+            - article [ref=e57]:
+              - generic [ref=e58]: Contribution Margin %
+              - generic [ref=e59]: 40%
+            - article [ref=e60]:
+              - generic [ref=e61]: Net Profit Margin %
+              - generic [ref=e62]: 25%
+            - article [ref=e63]:
+              - generic [ref=e64]: Markup %
+              - generic [ref=e65]: 33.33%
+```

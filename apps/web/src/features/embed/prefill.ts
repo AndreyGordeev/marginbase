@@ -18,8 +18,9 @@ const encodeBase64 = (str: string): string => {
     return Buffer.from(str, 'utf8').toString('base64url');
   }
   // Browser: use btoa for base64url encoding
-  const base64 = btoa(new TextEncoder().encode(str) as unknown as string);
-  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  const bytes = new TextEncoder().encode(str);
+  const base64 = btoa(String.fromCharCode(...bytes));
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 };
 
 const decodeBase64 = (str: string): string => {
@@ -28,9 +29,13 @@ const decodeBase64 = (str: string): string => {
   }
   // Browser: use atob for base64url decoding
   const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-  const padding = (4 - (base64.length % 4)) % 4;
-  const padded = base64 + '='.repeat(padding);
-  return new TextDecoder().decode(Uint8Array.from(atob(padded), c => c.charCodeAt(0)));
+  const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+  const binary = atob(base64 + padding);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return new TextDecoder().decode(bytes);
 };
 
 export const encodePrefill = (payload: PrefillPayload): string => {
