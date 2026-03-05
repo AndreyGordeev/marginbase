@@ -122,6 +122,9 @@ jobs:
       - name: Build domain-core
         run: corepack pnpm --filter @marginbase/domain-core build
 
+      - name: Build storage
+        run: corepack pnpm --filter @marginbase/storage build
+
       - name: Build testkit
         run: corepack pnpm --filter @marginbase/testkit build
 
