@@ -65,6 +65,9 @@ jobs:
       - name: Install dependencies
         run: corepack pnpm install --frozen-lockfile
 
+      - name: i18n key parity
+        run: corepack pnpm i18n:parity
+
       - name: Unit and integration tests
         run: corepack pnpm test
 
@@ -95,8 +98,8 @@ jobs:
       - name: Install dependencies
         run: corepack pnpm install --frozen-lockfile
 
-      - name: Install Playwright browser
-        run: corepack pnpm exec playwright install --with-deps chromium
+      - name: Install Playwright browsers
+        run: corepack pnpm exec playwright install --with-deps chromium firefox webkit
 
       - name: Run E2E
         run: corepack pnpm exec playwright test -c playwright.config.ts --reporter=html,line

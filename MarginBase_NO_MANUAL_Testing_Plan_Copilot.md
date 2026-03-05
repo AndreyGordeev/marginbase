@@ -318,17 +318,17 @@ If time-limited: run full suite on Chromium, smoke subset on WebKit.
 ---
 
 ## 15) Deliverables checklist (Definition of Done for NO MANUAL)
-- [ ] CI blocks merge on any regression
-- [ ] Playwright smoke suite exists and runs against preview build
-- [ ] Visual regression covers at least 8 screens
-- [ ] i18n parity script exists + E2E switch test
-- [ ] Offline scenario persistence E2E
-- [ ] Export PDF/XLSX E2E download tests
-- [ ] Share + embed E2E tests
-- [ ] Domain-core unit + property tests with thresholds
-- [ ] Storage/vault integration tests
-- [ ] Telemetry consent enforced + privacy payload assertions
-- [ ] Artifacts (trace/video/screenshots) uploaded on failure
+- [x] CI blocks merge on any regression
+- [x] Playwright smoke suite exists and runs against preview build
+- [x] Visual regression covers at least 8 screens
+- [x] i18n parity script exists + E2E switch test
+- [x] Offline scenario persistence E2E
+- [x] Export PDF/XLSX E2E download tests
+- [x] Share + embed E2E tests
+- [x] Domain-core unit + property tests with thresholds
+- [x] Storage/vault integration tests
+- [x] Telemetry consent enforced + privacy payload assertions
+- [x] Artifacts (trace/video/screenshots) uploaded on failure
 
 ---
 

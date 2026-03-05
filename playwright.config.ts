@@ -1,9 +1,9 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './apps/web/tests/e2e',
   timeout: 30_000,
-  retries: 1,
+  retries: process.env.CI ? 0 : 1,
   expect: {
     timeout: 10_000
   },
@@ -13,13 +13,41 @@ export default defineConfig({
     trace: 'on-first-retry',
     video: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    viewport: {
-      width: 1365,
-      height: 768
-    },
     locale: 'en-US',
     colorScheme: 'light'
   },
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: {
+          width: 1365,
+          height: 768
+        }
+      }
+    },
+    {
+      name: 'firefox',
+      use: {
+        ...devices['Desktop Firefox'],
+        viewport: {
+          width: 1365,
+          height: 768
+        }
+      }
+    },
+    {
+      name: 'webkit',
+      use: {
+        ...devices['Desktop Safari'],
+        viewport: {
+          width: 1365,
+          height: 768
+        }
+      }
+    }
+  ],
   webServer: {
     command:
       'corepack pnpm --filter @marginbase/web build && corepack pnpm --filter @marginbase/web exec vite preview --host 127.0.0.1 --port 4173',
