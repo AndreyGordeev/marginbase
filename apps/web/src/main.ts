@@ -10,6 +10,7 @@ import { type LegalRoute, renderLegalCenter, renderLegalDocument, setLegalBackTa
 import { LEGAL_DOCS } from './ui/legal/legal-docs';
 import { type AppRoutePath, renderDashboardPage, renderDataBackupPage, renderGatePage, renderSettingsPage, renderSubscriptionPage, renderWorkspacePage } from './ui/pages/app-pages';
 import { addBaseStyles } from './ui/styles/base-styles';
+import { checkAuthenticationGuard, handleInitialPathRedirect } from './routes/auth-guard';
 
 declare const __MB_SHOW_DEBUG_RESULTS__: boolean;
 
@@ -193,12 +194,8 @@ const render = async (): Promise<void> => {
   }
 
   // Protected routes - require authentication
-  const protectedRoutes = ['/dashboard', '/profit', '/break-even', '/cashflow', '/subscription', '/data', '/settings'];
-  if (protectedRoutes.includes(route)) {
-    if (!service.isSignedIn()) {
-      goTo('/login');
-      return;
-    }
+  if (!checkAuthenticationGuard(route, service, goTo)) {
+    return;
   }
 
   if (route === '/dashboard') {
@@ -283,21 +280,7 @@ if (typeof document !== 'undefined' && typeof window !== 'undefined') {
 
   if (!window.location.hash) {
     const path = getPathnameLanguageContext().normalizedPath;
-    const isLegacyPublicPath =
-      path === '/s' ||
-      path.startsWith('/s/') ||
-      path === '/embed' ||
-      path.startsWith('/embed/');
-
-    const protectedRoutes = ['/dashboard', '/profit', '/break-even', '/cashflow', '/subscription', '/data', '/settings'];
-    const isProtectedRoute = protectedRoutes.includes(path as RoutePath);
-
-    // Redirect to login if: invalid route OR protected route without authentication
-    if (!ROUTES.includes(path as RoutePath) && !isLegacyPublicPath) {
-      goTo('/login');
-    } else if (isProtectedRoute && !service.isSignedIn()) {
-      goTo('/login');
-    }
+    handleInitialPathRedirect(path, service, goTo, ROUTES);
   }
 
   const bootstrap = async (): Promise<void> => {
