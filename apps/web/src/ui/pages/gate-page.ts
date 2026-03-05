@@ -1,5 +1,6 @@
 import { translate } from '../../i18n';
 import { WebAppService } from '../../web-app-service';
+import { TEST_IDS } from '../test-ids';
 import type { CommonDeps } from './page-types';
 
 export const renderGatePage = (
@@ -11,16 +12,17 @@ export const renderGatePage = (
 
   const page = document.createElement('div');
   page.className = 'page page-centered';
+  page.setAttribute('data-testid', TEST_IDS.GATE_PAGE);
   const card = document.createElement('div');
   card.className = 'card auth-card';
 
   const copy = document.createElement('div');
   copy.className = 'auth-copy';
-  copy.innerHTML = `<h2>${translate('gate.title')}</h2><p>${translate('gate.subtitle')}</p>`;
+  copy.innerHTML = `<h2 data-testid="${TEST_IDS.PAYWALL_HEADING}">${translate('gate.title')}</h2><p>${translate('gate.subtitle')}</p>`;
 
   const actions = document.createElement('div');
   actions.className = 'auth-actions';
-  actions.appendChild(createActionButton(translate('gate.startTrial'), async () => {
+  const trialBtn = createActionButton(translate('gate.startTrial'), async () => {
     await service.trackUpgradeClicked();
 
     let checkoutUrl: string | null = null;
@@ -39,8 +41,13 @@ export const renderGatePage = (
 
     service.activateTrial();
     goTo('/dashboard');
-  }, 'primary'));
-  actions.appendChild(createActionButton(translate('gate.continueDashboard'), () => goTo('/dashboard')));
+  }, 'primary');
+  trialBtn.setAttribute('data-testid', TEST_IDS.TRIAL_CTA);
+  actions.appendChild(trialBtn);
+  
+  const continuBtn = createActionButton(translate('gate.continueDashboard'), () => goTo('/dashboard'));
+  continuBtn.setAttribute('data-testid', TEST_IDS.UPGRADE_CTA);
+  actions.appendChild(continuBtn);
 
   card.appendChild(copy);
   card.appendChild(actions);

@@ -95,10 +95,10 @@ jobs:
       - name: Install dependencies
         run: corepack pnpm install --frozen-lockfile
 
-      - name: Install Playwright browser
-        run: corepack pnpm exec playwright install --with-deps chromium
+      - name: Install Playwright browsers (Chromium, Firefox, WebKit)
+        run: corepack pnpm exec playwright install --with-deps chromium firefox webkit
 
-      - name: Run E2E
+      - name: Run E2E (all browsers - hard gate: zero retries)
         run: corepack pnpm exec playwright test -c playwright.config.ts --reporter=html,line
 
       - name: Upload Playwright HTML report

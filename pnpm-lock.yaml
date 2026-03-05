@@ -131,6 +131,29 @@ importers:
 
   packages/telemetry: {}
 
+  packages/testkit:
+    dependencies:
+      '@marginbase/domain-core':
+        specifier: workspace:*
+        version: link:../domain-core
+      '@marginbase/entitlements':
+        specifier: workspace:*
+        version: link:../entitlements
+      decimal.js:
+        specifier: ^10.6.0
+        version: 10.6.0
+    optionalDependencies:
+      '@playwright/test':
+        specifier: ^1.58.2
+        version: 1.58.2
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.11.0
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
 packages:
 
   '@ampproject/remapping@2.3.0':

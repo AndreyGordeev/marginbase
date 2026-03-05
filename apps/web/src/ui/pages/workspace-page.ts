@@ -3,6 +3,7 @@ import { getPrefillFromSearch } from '../../features/embed/prefill';
 import { renderShareScenarioDialog } from '../../features/share/ShareScenarioDialog';
 import { translate } from '../../i18n';
 import { type BreakEvenInputState, type CashflowInputState, type ProfitInputState, WebAppService } from '../../web-app-service';
+import { TEST_IDS } from '../test-ids';
 import { renderModuleResults } from '../results/module-results';
 import { normalizeScenarioName, parseRequiredNumber, renderSidebar, toUserFriendlyValidationMessage } from './page-shared';
 import type { WorkspaceDeps } from './page-types';
@@ -71,12 +72,14 @@ export const renderWorkspacePage = async (
 
   const shell = document.createElement('div');
   shell.className = 'shell';
+  shell.setAttribute('data-testid', TEST_IDS.APP_SHELL);
   shell.appendChild(renderSidebar(route, { createActionButton, goTo }));
 
   const main = document.createElement('main');
   main.className = 'main';
   const workspace = document.createElement('div');
   workspace.className = 'workspace';
+  workspace.setAttribute('data-testid', TEST_IDS.WORKSPACE_ROOT);
 
   const listPanel = document.createElement('section');
   listPanel.className = 'card scenario-list';
@@ -189,55 +192,59 @@ export const renderWorkspacePage = async (
   form.insertAdjacentElement('afterbegin', formError);
 
   form.appendChild(
-    createActionButton(translate('workspace.calculateScenario'), async () => {
-      clearFormError();
+    (() => {
+      const btn = createActionButton(translate('workspace.calculateScenario'), async () => {
+        clearFormError();
 
-      try {
-        const data = new FormData(form);
-        const scenarioName = normalizeScenarioName(String(data.get('scenarioName') ?? ''));
+        try {
+          const data = new FormData(form);
+          const scenarioName = normalizeScenarioName(String(data.get('scenarioName') ?? ''));
 
-        if (moduleId === 'profit') {
-          await service.saveProfitScenario({
-            scenarioId: selectedScenario?.scenarioId,
-            scenarioName,
-            unitPriceMinor: parseRequiredNumber(String(data.get('unitPriceMinor') ?? ''), translate('field.unitPrice')),
-            quantity: parseRequiredNumber(String(data.get('quantity') ?? ''), translate('field.quantity')),
-            variableCostPerUnitMinor: parseRequiredNumber(String(data.get('variableCostPerUnitMinor') ?? ''), translate('field.variableCostPerUnit')),
-            fixedCostsMinor: parseRequiredNumber(String(data.get('fixedCostsMinor') ?? ''), translate('field.fixedCosts'))
-          });
+          if (moduleId === 'profit') {
+            await service.saveProfitScenario({
+              scenarioId: selectedScenario?.scenarioId,
+              scenarioName,
+              unitPriceMinor: parseRequiredNumber(String(data.get('unitPriceMinor') ?? ''), translate('field.unitPrice')),
+              quantity: parseRequiredNumber(String(data.get('quantity') ?? ''), translate('field.quantity')),
+              variableCostPerUnitMinor: parseRequiredNumber(String(data.get('variableCostPerUnitMinor') ?? ''), translate('field.variableCostPerUnit')),
+              fixedCostsMinor: parseRequiredNumber(String(data.get('fixedCostsMinor') ?? ''), translate('field.fixedCosts'))
+            });
+          }
+
+          if (moduleId === 'breakeven') {
+            await service.saveBreakEvenScenario({
+              scenarioId: selectedScenario?.scenarioId,
+              scenarioName,
+              unitPriceMinor: parseRequiredNumber(String(data.get('unitPriceMinor') ?? ''), translate('field.unitPrice')),
+              variableCostPerUnitMinor: parseRequiredNumber(String(data.get('variableCostPerUnitMinor') ?? ''), translate('field.variableCostPerUnit')),
+              fixedCostsMinor: parseRequiredNumber(String(data.get('fixedCostsMinor') ?? ''), translate('field.fixedCosts')),
+              targetProfitMinor: parseRequiredNumber(String(data.get('targetProfitMinor') ?? ''), translate('field.targetProfit')),
+              plannedQuantity: parseRequiredNumber(String(data.get('plannedQuantity') ?? ''), translate('field.plannedQuantity'))
+            });
+          }
+
+          if (moduleId === 'cashflow') {
+            await service.saveCashflowScenario({
+              scenarioId: selectedScenario?.scenarioId,
+              scenarioName,
+              startingCashMinor: parseRequiredNumber(String(data.get('startingCashMinor') ?? ''), translate('field.startingCash')),
+              baseMonthlyRevenueMinor: parseRequiredNumber(String(data.get('baseMonthlyRevenueMinor') ?? ''), translate('field.baseRevenue')),
+              fixedMonthlyCostsMinor: parseRequiredNumber(String(data.get('fixedMonthlyCostsMinor') ?? ''), translate('field.fixedMonthlyCosts')),
+              variableMonthlyCostsMinor: parseRequiredNumber(String(data.get('variableMonthlyCostsMinor') ?? ''), translate('field.variableMonthlyCosts')),
+              forecastMonths: parseRequiredNumber(String(data.get('forecastMonths') ?? ''), translate('field.months')),
+              monthlyGrowthRate: parseRequiredNumber(String(data.get('monthlyGrowthRate') ?? ''), translate('field.growthRate'))
+            });
+          }
+
+          await render();
+        } catch (error) {
+          const message = error instanceof Error ? toUserFriendlyValidationMessage(error.message) : translate('workspace.validationFailed');
+          showFormError(message);
         }
-
-        if (moduleId === 'breakeven') {
-          await service.saveBreakEvenScenario({
-            scenarioId: selectedScenario?.scenarioId,
-            scenarioName,
-            unitPriceMinor: parseRequiredNumber(String(data.get('unitPriceMinor') ?? ''), translate('field.unitPrice')),
-            variableCostPerUnitMinor: parseRequiredNumber(String(data.get('variableCostPerUnitMinor') ?? ''), translate('field.variableCostPerUnit')),
-            fixedCostsMinor: parseRequiredNumber(String(data.get('fixedCostsMinor') ?? ''), translate('field.fixedCosts')),
-            targetProfitMinor: parseRequiredNumber(String(data.get('targetProfitMinor') ?? ''), translate('field.targetProfit')),
-            plannedQuantity: parseRequiredNumber(String(data.get('plannedQuantity') ?? ''), translate('field.plannedQuantity'))
-          });
-        }
-
-        if (moduleId === 'cashflow') {
-          await service.saveCashflowScenario({
-            scenarioId: selectedScenario?.scenarioId,
-            scenarioName,
-            startingCashMinor: parseRequiredNumber(String(data.get('startingCashMinor') ?? ''), translate('field.startingCash')),
-            baseMonthlyRevenueMinor: parseRequiredNumber(String(data.get('baseMonthlyRevenueMinor') ?? ''), translate('field.baseRevenue')),
-            fixedMonthlyCostsMinor: parseRequiredNumber(String(data.get('fixedMonthlyCostsMinor') ?? ''), translate('field.fixedMonthlyCosts')),
-            variableMonthlyCostsMinor: parseRequiredNumber(String(data.get('variableMonthlyCostsMinor') ?? ''), translate('field.variableMonthlyCosts')),
-            forecastMonths: parseRequiredNumber(String(data.get('forecastMonths') ?? ''), translate('field.months')),
-            monthlyGrowthRate: parseRequiredNumber(String(data.get('monthlyGrowthRate') ?? ''), translate('field.growthRate'))
-          });
-        }
-
-        await render();
-      } catch (error) {
-        const message = error instanceof Error ? toUserFriendlyValidationMessage(error.message) : translate('workspace.validationFailed');
-        showFormError(message);
-      }
-    }, 'primary form-submit')
+      }, 'primary form-submit');
+      btn.setAttribute('data-testid', TEST_IDS.CALCULATE_BUTTON);
+      return btn;
+    })()
   );
 
   center.appendChild(form);
@@ -248,6 +255,7 @@ export const renderWorkspacePage = async (
 
   const results = document.createElement('section');
   results.className = 'card';
+  results.setAttribute('data-testid', TEST_IDS.RESULTS_SECTION);
   results.innerHTML = `<h3>${translate('workspace.results')}</h3>`;
 
   const shareDialogHost = document.createElement('div');
@@ -282,6 +290,7 @@ export const renderWorkspacePage = async (
       showFormError(message);
     }
   });
+  shareButton.setAttribute('data-testid', TEST_IDS.SHARE_BUTTON);
 
   results.appendChild(shareButton);
   results.appendChild(shareDialogHost);
