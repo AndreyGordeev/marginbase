@@ -13,7 +13,7 @@ rules:
           - pattern: console.log(...)
           - metavariable-regex:
               metavariable: $ARGS
-              regex: (?i).*(revenue|cost|profit|cashflow|money|price|amount|salary|expense|balance|account|credit|debit|financial|password|secret|token|key|credential|auth|api_key|secret_key).*
+              regex: (?i).*(revenue|cost|profit|cashflow|money|price|amount|salary|expense|balance|account|credit|debit|financial|password|secret|token| api_key|secret_key|private_key|credential|auth).*
       - pattern: console.warn(...)
         metavariable-regex:
           metavariable: $ARGS
@@ -21,7 +21,7 @@ rules:
       - pattern: console.error(...)
         metavariable-regex:
           metavariable: $ARGS
-          regex: (?i).*(password|token|secret|key|credential).*
+          regex: (?i).*(password|token|secret|api_key|secret_key|private_key|credential).*
     message: |
       ⚠️ SECURITY: console.log/warn/error contains sensitive financial or authentication data
       - Never log: revenue, cost, profit, money amounts, passwords, tokens, secrets
