@@ -1,5 +1,5 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type MobileAppService = any;
+import type { MobileAppService } from '../mobile-app-service';
+
 export type MobileScreenRoute = string;
 
 export interface MobileScreenProps {

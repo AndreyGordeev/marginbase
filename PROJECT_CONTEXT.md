@@ -100,6 +100,14 @@ See [TESTING_PHASE_7_MAX_COVERAGE_SCOPE.md](TESTING_PHASE_7_MAX_COVERAGE_SCOPE.m
 
 **Three major functional gaps fully implemented and tested:**
 
+## Final Remediation Pass (2026-03-06)
+
+- AWS backend module now packages handlers from `infra/aws/modules/backend_api/lambda_handlers` (no active deployment packaging from `lambda_stubs`).
+- Web auth fallback is dev-only; production no longer silently signs in a local mock user when OAuth is unavailable.
+- `packages/backend-server` auth verification uses configurable provider mode (`GOOGLE_VERIFICATION_MODE`) and validates claims/audience before creating a session.
+- `packages/backend-server` billing now includes provider-backed checkout/portal paths (env-driven Stripe), webhook signature verification support, idempotency, and `/billing/webhook` alias.
+- Mobile UI screens were upgraded from placeholders to functional CRUD/editor workflows using `MobileAppService` with local persistence wiring.
+
 1. **Production Authentication (Google OAuth)**
    - ✅ GoogleOAuthService: async library loading, button initialization, token validation
    - ✅ WebAppService: sign-in with Google, token persistence, logout, ID token retrieval

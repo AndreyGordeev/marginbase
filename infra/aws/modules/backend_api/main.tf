@@ -1,54 +1,54 @@
 data "archive_file" "auth_lambda" {
   type        = "zip"
-  source_dir  = "${path.module}/lambda_stubs"
+  source_dir  = "${path.module}/lambda_handlers"
   output_path = "${path.module}/dist/auth.zip"
 }
 
 data "archive_file" "entitlements_lambda" {
   type        = "zip"
-  source_dir  = "${path.module}/lambda_stubs"
+  source_dir  = "${path.module}/lambda_handlers"
   output_path = "${path.module}/dist/entitlements.zip"
 }
 
 data "archive_file" "telemetry_lambda" {
   type        = "zip"
-  source_dir  = "${path.module}/lambda_stubs"
+  source_dir  = "${path.module}/lambda_handlers"
   output_path = "${path.module}/dist/telemetry.zip"
 }
 
 data "archive_file" "billing_lambda" {
   type        = "zip"
-  source_dir  = "${path.module}/lambda_stubs"
+  source_dir  = "${path.module}/lambda_handlers"
   output_path = "${path.module}/dist/billing.zip"
 }
 
 data "archive_file" "account_delete_lambda" {
   type        = "zip"
-  source_dir  = "${path.module}/lambda_stubs"
+  source_dir  = "${path.module}/lambda_handlers"
   output_path = "${path.module}/dist/account-delete.zip"
 }
 
 data "archive_file" "share_create_lambda" {
   type        = "zip"
-  source_dir  = "${path.module}/lambda_stubs"
+  source_dir  = "${path.module}/lambda_handlers"
   output_path = "${path.module}/dist/share-create.zip"
 }
 
 data "archive_file" "share_get_lambda" {
   type        = "zip"
-  source_dir  = "${path.module}/lambda_stubs"
+  source_dir  = "${path.module}/lambda_handlers"
   output_path = "${path.module}/dist/share-get.zip"
 }
 
 data "archive_file" "share_delete_lambda" {
   type        = "zip"
-  source_dir  = "${path.module}/lambda_stubs"
+  source_dir  = "${path.module}/lambda_handlers"
   output_path = "${path.module}/dist/share-delete.zip"
 }
 
 data "archive_file" "share_list_lambda" {
   type        = "zip"
-  source_dir  = "${path.module}/lambda_stubs"
+  source_dir  = "${path.module}/lambda_handlers"
   output_path = "${path.module}/dist/share-list.zip"
 }
 

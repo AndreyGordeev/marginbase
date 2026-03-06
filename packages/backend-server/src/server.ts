@@ -25,7 +25,7 @@ import type {
   TelemetryBatchResponse,
 } from '@marginbase/api-client';
 
-// Mock database storage
+// In-memory persistence for local/dev runtime.
 interface UserProfile {
   userId: string;
   email: string | null;
@@ -65,11 +65,253 @@ const entitlements = new Map<string, UserEntitlements>();
 const shareSnapshots = new Map<string, ShareSnapshot>();
 const webhookEvents = new Set<string>();
 
+interface GoogleTokenInfoResponse {
+  sub?: string;
+  email?: string;
+  email_verified?: string | boolean;
+  aud?: string;
+  iss?: string;
+  exp?: string;
+}
+
+const GOOGLE_TOKENINFO_URL =
+  process.env.GOOGLE_TOKENINFO_URL || 'https://oauth2.googleapis.com/tokeninfo';
+const STRIPE_API_BASE_URL = 'https://api.stripe.com/v1';
+const STRIPE_SIGNATURE_TOLERANCE_SECONDS = 300;
+
 // Helper functions
 const now = (): string => new Date().toISOString();
 
 const generateToken = (): string => {
   return crypto.randomBytes(24).toString('hex');
+};
+
+const decodeJwtPayload = (token: string): Record<string, unknown> | null => {
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  try {
+    const payloadBase64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = Buffer.from(payloadBase64, 'base64').toString('utf8');
+    return JSON.parse(payload) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+};
+
+const isTrustedIssuer = (issuer: string | undefined): boolean => {
+  return (
+    issuer === 'accounts.google.com' ||
+    issuer === 'https://accounts.google.com'
+  );
+};
+
+const parseAllowedGoogleAudiences = (): string[] => {
+  const raw = process.env.GOOGLE_CLIENT_IDS ?? process.env.VITE_GOOGLE_CLIENT_ID;
+  if (!raw) {
+    return [];
+  }
+
+  return raw
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const verifyTokenViaGoogleTokenInfo = async (
+  idToken: string,
+): Promise<GoogleTokenInfoResponse | null> => {
+  const url = `${GOOGLE_TOKENINFO_URL}?id_token=${encodeURIComponent(idToken)}`;
+  const response = await fetch(url, { method: 'GET' });
+  if (!response.ok) {
+    return null;
+  }
+
+  return (await response.json()) as GoogleTokenInfoResponse;
+};
+
+const verifyGoogleIdToken = async (
+  idToken: string,
+): Promise<{ userId: string; email: string | null; emailVerified: boolean }> => {
+  const audiences = parseAllowedGoogleAudiences();
+  const verificationMode = process.env.GOOGLE_VERIFICATION_MODE ?? 'tokeninfo';
+
+  if (verificationMode === 'development') {
+    const payload = decodeJwtPayload(idToken);
+    const subject = typeof payload?.sub === 'string' ? payload.sub : null;
+    const audience = typeof payload?.aud === 'string' ? payload.aud : undefined;
+    const issuer = typeof payload?.iss === 'string' ? payload.iss : undefined;
+
+    if (!subject) {
+      throw new Error('JWT payload does not contain sub claim.');
+    }
+
+    if (audiences.length > 0 && audience && !audiences.includes(audience)) {
+      throw new Error('Google token audience is not allowed.');
+    }
+
+    if (issuer && !isTrustedIssuer(issuer)) {
+      throw new Error('Google token issuer is not trusted.');
+    }
+
+    return {
+      userId: subject,
+      email: typeof payload?.email === 'string' ? payload.email : null,
+      emailVerified: payload?.email_verified === true,
+    };
+  }
+
+  const tokenInfo = await verifyTokenViaGoogleTokenInfo(idToken);
+  const subject = tokenInfo?.sub;
+  const audience = tokenInfo?.aud;
+  const issuer = tokenInfo?.iss;
+
+  if (!tokenInfo || !subject || !audience || !isTrustedIssuer(issuer)) {
+    throw new Error('Google token verification failed.');
+  }
+
+  if (audiences.length > 0 && !audiences.includes(audience)) {
+    throw new Error('Google token audience is not allowed.');
+  }
+
+  return {
+    userId: subject,
+    email: tokenInfo.email ?? null,
+    emailVerified:
+      tokenInfo.email_verified === true || tokenInfo.email_verified === 'true',
+  };
+};
+
+const encodeFormBody = (payload: Record<string, string | number>): string => {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(payload)) {
+    params.append(key, String(value));
+  }
+  return params.toString();
+};
+
+const stripePost = async (
+  path: string,
+  payload: Record<string, string | number>,
+): Promise<Record<string, unknown>> => {
+  const secret = process.env.STRIPE_SECRET_KEY;
+  if (!secret) {
+    throw new Error('STRIPE_SECRET_KEY is not configured.');
+  }
+
+  const response = await fetch(`${STRIPE_API_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${secret}`,
+      'content-type': 'application/x-www-form-urlencoded',
+    },
+    body: encodeFormBody(payload),
+  });
+
+  const parsed = (await response.json().catch(() => ({}))) as {
+    error?: { message?: string };
+  };
+  if (!response.ok) {
+    throw new Error(parsed.error?.message || 'Stripe API request failed.');
+  }
+
+  return parsed as Record<string, unknown>;
+};
+
+const parseStripeSignatureHeader = (
+  headerValue: string,
+): { timestamp: string; signatures: string[] } => {
+  const parts = headerValue
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  let timestamp = '';
+  const signatures: string[] = [];
+
+  for (const part of parts) {
+    const [key, value] = part.split('=');
+    if (key === 't' && value) {
+      timestamp = value;
+    }
+    if (key === 'v1' && value) {
+      signatures.push(value);
+    }
+  }
+
+  return { timestamp, signatures };
+};
+
+const verifyStripeWebhookSignature = (
+  rawBody: string,
+  signatureHeader: string,
+  webhookSecret: string,
+): boolean => {
+  const parsed = parseStripeSignatureHeader(signatureHeader);
+  if (!parsed.timestamp || parsed.signatures.length === 0) {
+    return false;
+  }
+
+  const timestampSeconds = Number(parsed.timestamp);
+  if (!Number.isFinite(timestampSeconds)) {
+    return false;
+  }
+
+  const driftSeconds = Math.abs(Date.now() / 1000 - timestampSeconds);
+  if (driftSeconds > STRIPE_SIGNATURE_TOLERANCE_SECONDS) {
+    return false;
+  }
+
+  const signedPayload = `${parsed.timestamp}.${rawBody}`;
+  const expected = crypto
+    .createHmac('sha256', webhookSecret)
+    .update(signedPayload)
+    .digest('hex');
+
+  return parsed.signatures.some((candidate) => {
+    try {
+      const left = Buffer.from(candidate, 'utf8');
+      const right = Buffer.from(expected, 'utf8');
+      return left.length === right.length && crypto.timingSafeEqual(left, right);
+    } catch {
+      return false;
+    }
+  });
+};
+
+const applyBillingStatus = (
+  existing: UserEntitlements,
+  status: 'active' | 'trialing' | 'past_due' | 'canceled',
+  source: UserEntitlements['source'],
+  periodEnd: string | null,
+): UserEntitlements => {
+  const updated: UserEntitlements = {
+    ...existing,
+    status,
+    source,
+    currentPeriodEnd: periodEnd,
+    trialEnd: status === 'trialing' ? periodEnd : null,
+    updatedAt: now(),
+    lastVerifiedAt: now(),
+  };
+
+  if (status === 'active' || status === 'trialing' || status === 'past_due') {
+    updated.bundle = true;
+    updated.profit = true;
+    updated.breakeven = true;
+    updated.cashflow = true;
+  }
+
+  if (status === 'canceled') {
+    updated.bundle = false;
+    updated.profit = true;
+    updated.breakeven = false;
+    updated.cashflow = false;
+  }
+
+  return updated;
 };
 
 const getOrCreateUserEntitlements = (userId: string): UserEntitlements => {
@@ -102,7 +344,11 @@ const getOrCreateUserEntitlements = (userId: string): UserEntitlements => {
 
 // Middleware
 const withErrorHandling = (
-  handler: (req: Request, res: Response, next: NextFunction) => Promise<void>,
+  handler: (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => Promise<unknown>,
 ) => {
   return (req: Request, res: Response, next: NextFunction) => {
     handler(req, res, next).catch((error: unknown) => {
@@ -128,10 +374,9 @@ const bearerTokenMiddleware = (
   next();
 };
 
-/* eslint-disable @typescript-eslint/no-namespace */
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
-    /* eslint-enable @typescript-eslint/no-namespace */
     interface Request {
       idToken?: string;
     }
@@ -168,34 +413,34 @@ export const createBackendServer = (): Express => {
   app.post(
     '/auth/verify',
     withErrorHandling(async (req: Request, res: Response) => {
-      const idToken = req.idToken;
+      const idToken = req.idToken || (req.body as { googleIdToken?: string }).googleIdToken;
 
       if (!idToken) {
-        return res.status(400).json({
+        res.status(400).json({
           code: 'INVALID_REQUEST',
           message: 'Google ID token is required in Authorization header',
         });
+        return;
       }
 
-      // In development, we'll accept any token that looks reasonable
-      // In production, this would verify with Google's tokeninfo endpoint
-      if (
-        process.env.NODE_ENV === 'production' &&
-        !process.env.SKIP_TOKEN_VERIFICATION
-      ) {
-        // Real token verification would happen here
-        // For now, we'll just accept tokens for development
+      let verified: { userId: string; email: string | null; emailVerified: boolean };
+      try {
+        verified = await verifyGoogleIdToken(idToken);
+      } catch (error) {
+        res.status(401).json({
+          code: 'UNAUTHORIZED',
+          message: error instanceof Error ? error.message : 'Token verification failed',
+        });
+        return;
       }
 
-      // Extract user ID from token (in production, this comes from Google)
-      // For development, we'll generate a consistent ID from the token
-      const userId = `goog_${Buffer.from(idToken).toString('base64').substring(0, 20)}`;
+      const userId = verified.userId;
 
       // Create or update user profile
       const userProfile: UserProfile = {
         userId,
-        email: null,
-        emailVerified: false,
+        email: verified.email,
+        emailVerified: verified.emailVerified,
         provider: 'google',
         createdAt: users.has(userId) ? users.get(userId)!.createdAt : now(),
         updatedAt: now(),
@@ -212,7 +457,7 @@ export const createBackendServer = (): Express => {
         verifiedAt: now(),
       };
 
-      return res.status(200).json(response);
+      res.status(200).json(response);
     }),
   );
 
@@ -228,14 +473,24 @@ export const createBackendServer = (): Express => {
       const idToken = req.idToken;
 
       if (!idToken) {
-        return res.status(401).json({
+        res.status(401).json({
           code: 'UNAUTHORIZED',
           message: 'Authorization token required',
         });
+        return;
       }
 
-      // Derive user ID from token (same as in auth/verify)
-      const userId = `goog_${Buffer.from(idToken).toString('base64').substring(0, 20)}`;
+      let userId = '';
+      try {
+        const verified = await verifyGoogleIdToken(idToken);
+        userId = verified.userId;
+      } catch {
+        res.status(401).json({
+          code: 'UNAUTHORIZED',
+          message: 'Token verification failed',
+        });
+        return;
+      }
 
       const userEntitlements = getOrCreateUserEntitlements(userId);
 
@@ -275,7 +530,7 @@ export const createBackendServer = (): Express => {
         },
       };
 
-      return res.status(200).json(response);
+      res.status(200).json(response);
     }),
   );
 
@@ -352,21 +607,61 @@ export const createBackendServer = (): Express => {
       const body = req.body as BillingCheckoutSessionRequest;
 
       if (!body.planId || !body.userId) {
-        return res.status(400).json({
+        res.status(400).json({
           code: 'INVALID_REQUEST',
           message: 'planId and userId are required',
         });
+        return;
       }
 
-      // In production, create actual Stripe checkout session
-      // For development, return a mock Stripe URL
-      const mockCheckoutUrl = `https://checkout.stripe.dev?planId=${body.planId}&userId=${body.userId}&email=${encodeURIComponent(body.email || '')}`;
+      let checkoutUrl = `https://checkout.stripe.dev?planId=${body.planId}&userId=${body.userId}&email=${encodeURIComponent(body.email || '')}`;
+
+      const stripePriceMap: Record<string, string | undefined> = {
+        profit: process.env.STRIPE_PRICE_PROFIT,
+        breakeven: process.env.STRIPE_PRICE_BREAKEVEN,
+        cashflow: process.env.STRIPE_PRICE_CASHFLOW,
+        bundle: process.env.STRIPE_PRICE_BUNDLE,
+      };
+      const priceId = stripePriceMap[body.planId];
+
+      if (process.env.STRIPE_SECRET_KEY && priceId) {
+        try {
+          const session = await stripePost('/checkout/sessions', {
+            mode: 'subscription',
+            'line_items[0][price]': priceId,
+            'line_items[0][quantity]': 1,
+            success_url:
+              process.env.STRIPE_CHECKOUT_SUCCESS_URL ||
+              'http://localhost:4173/?checkout=success',
+            cancel_url:
+              process.env.STRIPE_CHECKOUT_CANCEL_URL ||
+              'http://localhost:4173/?checkout=cancel',
+            'metadata[userId]': body.userId,
+            'metadata[planId]': body.planId,
+            customer_email: body.email || '',
+            client_reference_id: body.userId,
+          });
+
+          if (typeof session.url === 'string' && session.url.length > 0) {
+            checkoutUrl = session.url;
+          }
+        } catch (error) {
+          res.status(502).json({
+            code: 'STRIPE_CHECKOUT_ERROR',
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Unable to create Stripe checkout session',
+          });
+          return;
+        }
+      }
 
       const response: BillingCheckoutSessionResponse = {
-        checkoutUrl: mockCheckoutUrl,
+        checkoutUrl,
       };
 
-      return res.status(200).json(response);
+      res.status(200).json(response);
     }),
   );
 
@@ -380,20 +675,46 @@ export const createBackendServer = (): Express => {
       const body = req.body as BillingPortalSessionRequest;
 
       if (!body.userId) {
-        return res.status(400).json({
+        res.status(400).json({
           code: 'INVALID_REQUEST',
           message: 'userId is required',
         });
+        return;
       }
 
-      // In production, create actual Stripe billing portal session
-      const mockPortalUrl = `https://billing.stripe.dev?userId=${body.userId}&returnUrl=${encodeURIComponent(body.returnUrl || 'http://localhost')}`;
+      let portalUrl = `https://billing.stripe.dev?userId=${body.userId}&returnUrl=${encodeURIComponent(body.returnUrl || 'http://localhost')}`;
+
+      if (process.env.STRIPE_SECRET_KEY) {
+        try {
+          const stripeCustomerId = `cus_${body.userId}`;
+          const session = await stripePost('/billing_portal/sessions', {
+            customer: stripeCustomerId,
+            return_url:
+              body.returnUrl ||
+              process.env.STRIPE_PORTAL_RETURN_URL ||
+              'http://localhost:4173/#/settings',
+          });
+
+          if (typeof session.url === 'string' && session.url.length > 0) {
+            portalUrl = session.url;
+          }
+        } catch (error) {
+          res.status(502).json({
+            code: 'STRIPE_PORTAL_ERROR',
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Unable to create Stripe portal session',
+          });
+          return;
+        }
+      }
 
       const response: BillingPortalSessionResponse = {
-        portalUrl: mockPortalUrl,
+        portalUrl,
       };
 
-      return res.status(200).json(response);
+      res.status(200).json(response);
     }),
   );
 
@@ -401,55 +722,83 @@ export const createBackendServer = (): Express => {
    * POST /billing/webhook/stripe
    * Stripe webhook events
    */
-  app.post(
-    '/billing/webhook/stripe',
-    withErrorHandling(async (req: Request, res: Response) => {
-      const signature = req.headers['stripe-signature'] as string;
-      const body = req.body;
+  const handleBillingWebhook = withErrorHandling(
+    async (req: Request, res: Response) => {
+      const rawBody = JSON.stringify(req.body);
+      const signature = (req.headers['stripe-signature'] as string) || '';
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 
-      // In production, verify Stripe signature
-      // For development, accept all webhooks
-      if (process.env.NODE_ENV === 'production' && !signature) {
-        return res.status(401).json({
+      if (
+        webhookSecret &&
+        !verifyStripeWebhookSignature(rawBody, signature, webhookSecret)
+      ) {
+        res.status(401).json({
           code: 'UNAUTHORIZED',
           message: 'Invalid Stripe signature',
         });
+        return;
       }
 
-      // Process webhook idempotently
+      const body = req.body as {
+        id?: string;
+        type?: string;
+        data?: { object?: { metadata?: Record<string, string>; status?: string; current_period_end?: number; client_reference_id?: string } };
+      };
+
       const eventId = body.id || generateToken();
       if (webhookEvents.has(eventId)) {
-        return res.status(200).json({ received: true });
+        res.status(200).json({ received: true, idempotent: true });
+        return;
       }
 
       webhookEvents.add(eventId);
 
-      // Handle different event types
-      const eventType = body.type;
-      if (
-        eventType === 'checkout.session.completed' ||
-        eventType === 'customer.subscription.updated'
-      ) {
-        // Update user entitlements
-        const metadata = body.data?.object?.metadata || {};
-        const userId = metadata.userId as string;
+      const eventType = body.type || '';
+      const object = body.data?.object || {};
+      const metadata = object.metadata || {};
+      const userId = metadata.userId || object.client_reference_id || '';
 
-        if (userId) {
-          const userEntitlements = getOrCreateUserEntitlements(userId);
-          userEntitlements.bundle = true;
-          userEntitlements.status = 'active';
-          userEntitlements.source = 'stripe';
-          userEntitlements.currentPeriodEnd = new Date(
-            Date.now() + 30 * 24 * 60 * 60 * 1000,
-          ).toISOString();
-          userEntitlements.updatedAt = now();
-          entitlements.set(userId, userEntitlements);
+      if (userId) {
+        const current = getOrCreateUserEntitlements(userId);
+        const periodEnd =
+          typeof object.current_period_end === 'number'
+            ? new Date(object.current_period_end * 1000).toISOString()
+            : current.currentPeriodEnd;
+
+        let status: UserEntitlements['status'] = current.status;
+        if (eventType === 'checkout.session.completed') {
+          status = object.status === 'trialing' ? 'trialing' : 'active';
         }
+        if (
+          eventType === 'customer.subscription.updated' ||
+          eventType === 'invoice.paid'
+        ) {
+          status =
+            object.status === 'past_due'
+              ? 'past_due'
+              : object.status === 'canceled'
+                ? 'canceled'
+                : object.status === 'trialing'
+                  ? 'trialing'
+                  : 'active';
+        }
+        if (eventType === 'invoice.payment_failed') {
+          status = 'past_due';
+        }
+        if (eventType === 'customer.subscription.deleted') {
+          status = 'canceled';
+        }
+
+        const updated = applyBillingStatus(current, status, 'stripe', periodEnd);
+        entitlements.set(userId, updated);
       }
 
-      return res.status(200).json({ received: true });
-    }),
+      res.status(200).json({ received: true, eventId });
+    },
   );
+
+  app.post('/billing/webhook/stripe', handleBillingWebhook);
+  app.post('/billing/webhook', handleBillingWebhook);
 
   // ACCOUNT ENDPOINTS
 
@@ -633,7 +982,7 @@ export const createBackendServer = (): Express => {
         )
         .map((s) => ({
           token: s.token,
-          module: 'profit',
+          module: 'profit' as const,
           createdAt: s.createdAt,
           expiresAt: s.expiresAt,
         }));

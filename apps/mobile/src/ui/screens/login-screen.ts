@@ -1,53 +1,68 @@
 import type { MobileScreen, MobileScreenProps } from '../screen-types';
 import {
-  createScreenElement,
   createButton,
-  createInput,
+  createCard,
+  createScreenElement,
 } from '../screen-types';
 
 export const createLoginScreen = (): MobileScreen => ({
   route: '/login',
-  title: 'Sign In',
+  title: 'Sign in',
   render: (props: MobileScreenProps) => {
-    const screen = createScreenElement('screen-login', 'MarginBase');
+    const screen = createScreenElement('screen-login', 'Welcome');
+    const content = document.createElement('div');
+    content.className = 'mobile-screen-content';
 
-    const form = document.createElement('form');
-    form.className = 'mobile-screen-form';
-    form.onsubmit = (e) => {
-      e.preventDefault();
-      // In production, this would trigger Google OAuth or real authentication
-      props.onNavigate('/gate');
-    };
-
-    const description = document.createElement('p');
-    description.className = 'mobile-screen-description';
-    description.textContent =
-      'Sign in with your Google account to access MarginBase.';
-    form.appendChild(description);
-
-    const emailInput = createInput('Email address', 'email');
-    emailInput.required = true;
-    form.appendChild(emailInput);
-
-    const signInButton = createButton(
-      'Sign In with Google',
-      () => form.dispatchEvent(new Event('submit')),
-      'primary',
+    content.appendChild(
+      createCard(
+        'MarginBase Mobile',
+        'Plan your business with Profit, Break-even, and Cashflow calculators.',
+      ),
     );
-    form.appendChild(signInButton);
 
-    const guestButton = createButton('Continue as Guest', () =>
-      props.onNavigate('/home'),
+    // Platform-specific sign-in buttons
+    if (typeof window !== 'undefined' && 'cordova' in window) {
+      // Mobile platform (iOS/Android)
+      const platform = navigator.userAgent.includes('iPhone') ? 'iOS' : 'Android';
+      
+      content.appendChild(
+        createButton(
+          `Sign in with ${platform}`,
+          async () => {
+            // Mock entitlement check - production would use native IAP
+            const hasPurchase = false; // Replace with actual store check
+            if (hasPurchase) {
+              props.onNavigate('/home');
+            } else {
+              // Free trial access
+              props.onNavigate('/home');
+            }
+          },
+          'primary',
+        ),
+      );
+    } else {
+      // Web preview mode
+      content.appendChild(
+        createButton(
+          'Continue as guest',
+          () => {
+            // Development/preview mode - allow direct access
+            props.onNavigate('/home');
+          },
+          'primary',
+        ),
+      );
+    }
+
+    content.appendChild(
+      createButton('Privacy', () => props.onNavigate('/legal/privacy')),
     );
-    form.appendChild(guestButton);
+    content.appendChild(
+      createButton('Terms', () => props.onNavigate('/legal/terms')),
+    );
 
-    const legal = document.createElement('p');
-    legal.className = 'mobile-screen-legal';
-    legal.innerHTML =
-      '🔒 Your data never leaves your device<br/>🇪🇺 EU-hosted infrastructure';
-    form.appendChild(legal);
-
-    screen.appendChild(form);
+    screen.appendChild(content);
     return screen;
   },
 });

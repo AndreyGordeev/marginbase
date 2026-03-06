@@ -64,7 +64,7 @@ type ModuleId = EntitlementModuleId;
 
 type WebApiClient = Pick<
   MarginbaseApiClient,
-  'refreshEntitlements' | 'deleteAccount'
+  'refreshEntitlements' | 'deleteAccount' | 'verifyAuthToken'
 > &
   Partial<
     Pick<
@@ -290,6 +290,10 @@ export class WebAppService {
 
   public canOpenModule(moduleId: ModuleId): boolean {
     return canUseModule(moduleId, this.entitlementCache, new Date());
+  }
+
+  public getEntitlementCache(): EntitlementCache {
+    return this.entitlementCache;
   }
 
   public isSignedIn(): boolean {

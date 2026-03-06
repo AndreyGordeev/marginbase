@@ -1,8 +1,8 @@
 # API Contracts (v1)
 
-**Version:** 1.1 (Phase 4 OAuth + Billing)
-**Last Updated:** 2026-03-05
-**Status:** Production-Ready with Mock Server
+**Version:** 1.2 (Final remediation pass)
+**Last Updated:** 2026-03-06
+**Status:** Production wiring with provider-driven auth/billing handlers
 
 Purpose: define a stable backend contract for clients and serverless services.
 
@@ -15,6 +15,7 @@ Purpose: define a stable backend contract for clients and serverless services.
 - `POST /billing/checkout-session` (alias)
 - `POST /billing/portal-session`
 - `POST /billing/webhook/stripe`
+- `POST /billing/webhook` (alias)
 - `POST /billing/verify`
 - `POST /account/delete`
 - `POST /share/create`
@@ -34,8 +35,11 @@ Purpose: define a stable backend contract for clients and serverless services.
 ## Auth / Headers (Phase 4: Google OAuth 2.0)
 
 - `Authorization: Bearer <idToken>` is required for authenticated endpoints (for example `GET /entitlements`, `DELETE /share/:token`).
-- `POST /auth/verify` accepts the Google ID token in request payload (`idToken`) and returns verified user profile.
-- Google ID tokens obtained via `GoogleOAuthService` library loaded client-side.
+- `POST /auth/verify` accepts Google token in either `Authorization: Bearer <token>` or body field `googleIdToken`.
+- Verification mode is environment-driven via `GOOGLE_VERIFICATION_MODE`:
+  - `tokeninfo` (default): verifies against Google tokeninfo endpoint.
+  - `development`: validates JWT payload/claims for local environments.
+- Allowed audiences are controlled by `GOOGLE_CLIENT_IDS` (comma-separated).
 
 ## `POST /auth/verify` (NEW)
 
@@ -45,8 +49,7 @@ Request:
 
 ```json
 {
-  "idToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "nonce": "optional_csrf_nonce"
+  "googleIdToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
@@ -54,13 +57,11 @@ Response (200):
 
 ```json
 {
-  "userId": "user_google_oauth2_xyz",
+  "userId": "google_subject_id",
   "email": "user@example.com",
-  "name": "User Name",
-  "picture": "https://lh3.googleusercontent.com/...",
   "emailVerified": true,
-  "aud": "app_client_id.apps.googleusercontent.com",
-  "iss": "https://accounts.google.com"
+  "provider": "google",
+  "verifiedAt": "2026-03-06T12:00:00.000Z"
 }
 ```
 
@@ -122,9 +123,9 @@ Response:
 
 Client action: Redirect to `url` to complete Stripe checkout.
 
-## `POST /billing/webhook/stripe` (NEW - Phase 4)
+## `POST /billing/webhook/stripe` and `POST /billing/webhook`
 
-Webhook handler for Stripe events. Endpoint is **idempotent** — duplicate events with same `id` within 24h are ignored.
+Stripe webhook handlers with shared processing. Endpoint behavior is **idempotent** — duplicate events with same `id` are acknowledged and not re-applied.
 
 Request Headers:
 

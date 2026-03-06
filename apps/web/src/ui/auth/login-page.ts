@@ -85,19 +85,23 @@ export const renderLoginPage = (
       },
     );
   } else {
-    // Fallback if OAuth service not available
+    // Fallback path is development-only.
+    // Production must not silently sign in with a local mock user.
     auth.appendChild(
       createActionButton(
         translate('login.continueWithGoogle'),
         () => {
-          if (typeof localStorage !== 'undefined') {
+          if (import.meta.env.DEV && typeof localStorage !== 'undefined') {
             localStorage.setItem('marginbase_signed_in', 'true');
             localStorage.setItem(
               'marginbase_signed_in_user_id',
               'local_web_user',
             );
+            goTo('/gate');
+            return;
           }
-          goTo('/gate');
+
+          window.alert(translate('subscription.signInRequired'));
         },
         'primary',
       ),

@@ -1,55 +1,75 @@
 import type { MobileScreen, MobileScreenProps } from '../screen-types';
-import { createScreenElement, createButton, createCard } from '../screen-types';
+import {
+  createButton,
+  createCard,
+  createScreenElement,
+} from '../screen-types';
 
 export const createHomeScreen = (): MobileScreen => ({
   route: '/home',
   title: 'Dashboard',
   render: (props: MobileScreenProps) => {
     const screen = createScreenElement('screen-home', 'Dashboard');
-
     const content = document.createElement('div');
     content.className = 'mobile-screen-content';
 
-    // Access status
-    const statusCard = createCard(
-      'Module Access',
-      `Profit: ${props.service.canOpenModule('profit') ? '✓ Unlocked' : '🔒 Locked'}`,
+    content.appendChild(
+      createCard('Calculators', 'Select a module to manage scenarios.'),
     );
-    content.appendChild(statusCard);
 
-    // Quick access buttons
-    const modules = [
-      { id: 'profit', label: 'Profit Calculator', icon: '📊' },
-      { id: 'breakeven', label: 'Break-even', icon: '⚖️' },
-      { id: 'cashflow', label: 'Cashflow Forecast', icon: '📈' },
-    ];
+    // Profit calculator (always available)
+    content.appendChild(
+      createButton(
+        'Profit calculator',
+        () => props.onNavigate('/module/profit/scenarios'),
+        'primary',
+      ),
+    );
 
-    for (const mod of modules) {
-      const isLocked = !props.service.canOpenModule(
-        mod.id as 'profit' | 'breakeven' | 'cashflow',
+    // Break-even calculator (gated)
+    if (props.service.canOpenModule('breakeven')) {
+      content.appendChild(
+        createButton('Break-even calculator', () =>
+          props.onNavigate('/module/breakeven/scenarios'),
+        ),
       );
-      const button = createButton(
-        `${mod.icon} ${mod.label}${isLocked ? ' (Locked)' : ''}`,
-        () => props.onNavigate(`/module/${mod.id}/scenarios`),
-        isLocked ? 'disabled' : 'primary',
+    } else {
+      const lockedBtn = createButton(
+        'Break-even calculator (locked)',
+        () => props.onNavigate('/gate'),
       );
-      button.disabled = isLocked;
-      content.appendChild(button);
+      lockedBtn.disabled = false;
+      lockedBtn.style.opacity = '0.6';
+      content.appendChild(lockedBtn);
     }
 
-    const navButton1 = createButton('📱 Scenarios', () =>
-      props.onNavigate('/module/profit/scenarios'),
-    );
-    const navButton2 = createButton('⚙️ Settings', () =>
-      props.onNavigate('/settings'),
-    );
-    const navButton3 = createButton('🔒 Subscription', () =>
-      props.onNavigate('/subscription'),
-    );
+    // Cashflow calculator (gated)
+    if (props.service.canOpenModule('cashflow')) {
+      content.appendChild(
+        createButton('Cashflow calculator', () =>
+          props.onNavigate('/module/cashflow/scenarios'),
+        ),
+      );
+    } else {
+      const lockedBtn = createButton(
+        'Cashflow calculator (locked)',
+        () => props.onNavigate('/gate'),
+      );
+      lockedBtn.disabled = false;
+      lockedBtn.style.opacity = '0.6';
+      content.appendChild(lockedBtn);
+    }
 
-    content.appendChild(navButton1);
-    content.appendChild(navButton2);
-    content.appendChild(navButton3);
+    // Settings and subscription links
+    content.appendChild(
+      createCard('Account', 'Manage settings and subscription.'),
+    );
+    content.appendChild(
+      createButton('Settings', () => props.onNavigate('/settings')),
+    );
+    content.appendChild(
+      createButton('Subscription', () => props.onNavigate('/subscription')),
+    );
 
     screen.appendChild(content);
     return screen;
