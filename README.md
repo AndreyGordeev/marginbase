@@ -2,7 +2,7 @@
 
 Offline-first finance toolkit for small business.
 
-[![Tests](https://img.shields.io/badge/tests-400%2B%20passing-brightgreen)]() [![Coverage](https://img.shields.io/badge/coverage-98%25%20branches-brightgreen)]() [![Phase 7](https://img.shields.io/badge/Phase%207-COMPLETE-success)]()  
+[![Tests](https://img.shields.io/badge/tests-400%2B%20passing-brightgreen)]() [![Coverage](https://img.shields.io/badge/coverage-98%25%20branches-brightgreen)]() [![Phase 7](https://img.shields.io/badge/Phase%207-COMPLETE-success)]()
 
 ## Current Scope (2026-03-06 — Phase 7 Complete)
 
@@ -58,12 +58,14 @@ infra/
 ## Testing & Coverage (Phase 7: Maximum Optimization)
 
 **Coverage Metrics:**
+
 - `packages/domain-core`: **100% branches** (186 tests) ✅
 - `packages/reporting`: **100% branches** (105 tests) ✅
 - `packages/storage`: **98.26% branches** (44 tests) ✅
 - **Workspace total**: 400+ tests with zero regressions
 
 **Test Types:**
+
 - Unit tests: Deterministic + edge-case focused
 - Integration tests: Real persistence + crypto roundtrips
 - Property-based: 1000+ runs per invariant (fast-check)
@@ -71,6 +73,7 @@ infra/
 - Visual regression: Screenshot comparison via Playwright
 
 **I/O Gates (Hard Blocks):**
+
 - ✅ Lint: All packages pass
 - ✅ TypeCheck: Strict mode across workspace
 - ✅ i18n Parity: All locales verified

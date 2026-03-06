@@ -22,6 +22,7 @@ corepack pnpm boot:mobile   # Start mobile app (placeholder)
 ## Scripts Reference
 
 ### Testing
+
 - `test` - Run all unit and integration tests across workspace
 - `test:unit` - Run only package tests (domain-core, entitlements, etc.)
 - `test:coverage` - Run coverage with thresholds (95% lines, 90% branches)
@@ -30,6 +31,7 @@ corepack pnpm boot:mobile   # Start mobile app (placeholder)
 - `test:deterministic` - Run tests 3x to catch flaky tests
 
 ### Quality Checks
+
 - `lint` - ESLint across all packages
 - `typecheck` - TypeScript type checking
 - `i18n:parity` - Validate all locales have same keys
@@ -39,6 +41,7 @@ corepack pnpm boot:mobile   # Start mobile app (placeholder)
 - `validate:all` - **Run all checks** (lint + typecheck + i18n + test + coverage)
 
 ### Build & Deploy
+
 - `build` - Build all packages in dependency order
 - `boot:web` - Start web dev server (Vite)
 - `boot:mobile` - Start mobile dev environment
@@ -53,6 +56,7 @@ GitHub Actions runs 3 parallel jobs:
 4. **e2e** - Playwright on Chromium/Firefox/WebKit (102 tests)
 
 ### CI Optimizations
+
 - Playwright browser caching (~2min savings)
 - pnpm store caching (~30s savings)
 - Parallel job execution (~3min total runtime)
@@ -61,12 +65,14 @@ GitHub Actions runs 3 parallel jobs:
 ## Test Architecture
 
 ### Layers
+
 1. **Unit** (Vitest) - 54 tests in domain-core, 26 in storage
 2. **Property-based** (fast-check) - 1000+ runs per invariant
 3. **Integration** (Vitest) - IndexedDB, SQLite, Vault
 4. **E2E** (Playwright) - 102 tests × 3 browsers = 306 validations
 
 ### Coverage Gates
+
 - `domain-core`: 95% lines, 90% branches
 - `reporting`: enforced thresholds
 - Property-based: 1000 runs minimum
@@ -74,6 +80,7 @@ GitHub Actions runs 3 parallel jobs:
 ## Code Quality Rules
 
 ### Enforced
+
 - No `console.log` in production code (main.ts and scripts/ excluded)
 - All locale files must have matching keys
 - Bundle size < 10MB (current: ~2-3MB)
@@ -82,6 +89,7 @@ GitHub Actions runs 3 parallel jobs:
 - All E2E tests pass on 3 browsers
 
 ### Recommendations
+
 - Use `data-testid` for E2E-tested elements
 - Keep functions pure in domain-core
 - Never store financial values in telemetry
@@ -108,6 +116,7 @@ fc.assert(
 ```
 
 ### Covered Invariants
+
 - Profit: revenue = price × quantity
 - Profit: net = revenue - (fixed + variable)
 - Breakeven: quantity × contribution = fixed costs
@@ -116,6 +125,7 @@ fc.assert(
 ## Visual Regression Testing
 
 Playwright captures screenshots for:
+
 - Dashboard layout
 - Profit workspace (filled form)
 - Paywall modal
@@ -132,6 +142,7 @@ Update snapshots: `playwright test --update-snapshots`
 ## Debugging
 
 ### E2E Test Failures
+
 ```bash
 # Run single test
 corepack pnpm exec playwright test smoke.spec.ts
@@ -147,6 +158,7 @@ corepack pnpm exec playwright show-report
 ```
 
 ### Unit Test Failures
+
 ```bash
 # Watch mode
 corepack pnpm --filter @marginbase/domain-core test --watch
@@ -163,16 +175,18 @@ corepack pnpm --filter @marginbase/domain-core test:coverage
 **Current Status (2026-03-06):** 98%+ coverage achieved across critical packages
 
 ### Coverage by Package
-| Package | Branches | Statements | Functions | Lines | Status |
-|---------|----------|-----------|-----------|-------|--------|
-| domain-core | **100%** | 100% | 100% | 100% | ✅ Maximum |
-| reporting | **100%** | 100% | 100% | 100% | ✅ Maximum |
-| storage | **98.26%** | 97.33% | 97.16% | 97.33% | ✅ Optimal* |
-| entitlements | 95%+ | 95%+ | 95%+ | 95%+ | ✅ Target |
 
-*Storage optimal coverage: Remaining 1.74% gap is web-vault browser fallback (unreachable in Node.js unit tests). See [Phase 7 completion notes](./TESTING_PHASE_7_MAX_COVERAGE_SCOPE.md) for details.
+| Package      | Branches   | Statements | Functions | Lines  | Status       |
+| ------------ | ---------- | ---------- | --------- | ------ | ------------ |
+| domain-core  | **100%**   | 100%       | 100%      | 100%   | ✅ Maximum   |
+| reporting    | **100%**   | 100%       | 100%      | 100%   | ✅ Maximum   |
+| storage      | **98.26%** | 97.33%     | 97.16%    | 97.33% | ✅ Optimal\* |
+| entitlements | 95%+       | 95%+       | 95%+      | 95%+   | ✅ Target    |
+
+\*Storage optimal coverage: Remaining 1.74% gap is web-vault browser fallback (unreachable in Node.js unit tests). See [Phase 7 completion notes](./TESTING_PHASE_7_MAX_COVERAGE_SCOPE.md) for details.
 
 ### Run Coverage Locally
+
 ```bash
 # Full workspace coverage with gates
 corepack pnpm test:coverage
@@ -187,6 +201,7 @@ open coverage/index.html
 ```
 
 ### Testing Statistics
+
 - **Total tests:** 400+ across all packages
 - **E2E tests:** 54+ Playwright specs (3 browsers = 162+ validations)
 - **Property-based:** 1000+ algorithmic property runs per invariant
@@ -198,6 +213,7 @@ See full details in [TESTING_PHASE_7_MAX_COVERAGE_SCOPE.md](./TESTING_PHASE_7_MA
 ## Pre-Commit Checklist
 
 Before pushing:
+
 1. ✅ `corepack pnpm validate:all` passes
 2. ✅ `corepack pnpm test:e2e:all` passes
 3. ✅ No `console.log` in production code

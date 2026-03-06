@@ -5,17 +5,21 @@ Date: 2026-03-06 (Phase 7 Coverage Optimization Complete)
 This file is the **primary Copilot anchor**. Keep it short and authoritative.
 
 ## Product
+
 MarginBase is an offline-first finance toolkit for SMB with 3 calculators:
+
 - Profit / Margin
 - Break-even
 - Cashflow forecast
 
 Current scope also includes:
+
 - Local Business Report export (PDF + XLSX)
 - Shareable scenario links via encrypted snapshots (`/s/:token#k=<shareKey>`)
 - Embeddable stateless calculators (`/embed/:calculator`, `/embed/:lang/:calculator`)
 
 ## Non-negotiable Principles
+
 1. **Offline-first:** create/edit/calc/export works fully offline.
 2. **Thin backend:** backend is only for auth verification, entitlements, and telemetry ingest.
 3. **No raw scenario values in cloud:** scenario numeric values are local-only by default; only explicit user-initiated share snapshots are allowed server-side, and only as encrypted payloads (TTL + owner metadata).
@@ -26,6 +30,7 @@ Current scope also includes:
 8. **Web Local Vault:** optional passphrase-based encryption for local data, available to **all paid users**.
 
 ## Hard Rules for Code Generation
+
 - UI must not implement formulas.
 - UI must not access DB directly (use repositories).
 - Telemetry must not include monetary values.
@@ -33,6 +38,7 @@ Current scope also includes:
 - Never log tokens/receipts/payloads with sensitive fields.
 
 ## Package Boundaries (authoritative)
+
 - `packages/domain-core`: formulas, scenario/snapshot schema, migrations, numeric policy (pure functions only)
 - `packages/storage`: local repositories/adapters only
 - `packages/entitlements`: policy + gating decisions
@@ -41,36 +47,41 @@ Current scope also includes:
 - `packages/reporting`: local report model builder + PDF/XLSX exporters
 
 ## Growth Features Status
+
 - Report export: implemented and tested (local-only)
 - Share links: implemented and tested (sanitize -> encrypt -> store, migrate/decrypt on read, create/get/list/revoke, owner checks)
 - Embeds: implemented and tested (query options, CTA prefill, embed CSP)
 - Optional embed analytics: implemented with allowlist-safe events
 
 ## Delivery Workflow (Mandatory)
+
 - Each roadmap step is implemented in a dedicated git branch.
 - Each roadmap step is delivered as a separate pull request.
 - No mixed-step PRs.
 
 ## Documentation Sync (Mandatory)
+
 - Every change to behavior, API, data model, security policy, architecture, or UX must include matching documentation updates in the same PR.
 - If code changes and docs do not, the change is incomplete.
 - Keep these files aligned when applicable:
-	- `README.md` for scope, setup, and high-level capabilities
-	- `docs/contracts/api.md` for endpoint/request/response changes
-	- `docs/decisions/adr.md` for architectural decisions and trade-offs
-	- `docs/architecture/*.md` for boundary, deployment, or quality-attribute changes
-	- `docs/release-notes-v1.md` for user-visible behavior changes
+  - `README.md` for scope, setup, and high-level capabilities
+  - `docs/contracts/api.md` for endpoint/request/response changes
+  - `docs/decisions/adr.md` for architectural decisions and trade-offs
+  - `docs/architecture/*.md` for boundary, deployment, or quality-attribute changes
+  - `docs/release-notes-v1.md` for user-visible behavior changes
 - If any `.docx` artifact is added/maintained, keep an equivalent authoritative `.md` version in `docs/` and update both together.
 
 ## Quality Gates (Phase 7 Results)
 
 **Test Coverage (Unit + Integration):**
+
 - domain-core: 100% statements, 100% branches, 100% functions ✅
 - reporting: 100% statements, 100% branches, 100% functions ✅
 - storage: 97.33% statements, 98.26% branches, 97.16% functions ✅
 - **Total workspace:** 400+ tests passing (zero regressions)
 
 **CI Pipeline Gates (All Green):**
+
 - Lint: ESLint all packages
 - TypeCheck: TypeScript strict mode
 - i18n: Localization parity (en,de,fr,es,pl,it,ru)
@@ -79,6 +90,7 @@ Current scope also includes:
 - E2E: 54+ tests across Chromium, Firefox, WebKit
 
 **Known Limitations (Justified):**
+
 - web-vault.ts buffer fallback paths (10% gap): Browser-only code, requires E2E in real browser, theoretical edge case
 - Status: Acceptable for unit-test environment; all business logic fully covered
 

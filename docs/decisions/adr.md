@@ -22,14 +22,14 @@ package with pure calculation functions and shared types.
 
 ### Positive
 
--   Single source of truth for calculations
--   Reduced drift between platforms
--   Strong typing across layers
+- Single source of truth for calculations
+- Reduced drift between platforms
+- Strong typing across layers
 
 ### Negative
 
--   Requires discipline to keep domain-core framework-free
--   Floating point risks must be explicitly handled
+- Requires discipline to keep domain-core framework-free
+- Floating point risks must be explicitly handled
 
 ### Operational Impact
 
@@ -62,14 +62,14 @@ sync in V1.
 
 ### Positive
 
--   Works without network
--   Lower compliance risk
--   Minimal backend storage costs
+- Works without network
+- Lower compliance risk
+- Minimal backend storage costs
 
 ### Negative
 
--   No cross-device sync in V1
--   Requires robust local migration strategy
+- No cross-device sync in V1
+- Requires robust local migration strategy
 
 ### Operational Impact
 
@@ -102,12 +102,12 @@ ratios and enforce explicit rounding policy.
 
 ### Positive
 
--   Eliminates floating point drift
--   Predictable financial outputs
+- Eliminates floating point drift
+- Predictable financial outputs
 
 ### Negative
 
--   Slight increase in implementation complexity
+- Slight increase in implementation complexity
 
 ### Operational Impact
 
@@ -139,13 +139,13 @@ Use SQLite + SQLCipher. Store encryption key in Keychain/Keystore.
 
 ### Positive
 
--   Encryption at rest on mobile
--   Stronger security posture
+- Encryption at rest on mobile
+- Stronger security posture
 
 ### Negative
 
--   More complex native setup
--   Slight performance overhead
+- More complex native setup
+- Slight performance overhead
 
 ### Operational Impact
 
@@ -178,13 +178,13 @@ available to all paid users.
 
 ### Positive
 
--   Additional security for web users
--   No cloud exposure of keys
+- Additional security for web users
+- No cloud exposure of keys
 
 ### Negative
 
--   If passphrase lost, data unrecoverable
--   Additional UX complexity
+- If passphrase lost, data unrecoverable
+- Additional UX complexity
 
 ### Operational Impact
 
@@ -217,12 +217,12 @@ Use Bare React Native (not Expo managed).
 
 ### Positive
 
--   Full native control
--   Easier integration of encryption and billing SDKs
+- Full native control
+- Easier integration of encryption and billing SDKs
 
 ### Negative
 
--   More setup complexity vs Expo managed
+- More setup complexity vs Expo managed
 
 ### Operational Impact
 
@@ -255,13 +255,13 @@ Telemetry ingest. No scenario storage.
 
 ### Positive
 
--   Low cloud cost
--   Smaller attack surface
--   GDPR-friendly
+- Low cloud cost
+- Smaller attack surface
+- GDPR-friendly
 
 ### Negative
 
--   Requires careful entitlement caching design
+- Requires careful entitlement caching design
 
 ### Operational Impact
 
@@ -294,12 +294,12 @@ per 24h when online.
 
 ### Positive
 
--   Predictable offline UX
--   Controlled API usage
+- Predictable offline UX
+- Controlled API usage
 
 ### Negative
 
--   Short-term entitlement abuse window possible
+- Short-term entitlement abuse window possible
 
 ### Operational Impact
 
@@ -331,13 +331,13 @@ Host SPA on S3 + CloudFront. API via API Gateway + Lambda in EU region.
 
 ### Positive
 
--   Low cost
--   High availability
--   Simple deployment
+- Low cost
+- High availability
+- Simple deployment
 
 ### Negative
 
--   Requires correct SPA routing config
+- Requires correct SPA routing config
 
 ### Operational Impact
 
@@ -369,12 +369,12 @@ Mobile: native store billing. Web: Paddle as Merchant of Record.
 
 ### Positive
 
--   VAT/sales tax handled externally
--   Easier global expansion
+- VAT/sales tax handled externally
+- Easier global expansion
 
 ### Negative
 
--   Dependency on third-party provider
+- Dependency on third-party provider
 
 ### Operational Impact
 
@@ -406,12 +406,12 @@ Use Terraform for AWS infrastructure.
 
 ### Positive
 
--   Industry standard
--   Clear environment separation
+- Industry standard
+- Clear environment separation
 
 ### Negative
 
--   Requires Terraform expertise and discipline
+- Requires Terraform expertise and discipline
 
 ### Operational Impact
 
@@ -443,12 +443,12 @@ Use React hooks + Zustand for lightweight global state.
 
 ### Positive
 
--   Simple and scalable
--   Avoids Redux-level complexity
+- Simple and scalable
+- Avoids Redux-level complexity
 
 ### Negative
 
--   Requires conventions to prevent state sprawl
+- Requires conventions to prevent state sprawl
 
 ### Operational Impact
 
@@ -471,6 +471,7 @@ Status: Accepted
 ## Context
 
 Web runtime has delivered i18n across supported languages (`en,de,fr,es,pl,it,ru`) with a mixed routing model:
+
 - language-aware internal app routes
 - stable legacy public routes for share/embed compatibility
 
@@ -483,12 +484,12 @@ Adopt and document the canonical web routing/i18n model as:
 1. i18n is UI-only in `apps/web` (`i18next` + browser language detector).
 2. Internal app routes are language-aware (`/:lang/...`).
 3. Legacy public routes remain unprefixed for compatibility:
-	- share: `/s/:token`
-	- embeds: `/embed/profit`, `/embed/breakeven`, `/embed/cashflow`
+   - share: `/s/:token`
+   - embeds: `/embed/profit`, `/embed/breakeven`, `/embed/cashflow`
 4. Language can be resolved from current i18n state and `lang` query where applicable (not path-segmented embed routes).
 5. Domain and backend boundaries remain unchanged:
-	- no localization logic in `packages/domain-core`
-	- no monetary scenario values in telemetry/auth/entitlements/billing endpoints
+   - no localization logic in `packages/domain-core`
+   - no monetary scenario values in telemetry/auth/entitlements/billing endpoints
 
 This ADR supersedes prior implied web routing assumptions where they conflict with the above model.
 
@@ -589,4 +590,3 @@ After initial testing implementation (Phases 1-3), this ADR documents the Phase 
 1. **Full Browser Testing:** Would require moving crypto code to browser layer. Rejected: violates security model (encrypted data must stay in controlled environment).
 2. **100% Branch Coverage:** Would require architectural refactoring. Rejected: 1.74% gap is justified; unit testing exhausted.
 3. **Continue Optimization:** Would face diminishing returns. Accepted Phase 7 as stopping point: reachable code fully tested.
-
