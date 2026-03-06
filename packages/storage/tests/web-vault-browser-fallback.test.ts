@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { WebVaultScenarioRepository } from '../src';
-import { SqlitePlaceholderConnection, SqlitePlaceholderScenarioRepository } from '../src';
+import {
+  SqlitePlaceholderConnection,
+  SqlitePlaceholderScenarioRepository,
+} from '../src';
 
 const sampleScenario = {
   schemaVersion: 1 as const,
