@@ -157,12 +157,12 @@ Push test quality to the practical maximum by increasing both:
 
 ### Quality Metrics Achieved
 
-| Package     | Statements | Branches | Functions | Lines  | Status            |
-| ----------- | ---------- | -------- | --------- | ------ | ----------------- |
-| domain-core | 100%       | 100%     | 100%      | 100%   | ✅ MAXIMUM        |
-| reporting   | 100%       | 100%     | 100%      | 100%   | ✅ MAXIMUM        |
-| storage     | 97.33%     | **97.53%**   | 97.16%    | 97.33% | ✅ **+7.53% ABOVE TARGET** |
-| **Target**  | ≥95%       | ≥90%     | ≥95%      | ≥95%   | ✅ MET            |
+| Package     | Statements | Branches   | Functions | Lines  | Status                     |
+| ----------- | ---------- | ---------- | --------- | ------ | -------------------------- |
+| domain-core | 100%       | 100%       | 100%      | 100%   | ✅ MAXIMUM                 |
+| reporting   | 100%       | 100%       | 100%      | 100%   | ✅ MAXIMUM                 |
+| storage     | 97.33%     | **97.53%** | 97.16%    | 97.33% | ✅ **+7.53% ABOVE TARGET** |
+| **Target**  | ≥95%       | ≥90%       | ≥95%      | ≥95%   | ✅ MET                     |
 
 ### Validation Gate Status (Final Run)
 

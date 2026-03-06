@@ -410,4 +410,32 @@ describe('sqlcipher repositories', () => {
     // Test getting non-existent setting returns null
     expect(await encryptedSettingsRepository.getSetting('missing')).toBeNull();
   });
+
+  it('defaults to wipe migration strategy when undefined', async () => {
+    const connection = await SqlCipherConnection.initialize({
+      secureKeyStore: new InMemorySecureKeyStore('android-keystore'),
+      // migrationStrategy intentionally omitted - should default to 'wipe'
+    });
+
+    expect(connection.getEncryptionInfo().migrationStrategy).toBe('wipe');
+    expect(connection.verifyEncryptedAtRest()).toBe(true);
+
+    // Verify connection works and can store data
+    const scenarioRepository = new SqlCipherScenarioRepository(connection);
+    await scenarioRepository.upsertScenario(sampleScenario);
+    expect((await scenarioRepository.listScenarios()).length).toBe(1);
+  });
+
+  it('defaults to keyAlias when not provided', async () => {
+    const connection = await SqlCipherConnection.initialize({
+      secureKeyStore: new InMemorySecureKeyStore('android-keystore'),
+      migrationStrategy: 'wipe',
+      // keyAlias intentionally omitted - should use DEFAULT_KEY_ALIAS
+    });
+
+    // If keyAlias was not set, it should have a valid default
+    expect(connection.getEncryptionInfo().keyAlias).toBeDefined();
+    expect(connection.getEncryptionInfo().keyAlias.length).toBeGreaterThan(0);
+    expect(connection.verifyEncryptedAtRest()).toBe(true);
+  });
 });
