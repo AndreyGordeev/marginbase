@@ -15,9 +15,10 @@ export default {
   concurrency: 3,
   timeoutMS: 60000,
   timeoutFactor: 1.5,
-  mutationScore: {
-    threshold: 65,
-    thresholdFatal: 50,
+  thresholds: {
+    high: 80,
+    low: 65,
+    break: 50,
   },
   incremental: false,
 };

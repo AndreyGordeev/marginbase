@@ -10,30 +10,6 @@ export default {
 
   // Mutants to inject
   mutate: ['src/**/*.ts', '!src/index.ts'],
-  mutators: [
-    'ArithmeticOperator',
-    'ArrayLiteral',
-    'AssignmentOperator',
-    'BigIntLiteral',
-    'BlockStatement',
-    'BooleanLiteral',
-    'ConditionalExpression',
-    'DoWhileStatement',
-    'EqualityOperator',
-    'ForStatement',
-    'IfStatement',
-    'LogicalOperator',
-    'MethodExpression',
-    'NegatedExpression',
-    'ObjectLiteral',
-    'RegExp',
-    'ReturnValue',
-    'StringLiteral',
-    'StringCharAt',
-    'UnaryOperator',
-    'UpdateOperator',
-    'WhileStatement',
-  ],
 
   // Reporting
   reporters: ['progress', 'clear-text'],
@@ -45,9 +21,10 @@ export default {
   timeoutFactor: 1.5,
 
   // Mutation testing score thresholds (v9.x format)
-  mutationScore: {
-    threshold: 65,
-    thresholdFatal: 50,
+  thresholds: {
+    high: 80,
+    low: 65,
+    break: 50,
   },
 
   // Disable incremental for CI consistency

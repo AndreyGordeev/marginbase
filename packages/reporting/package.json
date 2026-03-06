@@ -14,6 +14,6 @@
   "dependencies": {
     "@marginbase/domain-core": "workspace:*",
     "pdf-lib": "^1.17.1",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   }
 }
