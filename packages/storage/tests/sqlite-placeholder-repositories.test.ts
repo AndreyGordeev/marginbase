@@ -108,4 +108,30 @@ describe('sqlite placeholder repositories', () => {
     await repository.clearScenarios();
     expect((await repository.listScenarios()).length).toBe(0);
   });
+
+  it('settings repository - null case for missing settings', async () => {
+    const connection = new SqlitePlaceholderConnection();
+    const settings = new SqlitePlaceholderSettingsRepository(connection);
+
+    // Test null when setting doesn't exist
+    expect(await settings.getSetting('nonexistentKey')).toBeNull();
+
+    // Set and verify retrieval
+    await settings.setSetting({
+      key: 'theme',
+      value: 'dark',
+      updatedAt: '2026-03-02T10:00:00.000Z',
+    });
+    expect(await settings.getSetting('theme')).not.toBeNull();
+    expect((await settings.listSettings()).length).toBe(1);
+
+    // Update existing setting
+    await settings.setSetting({
+      key: 'theme',
+      value: 'light',
+      updatedAt: '2026-03-02T10:00:00.000Z',
+    });
+    expect((await settings.listSettings()).length).toBe(1);
+    expect((await settings.getSetting('theme'))?.value).toBe('light');
+  });
 });

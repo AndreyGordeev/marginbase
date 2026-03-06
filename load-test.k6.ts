@@ -38,9 +38,9 @@ export const options = {
     'http_req_duration{staticAsset:no}': ['p(95)<500', 'p(99)<1000'],
     'http_req_duration{staticAsset:yes}': ['p(95)<200'],
     // Error rate < 1%
-    'http_req_failed': ['rate<0.01'],
+    http_req_failed: ['rate<0.01'],
     // Connection successful rate > 99%
-    'http_conn_connecting': ['p(99)<100'],
+    http_conn_connecting: ['p(99)<100'],
   },
 };
 
@@ -77,8 +77,13 @@ export default function () {
   });
 
   // 2. If it's a calculator page, simulate calculation
-  if (page.includes('profit') || page.includes('break-even') || page.includes('cashflow')) {
-    const inputs = CALCULATOR_INPUTS[Math.floor(Math.random() * CALCULATOR_INPUTS.length)];
+  if (
+    page.includes('profit') ||
+    page.includes('break-even') ||
+    page.includes('cashflow')
+  ) {
+    const inputs =
+      CALCULATOR_INPUTS[Math.floor(Math.random() * CALCULATOR_INPUTS.length)];
 
     // Simulate API call for calculation (mock endpoint)
     const calcRes = http.post(
@@ -90,7 +95,7 @@ export default function () {
       {
         headers: { 'Content-Type': 'application/json' },
         tags: { name: 'API: Calculate', staticAsset: 'no' },
-      }
+      },
     );
 
     check(calcRes, {

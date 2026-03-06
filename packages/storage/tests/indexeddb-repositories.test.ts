@@ -116,4 +116,33 @@ describe('indexeddb repositories', () => {
     await repository.clearScenarios();
     expect((await repository.listScenarios()).length).toBe(0);
   });
+
+  it('settings repository - null case when setting not found', async () => {
+    const connection = new IndexedDbConnection(`test-db-${Date.now()}`);
+    const settings = new IndexedDbSettingsRepository(connection);
+
+    // Test null when setting doesn't exist
+    expect(await settings.getSetting('missingKey')).toBeNull();
+    expect((await settings.listSettings()).length).toBe(0);
+
+    // Set multiple settings
+    await settings.setSetting({
+      key: 'numberFormat',
+      value: 'eu',
+      updatedAt: '2026-03-02T10:00:00.000Z',
+    });
+    await settings.setSetting({
+      key: 'theme',
+      value: 'dark',
+      updatedAt: '2026-03-02T10:00:00.000Z',
+    });
+
+    // Verify all settings are retrievable
+    expect(await settings.getSetting('numberFormat')).not.toBeNull();
+    expect(await settings.getSetting('theme')).not.toBeNull();
+    expect((await settings.listSettings()).length).toBe(2);
+
+    // Verify missing key still returns null
+    expect(await settings.getSetting('unknownKey')).toBeNull();
+  });
 });
