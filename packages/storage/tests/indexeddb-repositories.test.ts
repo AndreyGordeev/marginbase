@@ -5,7 +5,7 @@ import {
   IndexedDbEntitlementRepository,
   IndexedDbScenarioRepository,
   IndexedDbSchemaStateRepository,
-  IndexedDbSettingsRepository
+  IndexedDbSettingsRepository,
 } from '../src';
 
 const sampleScenario = {
@@ -14,7 +14,7 @@ const sampleScenario = {
   module: 'profit' as const,
   scenarioName: 'IndexedDb Scenario',
   inputData: { revenue: 1000 },
-  updatedAt: '2026-03-02T10:00:00.000Z'
+  updatedAt: '2026-03-02T10:00:00.000Z',
 };
 
 describe('indexeddb repositories', () => {
@@ -35,8 +35,8 @@ describe('indexeddb repositories', () => {
         ...sampleScenario,
         scenarioId: 'scenario_2',
         module: 'breakeven',
-        scenarioName: 'Replaced'
-      }
+        scenarioName: 'Replaced',
+      },
     ]);
 
     expect(await repository.getScenarioById('scenario_1')).toBeNull();
@@ -51,18 +51,50 @@ describe('indexeddb repositories', () => {
     const settings = new IndexedDbSettingsRepository(connection);
     const entitlements = new IndexedDbEntitlementRepository(connection);
 
-    await settings.setSetting({ key: 'theme', value: 'dark', updatedAt: '2026-03-02T10:00:00.000Z' });
+    await settings.setSetting({
+      key: 'theme',
+      value: 'dark',
+      updatedAt: '2026-03-02T10:00:00.000Z',
+    });
     expect((await settings.getSetting('theme'))?.value).toBe('dark');
     expect((await settings.listSettings()).length).toBe(1);
 
     await entitlements.setEntitlementCache({
       userId: 'user_1',
       lastVerifiedAt: '2026-03-02T10:00:00.000Z',
-      entitlementSet: { bundle: true, profit: true, breakeven: false, cashflow: false }
+      entitlementSet: {
+        bundle: true,
+        profit: true,
+        breakeven: false,
+        cashflow: false,
+      },
     });
 
-    expect((await entitlements.getEntitlementCache('user_1'))?.entitlementSet.bundle).toBe(true);
+    expect(
+      (await entitlements.getEntitlementCache('user_1'))?.entitlementSet.bundle,
+    ).toBe(true);
     expect(await entitlements.clearEntitlementCache('user_1')).toBe(true);
+
+    // Non-existing cache clear returns false branch.
+    expect(await entitlements.clearEntitlementCache('missing_user')).toBe(
+      false,
+    );
+
+    await entitlements.setEntitlementCache({
+      userId: 'user_2',
+      lastVerifiedAt: '2026-03-02T10:00:00.000Z',
+      entitlementSet: {
+        bundle: false,
+        profit: true,
+        breakeven: true,
+        cashflow: true,
+      },
+    });
+    await entitlements.clearAllEntitlementCache();
+    expect(await entitlements.getEntitlementCache('user_2')).toBeNull();
+
+    await settings.clearSettings();
+    expect((await settings.listSettings()).length).toBe(0);
   });
 
   it('persists and reads schema version state', async () => {
@@ -72,5 +104,16 @@ describe('indexeddb repositories', () => {
     expect(await state.getSchemaVersion()).toBe(0);
     await state.setSchemaVersion(3);
     expect(await state.getSchemaVersion()).toBe(3);
+  });
+
+  it('returns false for deleting non-existing scenario and supports clearScenarios', async () => {
+    const connection = new IndexedDbConnection(`test-db-${Date.now()}`);
+    const repository = new IndexedDbScenarioRepository(connection);
+
+    expect(await repository.deleteScenario('missing_id')).toBe(false);
+
+    await repository.upsertScenario(sampleScenario);
+    await repository.clearScenarios();
+    expect((await repository.listScenarios()).length).toBe(0);
   });
 });

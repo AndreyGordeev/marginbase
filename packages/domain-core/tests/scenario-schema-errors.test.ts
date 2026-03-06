@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   validateScenario,
   importScenariosReplaceAllFromJson,
-  createScenarioExport
+  createScenarioExport,
 } from '../src';
 
 /**
@@ -23,7 +23,7 @@ describe('scenario-schema: validation error paths', () => {
         module: 'profit',
         scenarioName: 'Test',
         inputData: { unitPriceMinor: 1000 },
-        updatedAt: '2026-03-05T10:00:00.000Z'
+        updatedAt: '2026-03-05T10:00:00.000Z',
       });
 
       expect(result.ok).toBe(false);
@@ -31,9 +31,9 @@ describe('scenario-schema: validation error paths', () => {
         expect.arrayContaining([
           expect.objectContaining({
             code: 'SCENARIO_ID_REQUIRED',
-            path: '$.scenarioId'
-          })
-        ])
+            path: '$.scenarioId',
+          }),
+        ]),
       );
     });
 
@@ -44,11 +44,13 @@ describe('scenario-schema: validation error paths', () => {
         module: 'profit',
         scenarioName: 'Test',
         inputData: { unitPriceMinor: 1000 },
-        updatedAt: '2026-03-05T10:00:00.000Z'
+        updatedAt: '2026-03-05T10:00:00.000Z',
       });
 
       expect(result.ok).toBe(false);
-      expect(result.errors.map((e) => e.code)).toContain('SCENARIO_ID_REQUIRED');
+      expect(result.errors.map((e) => e.code)).toContain(
+        'SCENARIO_ID_REQUIRED',
+      );
     });
   });
 
@@ -60,7 +62,7 @@ describe('scenario-schema: validation error paths', () => {
         module: 'invalid_module',
         scenarioName: 'Test',
         inputData: {},
-        updatedAt: '2026-03-05T10:00:00.000Z'
+        updatedAt: '2026-03-05T10:00:00.000Z',
       });
 
       expect(result.ok).toBe(false);
@@ -68,9 +70,9 @@ describe('scenario-schema: validation error paths', () => {
         expect.arrayContaining([
           expect.objectContaining({
             code: 'MODULE_INVALID',
-            path: '$.module'
-          })
-        ])
+            path: '$.module',
+          }),
+        ]),
       );
     });
 
@@ -81,7 +83,7 @@ describe('scenario-schema: validation error paths', () => {
         module: '',
         scenarioName: 'Test',
         inputData: {},
-        updatedAt: '2026-03-05T10:00:00.000Z'
+        updatedAt: '2026-03-05T10:00:00.000Z',
       });
 
       expect(result.ok).toBe(false);
@@ -97,7 +99,7 @@ describe('scenario-schema: validation error paths', () => {
         module: 'profit',
         scenarioName: '',
         inputData: { unitPriceMinor: 1000 },
-        updatedAt: '2026-03-05T10:00:00.000Z'
+        updatedAt: '2026-03-05T10:00:00.000Z',
       });
 
       expect(result.ok).toBe(false);
@@ -105,9 +107,9 @@ describe('scenario-schema: validation error paths', () => {
         expect.arrayContaining([
           expect.objectContaining({
             code: 'SCENARIO_NAME_REQUIRED',
-            path: '$.scenarioName'
-          })
-        ])
+            path: '$.scenarioName',
+          }),
+        ]),
       );
     });
 
@@ -118,11 +120,13 @@ describe('scenario-schema: validation error paths', () => {
         module: 'profit',
         scenarioName: '  \t  ',
         inputData: {},
-        updatedAt: '2026-03-05T10:00:00.000Z'
+        updatedAt: '2026-03-05T10:00:00.000Z',
       });
 
       expect(result.ok).toBe(false);
-      expect(result.errors.map((e) => e.code)).toContain('SCENARIO_NAME_REQUIRED');
+      expect(result.errors.map((e) => e.code)).toContain(
+        'SCENARIO_NAME_REQUIRED',
+      );
     });
   });
 
@@ -134,8 +138,8 @@ describe('scenario-schema: validation error paths', () => {
         scenarioId: 'scn_test',
         module: 'profit',
         scenarioName: 'Test',
-        inputData: 'not-an-object' as any,
-        updatedAt: '2026-03-05T10:00:00.000Z'
+        inputData: 'not-an-object' as Record<string, unknown>,
+        updatedAt: '2026-03-05T10:00:00.000Z',
       });
 
       // Validation passes because normalization coerces to {}
@@ -149,8 +153,8 @@ describe('scenario-schema: validation error paths', () => {
         scenarioId: 'scn_test',
         module: 'profit',
         scenarioName: 'Test',
-        inputData: null as any,
-        updatedAt: '2026-03-05T10:00:00.000Z'
+        inputData: null as Record<string, unknown>,
+        updatedAt: '2026-03-05T10:00:00.000Z',
       });
 
       expect(result.ok).toBe(true);
@@ -163,8 +167,8 @@ describe('scenario-schema: validation error paths', () => {
         scenarioId: 'scn_test',
         module: 'profit',
         scenarioName: 'Test',
-        inputData: [] as any,
-        updatedAt: '2026-03-05T10:00:00.000Z'
+        inputData: [] as Record<string, unknown>,
+        updatedAt: '2026-03-05T10:00:00.000Z',
       });
 
       expect(result.ok).toBe(true);
@@ -178,11 +182,14 @@ describe('scenario-schema: validation error paths', () => {
         module: 'profit',
         scenarioName: 'Test',
         inputData: { unitPriceMinor: 5000, unitCostMinor: 3000 },
-        updatedAt: '2026-03-05T10:00:00.000Z'
+        updatedAt: '2026-03-05T10:00:00.000Z',
       });
 
       expect(result.ok).toBe(true);
-      expect(result.value?.inputData).toEqual({ unitPriceMinor: 5000, unitCostMinor: 3000 });
+      expect(result.value?.inputData).toEqual({
+        unitPriceMinor: 5000,
+        unitCostMinor: 3000,
+      });
     });
   });
 
@@ -194,7 +201,7 @@ describe('scenario-schema: validation error paths', () => {
         module: 'profit',
         scenarioName: 'Test',
         inputData: {},
-        updatedAt: 'not-a-timestamp'
+        updatedAt: 'not-a-timestamp',
       });
 
       expect(result.ok).toBe(false);
@@ -202,9 +209,9 @@ describe('scenario-schema: validation error paths', () => {
         expect.arrayContaining([
           expect.objectContaining({
             code: 'UPDATED_AT_INVALID',
-            path: '$.updatedAt'
-          })
-        ])
+            path: '$.updatedAt',
+          }),
+        ]),
       );
     });
 
@@ -215,7 +222,7 @@ describe('scenario-schema: validation error paths', () => {
         module: 'profit',
         scenarioName: 'Test',
         inputData: {},
-        updatedAt: '2026-13-45T99:99:99.000Z' // Invalid month/day/time
+        updatedAt: '2026-13-45T99:99:99.000Z', // Invalid month/day/time
       });
 
       expect(result.ok).toBe(false);
@@ -229,7 +236,7 @@ describe('scenario-schema: validation error paths', () => {
         module: 'profit',
         scenarioName: 'Test',
         inputData: {},
-        updatedAt: ''
+        updatedAt: '',
       });
 
       expect(result.ok).toBe(false);
@@ -245,7 +252,7 @@ describe('scenario-schema: validation error paths', () => {
         module: 'profit',
         scenarioName: 'Test',
         inputData: { unitPriceMinor: 1000 },
-        updatedAt: '2026-03-05T10:00:00.000Z'
+        updatedAt: '2026-03-05T10:00:00.000Z',
       });
 
       expect(result.ok).toBe(true);
@@ -260,8 +267,8 @@ describe('scenario-schema: validation error paths', () => {
         module: 'profit',
         scenarioName: 'Test',
         inputData: {},
-        calculatedData: 'not-an-object' as any,
-        updatedAt: '2026-03-05T10:00:00.000Z'
+        calculatedData: 'not-an-object' as Record<string, unknown>,
+        updatedAt: '2026-03-05T10:00:00.000Z',
       });
 
       expect(result.ok).toBe(true);
@@ -275,8 +282,8 @@ describe('scenario-schema: validation error paths', () => {
         module: 'cashflow',
         scenarioName: 'Test',
         inputData: {},
-        calculatedData: [] as any,
-        updatedAt: '2026-03-05T10:00:00.000Z'
+        calculatedData: [] as Record<string, unknown>,
+        updatedAt: '2026-03-05T10:00:00.000Z',
       });
 
       expect(result.ok).toBe(true);
@@ -291,7 +298,7 @@ describe('scenario-schema: validation error paths', () => {
         scenarioName: 'Test',
         inputData: {},
         calculatedData: { netProfitMinor: 2000 },
-        updatedAt: '2026-03-05T10:00:00.000Z'
+        updatedAt: '2026-03-05T10:00:00.000Z',
       });
 
       expect(result.ok).toBe(true);
@@ -306,9 +313,9 @@ describe('scenario-schema: validation error paths', () => {
         scenarioId: '',
         module: 'invalid',
         scenarioName: '',
-        inputData: 'not-an-object' as any,
-        calculatedData: [] as any,
-        updatedAt: 'not-a-date'
+        inputData: 'not-an-object' as Record<string, unknown>,
+        calculatedData: [] as Record<string, unknown>,
+        updatedAt: 'not-a-date',
       });
 
       expect(result.ok).toBe(false);
@@ -325,7 +332,7 @@ describe('scenario-schema: validation error paths', () => {
         module: 'invalid_module',
         scenarioName: '  ',
         inputData: {},
-        updatedAt: 'not-a-date'
+        updatedAt: 'not-a-date',
       });
 
       expect(result.ok).toBe(false);
@@ -349,95 +356,105 @@ describe('scenario-schema: import validation error paths', () => {
       expect(result.errors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            code: 'JSON_INVALID'
-          })
-        ])
+            code: 'JSON_INVALID',
+          }),
+        ]),
       );
     });
 
     it('rejects JSON without schemaVersion=1', () => {
-      const result = importScenariosReplaceAllFromJson(JSON.stringify({
-        schemaVersion: 99,
-        scenarios: []
-      }));
+      const result = importScenariosReplaceAllFromJson(
+        JSON.stringify({
+          schemaVersion: 99,
+          scenarios: [],
+        }),
+      );
 
       expect(result.ok).toBe(false);
       expect(result.errors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            code: 'SCHEMA_VERSION_UNSUPPORTED'
-          })
-        ])
+            code: 'SCHEMA_VERSION_UNSUPPORTED',
+          }),
+        ]),
       );
     });
 
     it('rejects JSON without scenarios array', () => {
-      const result = importScenariosReplaceAllFromJson(JSON.stringify({
-        schemaVersion: 1
-        // scenarios missing
-      }));
+      const result = importScenariosReplaceAllFromJson(
+        JSON.stringify({
+          schemaVersion: 1,
+          // scenarios missing
+        }),
+      );
 
       expect(result.ok).toBe(false);
       expect(result.errors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             code: 'SCENARIOS_REQUIRED',
-            path: '$.scenarios'
-          })
-        ])
+            path: '$.scenarios',
+          }),
+        ]),
       );
     });
 
     it('rejects empty scenarios array', () => {
-      const result = importScenariosReplaceAllFromJson(JSON.stringify({
-        schemaVersion: 1,
-        scenarios: []
-      }));
+      const result = importScenariosReplaceAllFromJson(
+        JSON.stringify({
+          schemaVersion: 1,
+          scenarios: [],
+        }),
+      );
 
       expect(result.ok).toBe(false);
       expect(result.errors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             code: 'SCENARIOS_EMPTY',
-            path: '$.scenarios'
-          })
-        ])
+            path: '$.scenarios',
+          }),
+        ]),
       );
       expect(result.summary.total).toBe(0);
     });
 
     it('rejects scenarios as non-array', () => {
-      const result = importScenariosReplaceAllFromJson(JSON.stringify({
-        schemaVersion: 1,
-        scenarios: 'not-an-array'
-      }));
+      const result = importScenariosReplaceAllFromJson(
+        JSON.stringify({
+          schemaVersion: 1,
+          scenarios: 'not-an-array',
+        }),
+      );
 
       expect(result.ok).toBe(false);
       expect(result.errors.map((e) => e.code)).toContain('SCENARIOS_REQUIRED');
     });
 
     it('handles partial success with invalid scenarios', () => {
-      const result = importScenariosReplaceAllFromJson(JSON.stringify({
-        schemaVersion: 1,
-        scenarios: [
-          {
-            schemaVersion: 1,
-            scenarioId: 'valid_1',
-            module: 'profit',
-            scenarioName: 'Valid',
-            inputData: { unitPriceMinor: 1000 },
-            updatedAt: '2026-03-05T10:00:00.000Z'
-          },
-          {
-            schemaVersion: 1,
-            scenarioId: '', // Invalid
-            module: 'invalid',
-            scenarioName: '',
-            inputData: {},
-            updatedAt: 'not-a-date'
-          }
-        ]
-      }));
+      const result = importScenariosReplaceAllFromJson(
+        JSON.stringify({
+          schemaVersion: 1,
+          scenarios: [
+            {
+              schemaVersion: 1,
+              scenarioId: 'valid_1',
+              module: 'profit',
+              scenarioName: 'Valid',
+              inputData: { unitPriceMinor: 1000 },
+              updatedAt: '2026-03-05T10:00:00.000Z',
+            },
+            {
+              schemaVersion: 1,
+              scenarioId: '', // Invalid
+              module: 'invalid',
+              scenarioName: '',
+              inputData: {},
+              updatedAt: 'not-a-date',
+            },
+          ],
+        }),
+      );
 
       expect(result.ok).toBe(false);
       expect(result.scenarios.length).toBe(1); // Only valid scenario imported
@@ -447,32 +464,36 @@ describe('scenario-schema: import validation error paths', () => {
     });
 
     it('validates all scenarios and accumulates errors', () => {
-      const result = importScenariosReplaceAllFromJson(JSON.stringify({
-        schemaVersion: 1,
-        scenarios: [
-          {
-            schemaVersion: 1,
-            scenarioId: '',
-            module: 'invalid',
-            scenarioName: '',
-            inputData: 'not-object',
-            updatedAt: 'bad-date'
-          },
-          {
-            schemaVersion: 1,
-            scenarioId: ' ',
-            module: '',
-            scenarioName: '  ',
-            inputData: [],
-            updatedAt: ''
-          }
-        ]
-      }));
+      const result = importScenariosReplaceAllFromJson(
+        JSON.stringify({
+          schemaVersion: 1,
+          scenarios: [
+            {
+              schemaVersion: 1,
+              scenarioId: '',
+              module: 'invalid',
+              scenarioName: '',
+              inputData: 'not-object',
+              updatedAt: 'bad-date',
+            },
+            {
+              schemaVersion: 1,
+              scenarioId: ' ',
+              module: '',
+              scenarioName: '  ',
+              inputData: [],
+              updatedAt: '',
+            },
+          ],
+        }),
+      );
 
       expect(result.ok).toBe(false);
       expect(result.scenarios.length).toBe(0);
       expect(result.errors.length).toBe(2); // Both scenarios invalid
-      expect(result.errors.every((e) => e.code === 'SCENARIO_INVALID')).toBe(true);
+      expect(result.errors.every((e) => e.code === 'SCENARIO_INVALID')).toBe(
+        true,
+      );
     });
   });
 
@@ -486,8 +507,8 @@ describe('scenario-schema: import validation error paths', () => {
           scenarioName: 'Export Test',
           inputData: { unitPriceMinor: 5000, unitCostMinor: 3000 },
           calculatedData: { netProfitMinor: 2000 },
-          updatedAt: '2026-03-05T10:00:00.000Z'
-        }
+          updatedAt: '2026-03-05T10:00:00.000Z',
+        },
       ];
 
       const exported = createScenarioExport(scenarios);
@@ -507,7 +528,7 @@ describe('scenario-schema: import validation error paths', () => {
           module: 'profit' as const,
           scenarioName: 'Profit',
           inputData: {},
-          updatedAt: '2026-03-05T10:00:00.000Z'
+          updatedAt: '2026-03-05T10:00:00.000Z',
         },
         {
           schemaVersion: 1 as const,
@@ -515,7 +536,7 @@ describe('scenario-schema: import validation error paths', () => {
           module: 'breakeven' as const,
           scenarioName: 'Break-even',
           inputData: {},
-          updatedAt: '2026-03-05T10:00:00.000Z'
+          updatedAt: '2026-03-05T10:00:00.000Z',
         },
         {
           schemaVersion: 1 as const,
@@ -523,12 +544,14 @@ describe('scenario-schema: import validation error paths', () => {
           module: 'cashflow' as const,
           scenarioName: 'Cashflow',
           inputData: {},
-          updatedAt: '2026-03-05T10:00:00.000Z'
-        }
+          updatedAt: '2026-03-05T10:00:00.000Z',
+        },
       ];
 
       const exported = createScenarioExport(scenarios);
-      const reimported = importScenariosReplaceAllFromJson(JSON.stringify(exported));
+      const reimported = importScenariosReplaceAllFromJson(
+        JSON.stringify(exported),
+      );
 
       expect(reimported.ok).toBe(true);
       expect(reimported.summary.profit).toBe(1);
@@ -542,33 +565,37 @@ describe('scenario-schema: import validation error paths', () => {
         {
           schemaVersion: 1 as const,
           scenarioId: '',
-          module: 'invalid' as any,
+          module: 'invalid' as Record<string, unknown>,
           scenarioName: '',
           inputData: {},
-          updatedAt: 'not-a-date'
-        }
+          updatedAt: 'not-a-date',
+        },
       ];
 
-      expect(() => createScenarioExport(invalidScenarios)).toThrow(/Cannot export invalid scenario/i);
+      expect(() => createScenarioExport(invalidScenarios)).toThrow(
+        /Cannot export invalid scenario/i,
+      );
     });
 
     it('rejects import when JSON is not an object (array instead)', () => {
-      const result = importScenariosReplaceAllFromJson(JSON.stringify([
-        { scenarioId: 'test' }
-      ]));
+      const result = importScenariosReplaceAllFromJson(
+        JSON.stringify([{ scenarioId: 'test' }]),
+      );
 
       expect(result.ok).toBe(false);
       expect(result.errors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            code: 'FILE_NOT_OBJECT'
-          })
-        ])
+            code: 'FILE_NOT_OBJECT',
+          }),
+        ]),
       );
     });
 
     it('rejects import when JSON is primitive (string)', () => {
-      const result = importScenariosReplaceAllFromJson(JSON.stringify('just a string'));
+      const result = importScenariosReplaceAllFromJson(
+        JSON.stringify('just a string'),
+      );
 
       expect(result.ok).toBe(false);
       expect(result.errors[0].code).toBe('FILE_NOT_OBJECT');

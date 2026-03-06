@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { read, utils } from 'xlsx';
+import { read } from 'xlsx';
 import { buildReportModel, exportReportXlsx, exportReportPdf } from '../src';
 
 /**
@@ -21,17 +21,17 @@ describe('buildReportModel: edge case coverage', () => {
           unitPriceMinor: 1000,
           variableCostPerUnitMinor: 600,
           fixedCostsMinor: 10000,
-          plannedQuantity: 5 // Below breakeven (25 units needed)
-        }
+          plannedQuantity: 5, // Below breakeven (25 units needed)
+        },
       });
 
       expect(report.riskIndicators).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             code: 'NEGATIVE_MARGIN_OF_SAFETY',
-            severity: 'warning'
-          })
-        ])
+            severity: 'warning',
+          }),
+        ]),
       );
     });
 
@@ -44,17 +44,17 @@ describe('buildReportModel: edge case coverage', () => {
           fixedMonthlyCostsMinor: 1500,
           variableMonthlyCostsMinor: 200,
           forecastMonths: 6,
-          monthlyGrowthRate: 0
-        }
+          monthlyGrowthRate: 0,
+        },
       });
 
       expect(report.riskIndicators).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             code: 'NEGATIVE_CASH_BALANCE',
-            severity: 'warning'
-          })
-        ])
+            severity: 'warning',
+          }),
+        ]),
       );
       expect(report.cashflow?.firstNegativeMonth).not.toBeNull();
     });
@@ -68,17 +68,17 @@ describe('buildReportModel: edge case coverage', () => {
           fixedMonthlyCostsMinor: 800,
           variableMonthlyCostsMinor: 400,
           forecastMonths: 6,
-          monthlyGrowthRate: -0.05 // Negative growth
-        }
+          monthlyGrowthRate: -0.05, // Negative growth
+        },
       });
 
       expect(report.riskIndicators).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             code: 'NEGATIVE_GROWTH',
-            severity: 'info'
-          })
-        ])
+            severity: 'info',
+          }),
+        ]),
       );
       expect(report.cashflow?.warnings).toContain('NEGATIVE_GROWTH');
     });
@@ -91,17 +91,17 @@ describe('buildReportModel: edge case coverage', () => {
           unitPriceMinor: 1000,
           quantity: 5,
           variableCostPerUnitMinor: 800,
-          fixedCostsMinor: 2000 // Results in negative profit
-        }
+          fixedCostsMinor: 2000, // Results in negative profit
+        },
       });
 
       expect(report.riskIndicators).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             code: 'PROFIT_NON_POSITIVE',
-            severity: 'warning'
-          })
-        ])
+            severity: 'warning',
+          }),
+        ]),
       );
       expect(report.profitability?.netProfitMinor).toBeLessThanOrEqual(0);
     });
@@ -114,13 +114,13 @@ describe('buildReportModel: edge case coverage', () => {
           unitPriceMinor: 500,
           quantity: 2,
           variableCostPerUnitMinor: 400,
-          fixedCostsMinor: 1000
+          fixedCostsMinor: 1000,
         },
         breakEvenInput: {
           unitPriceMinor: 500,
           variableCostPerUnitMinor: 400,
           fixedCostsMinor: 1000,
-          plannedQuantity: 3 // Below breakeven (10 units needed)
+          plannedQuantity: 3, // Below breakeven (10 units needed)
         },
         cashflowInput: {
           startingCashMinor: 500,
@@ -128,8 +128,8 @@ describe('buildReportModel: edge case coverage', () => {
           fixedMonthlyCostsMinor: 400,
           variableMonthlyCostsMinor: 100,
           forecastMonths: 6,
-          monthlyGrowthRate: -0.02
-        }
+          monthlyGrowthRate: -0.02,
+        },
       });
 
       expect(report.riskIndicators.length).toBeGreaterThanOrEqual(3);
@@ -150,8 +150,8 @@ describe('buildReportModel: edge case coverage', () => {
           variableCostPerUnitMinor: 600,
           fixedCostsMinor: 1000,
           plannedQuantity: 10,
-          targetProfitMinor: null
-        }
+          targetProfitMinor: null,
+        },
       });
 
       // When targetProfitMinor is null, calculator still computes breakeven quantity
@@ -167,8 +167,8 @@ describe('buildReportModel: edge case coverage', () => {
           unitPriceMinor: 1000,
           variableCostPerUnitMinor: 600,
           fixedCostsMinor: 0,
-          plannedQuantity: 5
-        }
+          plannedQuantity: 5,
+        },
       });
 
       expect(report.breakeven?.breakEvenQuantity).toBe(0);
@@ -182,8 +182,8 @@ describe('buildReportModel: edge case coverage', () => {
           unitPriceMinor: 1000,
           quantity: 0,
           variableCostPerUnitMinor: 600,
-          fixedCostsMinor: 1000
-        }
+          fixedCostsMinor: 1000,
+        },
       });
 
       expect(report.profitability?.revenueTotalMinor).toBe(0);
@@ -198,8 +198,8 @@ describe('buildReportModel: edge case coverage', () => {
           unitPriceMinor: 999999999, // Near max safe minor units
           quantity: 100,
           variableCostPerUnitMinor: 500000000,
-          fixedCostsMinor: 10000000
-        }
+          fixedCostsMinor: 10000000,
+        },
       });
 
       expect(report.profitability?.revenueTotalMinor).toBeGreaterThan(0);
@@ -215,8 +215,8 @@ describe('buildReportModel: edge case coverage', () => {
           mode: 'revenue',
           totalRevenueMinor: 10000,
           variableCostPerUnitMinor: 6000,
-          fixedCostsMinor: 2000
-        }
+          fixedCostsMinor: 2000,
+        },
       });
 
       const xlsxBytes = exportReportXlsx(report);
@@ -235,8 +235,8 @@ describe('buildReportModel: edge case coverage', () => {
           unitPriceMinor: 1000,
           variableCostPerUnitMinor: 600,
           fixedCostsMinor: 2000,
-          plannedQuantity: 10
-        }
+          plannedQuantity: 10,
+        },
       });
 
       const xlsxBytes = exportReportXlsx(report);
@@ -257,8 +257,8 @@ describe('buildReportModel: edge case coverage', () => {
           fixedMonthlyCostsMinor: 800,
           variableMonthlyCostsMinor: 400,
           forecastMonths: 12,
-          monthlyGrowthRate: 0.03
-        }
+          monthlyGrowthRate: 0.03,
+        },
       });
 
       const xlsxBytes = exportReportXlsx(report);
@@ -279,8 +279,8 @@ describe('buildReportModel: edge case coverage', () => {
           fixedMonthlyCostsMinor: 300,
           variableMonthlyCostsMinor: 100,
           forecastMonths: 1, // Minimal projection
-          monthlyGrowthRate: 0
-        }
+          monthlyGrowthRate: 0,
+        },
       });
 
       const pdfBytes = await exportReportPdf(report);
@@ -297,16 +297,22 @@ describe('buildReportModel: edge case coverage', () => {
           unitPriceMinor: 1000,
           quantity: 10,
           variableCostPerUnitMinor: 600,
-          fixedCostsMinor: 1000
-        }
+          fixedCostsMinor: 1000,
+        },
       });
 
-      const pdfBytesNoWatermark = await exportReportPdf(report, { watermarkText: '' });
-      const pdfBytesWithWatermark = await exportReportPdf(report, { watermarkText: 'MarginBase v1' });
+      const pdfBytesNoWatermark = await exportReportPdf(report, {
+        watermarkText: '',
+      });
+      const pdfBytesWithWatermark = await exportReportPdf(report, {
+        watermarkText: 'MarginBase v1',
+      });
 
       // Both should be valid PDFs, watermark text affects content size slightly
       expect(pdfBytesNoWatermark.byteLength).toBeGreaterThan(500);
-      expect(pdfBytesWithWatermark.byteLength).toBeGreaterThan(pdfBytesNoWatermark.byteLength);
+      expect(pdfBytesWithWatermark.byteLength).toBeGreaterThan(
+        pdfBytesNoWatermark.byteLength,
+      );
     });
   });
 
@@ -322,8 +328,8 @@ describe('buildReportModel: edge case coverage', () => {
           unitPriceMinor: 1000,
           quantity: 5,
           variableCostPerUnitMinor: 600,
-          fixedCostsMinor: 1000
-        }
+          fixedCostsMinor: 1000,
+        },
       });
 
       expect(report.summary.title).toBe('Custom Report Title');
@@ -339,8 +345,8 @@ describe('buildReportModel: edge case coverage', () => {
           unitPriceMinor: 1000,
           quantity: 5,
           variableCostPerUnitMinor: 600,
-          fixedCostsMinor: 1000
-        }
+          fixedCostsMinor: 1000,
+        },
       });
 
       expect(report.summary.title).toBe('Business Report');

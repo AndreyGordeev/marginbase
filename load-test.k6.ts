@@ -107,7 +107,6 @@ export default function () {
  * Setup phase: Initialize test data (optional)
  */
 export function setup() {
-  console.log('🚀 Load test starting...');
   return {
     timestamp: new Date(),
   };
@@ -117,5 +116,5 @@ export function setup() {
  * Teardown phase: Cleanup (optional)
  */
 export function teardown() {
-  console.log('✅ Load test completed');
+  // Cleanup completed
 }

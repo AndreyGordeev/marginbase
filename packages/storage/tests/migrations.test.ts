@@ -6,16 +6,24 @@ import {
   SqlitePlaceholderSchemaStateRepository,
   SqlitePlaceholderSettingsRepository,
   runStorageMigrations,
-  type StorageMigration
+  type StorageMigration,
 } from '../src';
 
 describe('runStorageMigrations', () => {
   it('applies sequential migrations and updates schema version', async () => {
     const connection = new SqlitePlaceholderConnection();
-    const scenarioRepository = new SqlitePlaceholderScenarioRepository(connection);
-    const settingsRepository = new SqlitePlaceholderSettingsRepository(connection);
-    const entitlementRepository = new SqlitePlaceholderEntitlementRepository(connection);
-    const stateRepository = new SqlitePlaceholderSchemaStateRepository(connection);
+    const scenarioRepository = new SqlitePlaceholderScenarioRepository(
+      connection,
+    );
+    const settingsRepository = new SqlitePlaceholderSettingsRepository(
+      connection,
+    );
+    const entitlementRepository = new SqlitePlaceholderEntitlementRepository(
+      connection,
+    );
+    const stateRepository = new SqlitePlaceholderSchemaStateRepository(
+      connection,
+    );
 
     const migrations: StorageMigration[] = [
       {
@@ -25,9 +33,9 @@ describe('runStorageMigrations', () => {
           await context.settingsRepository.setSetting({
             key: 'migration_0_1',
             value: true,
-            updatedAt: '2026-03-02T10:00:00.000Z'
+            updatedAt: '2026-03-02T10:00:00.000Z',
           });
-        }
+        },
       },
       {
         fromVersion: 1,
@@ -36,10 +44,15 @@ describe('runStorageMigrations', () => {
           await context.entitlementRepository.setEntitlementCache({
             userId: 'migration_user',
             lastVerifiedAt: '2026-03-02T10:00:00.000Z',
-            entitlementSet: { bundle: false, profit: true, breakeven: false, cashflow: false }
+            entitlementSet: {
+              bundle: false,
+              profit: true,
+              breakeven: false,
+              cashflow: false,
+            },
           });
-        }
-      }
+        },
+      },
     ];
 
     const finalVersion = await runStorageMigrations({
@@ -48,15 +61,19 @@ describe('runStorageMigrations', () => {
       context: {
         scenarioRepository,
         settingsRepository,
-        entitlementRepository
+        entitlementRepository,
       },
-      targetVersion: 2
+      targetVersion: 2,
     });
 
     expect(finalVersion).toBe(2);
     expect(await stateRepository.getSchemaVersion()).toBe(2);
-    expect((await settingsRepository.getSetting('migration_0_1'))?.value).toBe(true);
-    expect(await entitlementRepository.getEntitlementCache('migration_user')).not.toBeNull();
+    expect((await settingsRepository.getSetting('migration_0_1'))?.value).toBe(
+      true,
+    );
+    expect(
+      await entitlementRepository.getEntitlementCache('migration_user'),
+    ).not.toBeNull();
   });
 
   it('throws when migration path has gaps', async () => {
@@ -71,16 +88,49 @@ describe('runStorageMigrations', () => {
             toVersion: 2,
             migrate: async () => {
               return;
-            }
-          }
+            },
+          },
         ],
         context: {
-          scenarioRepository: new SqlitePlaceholderScenarioRepository(connection),
-          settingsRepository: new SqlitePlaceholderSettingsRepository(connection),
-          entitlementRepository: new SqlitePlaceholderEntitlementRepository(connection)
+          scenarioRepository: new SqlitePlaceholderScenarioRepository(
+            connection,
+          ),
+          settingsRepository: new SqlitePlaceholderSettingsRepository(
+            connection,
+          ),
+          entitlementRepository: new SqlitePlaceholderEntitlementRepository(
+            connection,
+          ),
         },
-        targetVersion: 2
-      })
+        targetVersion: 2,
+      }),
     ).rejects.toThrowError(/no migration found/i);
+  });
+
+  it('throws when target version is lower than current version', async () => {
+    const connection = new SqlitePlaceholderConnection();
+    const stateRepository = new SqlitePlaceholderSchemaStateRepository(
+      connection,
+    );
+    await stateRepository.setSchemaVersion(2);
+
+    await expect(
+      runStorageMigrations({
+        stateRepository,
+        migrations: [],
+        context: {
+          scenarioRepository: new SqlitePlaceholderScenarioRepository(
+            connection,
+          ),
+          settingsRepository: new SqlitePlaceholderSettingsRepository(
+            connection,
+          ),
+          entitlementRepository: new SqlitePlaceholderEntitlementRepository(
+            connection,
+          ),
+        },
+        targetVersion: 1,
+      }),
+    ).rejects.toThrowError(/cannot be lower than current version/i);
   });
 });

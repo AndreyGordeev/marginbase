@@ -207,22 +207,6 @@ export const validateScenario = (input: ScenarioAnyVersion): ScenarioValidationR
     });
   }
 
-  if (!isRecord(migrated.inputData)) {
-    errors.push({
-      code: 'INPUT_DATA_INVALID',
-      message: 'inputData must be an object.',
-      path: '$.inputData'
-    });
-  }
-
-  if (migrated.calculatedData !== undefined && !isRecord(migrated.calculatedData)) {
-    errors.push({
-      code: 'CALCULATED_DATA_INVALID',
-      message: 'calculatedData must be an object when provided.',
-      path: '$.calculatedData'
-    });
-  }
-
   if (!migrated.updatedAt || !isIsoDateTime(migrated.updatedAt)) {
     errors.push({
       code: 'UPDATED_AT_INVALID',

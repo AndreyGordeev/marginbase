@@ -9,7 +9,7 @@ describe('calculateProfit', () => {
       quantity: 100,
       variableCostPerUnitMinor: 1200,
       fixedCostsMinor: 30000,
-      additionalVariableCostsMinor: 5000
+      additionalVariableCostsMinor: 5000,
     });
 
     expect(result.revenueTotalMinor.toString()).toBe('200000');
@@ -27,7 +27,7 @@ describe('calculateProfit', () => {
       mode: 'revenue',
       totalRevenueMinor: 100000,
       fixedCostsMinor: 20000,
-      totalVariableCostsMinor: 70000
+      totalVariableCostsMinor: 70000,
     });
 
     expect(result.revenueTotalMinor.toString()).toBe('100000');
@@ -40,11 +40,26 @@ describe('calculateProfit', () => {
     const result = calculateProfit({
       mode: 'revenue',
       totalRevenueMinor: 50000,
-      fixedCostsMinor: 2000
+      fixedCostsMinor: 2000,
     });
 
     expect(result.warnings).toContain('INSUFFICIENT_DATA_TVC');
     expect(result.variableCostTotalMinor.toString()).toBe('0');
+  });
+
+  it('calculates total variable costs from variableCostPerUnitMinor and quantity in revenue mode', () => {
+    const result = calculateProfit({
+      mode: 'revenue',
+      totalRevenueMinor: 120000,
+      fixedCostsMinor: 10000,
+      variableCostPerUnitMinor: 800,
+      quantity: 100,
+      additionalVariableCostsMinor: 500,
+    });
+
+    expect(result.variableCostTotalMinor.toString()).toBe('80500');
+    expect(result.netProfitMinor.toString()).toBe('29500');
+    expect(result.warnings).not.toContain('INSUFFICIENT_DATA_TVC');
   });
 
   it('emits R_ZERO warning when revenue is zero', () => {
@@ -53,7 +68,7 @@ describe('calculateProfit', () => {
       unitPriceMinor: 0,
       quantity: 10,
       variableCostPerUnitMinor: 0,
-      fixedCostsMinor: 100
+      fixedCostsMinor: 100,
     });
 
     expect(result.contributionMarginPct).toBeNull();
@@ -69,7 +84,7 @@ describe('calculateProfit', () => {
       unitPriceMinor: 15,
       quantity: 10,
       variableCostPerUnitMinor: 700,
-      fixedCostsMinor: 1000
+      fixedCostsMinor: 1000,
     });
 
     expect(result.netProfitMinor.toString()).toBe('-7850');
