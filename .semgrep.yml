@@ -3,6 +3,8 @@ rules:
     paths:
       exclude:
         - packages/backend-server/
+        - scripts/
+        - "tests/"
         - "**/tests/**"
         - "**/*.test.ts"
         - "**/*.spec.ts"
