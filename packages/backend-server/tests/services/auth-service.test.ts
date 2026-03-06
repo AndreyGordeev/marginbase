@@ -130,15 +130,41 @@ describe('AuthService', () => {
         ).rejects.toThrow('Network error');
       });
 
-      it('should accept token when no audiences configured', async () => {
+      it('should reject when audiences are missing in tokeninfo mode', async () => {
         delete process.env.GOOGLE_CLIENT_IDS;
         delete process.env.VITE_GOOGLE_CLIENT_ID;
+        await expect(
+          authService.verifyGoogleIdToken('any-token'),
+        ).rejects.toThrow('GOOGLE_CLIENT_IDS is required');
+      });
 
+      it('should reject expired token in production mode', async () => {
         const mockTokenInfo = {
-          sub: 'google-user-456',
-          email: 'any@example.com',
+          sub: 'google-user-123',
+          email: 'test@example.com',
           email_verified: true,
-          aud: 'any-client.apps.googleusercontent.com',
+          aud: 'client1.apps.googleusercontent.com',
+          iss: 'https://accounts.google.com',
+          exp: String(Math.floor(Date.now() / 1000) - 10),
+        };
+
+        global.fetch = vi.fn().mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockTokenInfo,
+        });
+
+        await expect(
+          authService.verifyGoogleIdToken('expired-token'),
+        ).rejects.toThrow('expired');
+      });
+
+      it('should reject revoked subject in production mode', async () => {
+        process.env.REVOKED_SESSION_SUBJECTS = 'google-user-123';
+        const mockTokenInfo = {
+          sub: 'google-user-123',
+          email: 'test@example.com',
+          email_verified: true,
+          aud: 'client1.apps.googleusercontent.com',
           iss: 'https://accounts.google.com',
           exp: String(Math.floor(Date.now() / 1000) + 3600),
         };
@@ -148,17 +174,16 @@ describe('AuthService', () => {
           json: async () => mockTokenInfo,
         });
 
-        const result = await authService.verifyGoogleIdToken('any-token');
-
-        expect(result.userId).toBe('google-user-456');
+        await expect(
+          authService.verifyGoogleIdToken('revoked-token'),
+        ).rejects.toThrow('revoked');
       });
     });
 
     describe('development mode', () => {
       it('should decode JWT without verification', async () => {
         process.env.GOOGLE_VERIFICATION_MODE = 'development';
-        process.env.GOOGLE_CLIENT_IDS =
-          'dev-client.apps.googleusercontent.com';
+        process.env.GOOGLE_CLIENT_IDS = 'dev-client.apps.googleusercontent.com';
         const devAuthService = new AuthService();
 
         // Real JWT structure (header.payload.signature) with base64url encoding
@@ -199,8 +224,7 @@ describe('AuthService', () => {
 
       it('should reject JWT with wrong audience in development mode', async () => {
         process.env.GOOGLE_VERIFICATION_MODE = 'development';
-        process.env.GOOGLE_CLIENT_IDS =
-          'dev-client.apps.googleusercontent.com';
+        process.env.GOOGLE_CLIENT_IDS = 'dev-client.apps.googleusercontent.com';
         const devAuthService = new AuthService();
         const header = Buffer.from(
           JSON.stringify({ alg: 'RS256', typ: 'JWT' }),
@@ -221,6 +245,61 @@ describe('AuthService', () => {
         await expect(devAuthService.verifyGoogleIdToken(token)).rejects.toThrow(
           'audience is not allowed',
         );
+      });
+
+      it('should reject expired JWT in development mode', async () => {
+        process.env.GOOGLE_VERIFICATION_MODE = 'development';
+        process.env.GOOGLE_CLIENT_IDS = 'dev-client.apps.googleusercontent.com';
+        const devAuthService = new AuthService();
+        const header = Buffer.from(
+          JSON.stringify({ alg: 'RS256', typ: 'JWT' }),
+        ).toString('base64url');
+        const payload = Buffer.from(
+          JSON.stringify({
+            sub: 'dev-user-expired',
+            aud: 'dev-client.apps.googleusercontent.com',
+            iss: 'https://accounts.google.com',
+            exp: Math.floor(Date.now() / 1000) - 1,
+          }),
+        ).toString('base64url');
+
+        const token = `${header}.${payload}.fake-signature`;
+        await expect(devAuthService.verifyGoogleIdToken(token)).rejects.toThrow(
+          'expired',
+        );
+      });
+
+      it('should reject revoked subject in development mode', async () => {
+        process.env.GOOGLE_VERIFICATION_MODE = 'development';
+        process.env.GOOGLE_CLIENT_IDS = 'dev-client.apps.googleusercontent.com';
+        process.env.REVOKED_SESSION_SUBJECTS = 'dev-user-789';
+
+        const devAuthService = new AuthService();
+        const header = Buffer.from(
+          JSON.stringify({ alg: 'RS256', typ: 'JWT' }),
+        ).toString('base64url');
+        const payload = Buffer.from(
+          JSON.stringify({
+            sub: 'dev-user-789',
+            aud: 'dev-client.apps.googleusercontent.com',
+            iss: 'https://accounts.google.com',
+            exp: Math.floor(Date.now() / 1000) + 3600,
+          }),
+        ).toString('base64url');
+
+        const token = `${header}.${payload}.fake-signature`;
+        await expect(devAuthService.verifyGoogleIdToken(token)).rejects.toThrow(
+          'revoked',
+        );
+      });
+
+      it('should reject tampered payload in development mode', async () => {
+        process.env.GOOGLE_VERIFICATION_MODE = 'development';
+        const devAuthService = new AuthService();
+
+        await expect(
+          devAuthService.verifyGoogleIdToken('header.invalid-json.signature'),
+        ).rejects.toThrow();
       });
     });
   });

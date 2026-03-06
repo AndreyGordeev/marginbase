@@ -1,0 +1,78 @@
+name: DAST Baseline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  dast-baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Build backend server
+        run: corepack pnpm --filter @marginbase/backend-server build
+
+      - name: Start backend server
+        run: |
+          nohup node packages/backend-server/dist/server.js > backend.log 2>&1 &
+          echo $! > backend.pid
+          sleep 8
+
+      - name: Prepare DAST target list
+        run: |
+          cat > dast-targets.txt << 'EOF'
+          http://127.0.0.1:3000/health
+          http://127.0.0.1:3000/auth/verify
+          http://127.0.0.1:3000/billing/verify
+          http://127.0.0.1:3000/billing/checkout/session
+          http://127.0.0.1:3000/billing/portal/session
+          http://127.0.0.1:3000/entitlements/test-user
+          http://127.0.0.1:3000/account/delete
+          EOF
+
+      - name: Run OWASP ZAP baseline scan
+        run: |
+          docker run --rm --network host -v "$PWD:/zap/wrk/:rw" ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+            -t http://127.0.0.1:3000 \
+            -c /zap/wrk/infra/security/zap-baseline.conf \
+            -J /zap/wrk/zap-report.json \
+            -w /zap/wrk/zap-report.md \
+            -x /zap/wrk/zap-report.xml \
+            -r /zap/wrk/zap-report.html \
+            -m 5
+
+      - name: Stop backend server
+        if: always()
+        run: |
+          if [ -f backend.pid ]; then
+            kill "$(cat backend.pid)" || true
+          fi
+
+      - name: Upload DAST reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dast-baseline-report
+          path: |
+            zap-report.json
+            zap-report.md
+            zap-report.xml
+            zap-report.html
+            backend.log
+          if-no-files-found: ignore
+          retention-days: 7

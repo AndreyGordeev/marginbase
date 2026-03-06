@@ -1,0 +1,46 @@
+name: Mutation Testing
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Build dependency packages
+        run: |
+          corepack pnpm --filter @marginbase/domain-core build
+          corepack pnpm --filter @marginbase/entitlements build
+          corepack pnpm --filter @marginbase/api-client build
+          corepack pnpm --filter @marginbase/backend-server build
+
+      - name: Run mutation tests (hard gate)
+        run: corepack pnpm test:mutation
+
+      - name: Upload mutation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-reports
+          path: |
+            packages/domain-core/reports/mutation
+            packages/entitlements/reports/mutation
+            packages/backend-server/reports/mutation
+          if-no-files-found: ignore
+          retention-days: 7

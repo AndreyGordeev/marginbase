@@ -1,0 +1,79 @@
+name: E2E Browser Device Matrix
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  critical-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - chromium-desktop
+          - chromium-tablet
+          - chromium-mobile-small
+          - chromium-mobile-large
+          - firefox-desktop
+          - firefox-tablet
+          - firefox-mobile-small
+          - firefox-mobile-large
+          - webkit-desktop
+          - webkit-tablet
+          - webkit-mobile-small
+          - webkit-mobile-large
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: corepack pnpm exec playwright install --with-deps chromium firefox webkit
+
+      - name: Build web app
+        run: corepack pnpm --filter @marginbase/web build
+
+      - name: Run critical E2E in matrix
+        run: corepack pnpm exec playwright test apps/web/tests/e2e/critical-flows.spec.ts --project=${{ matrix.project }} --reporter=line
+        env:
+          CI: true
+
+  layout-guards-matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: corepack pnpm exec playwright install --with-deps chromium
+
+      - name: Build web app
+        run: corepack pnpm --filter @marginbase/web build
+
+      - name: Run layout guards on desktop and mobile
+        run: corepack pnpm exec playwright test apps/web/tests/e2e/layout-guards-hard-gate.spec.ts --project=chromium-desktop --project=chromium-mobile-small --reporter=line
+        env:
+          CI: true

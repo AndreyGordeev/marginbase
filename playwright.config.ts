@@ -7,10 +7,14 @@ export default defineConfig({
   workers: process.env.CI ? 2 : undefined,
   forbidOnly: !!process.env.CI,
   expect: {
-    timeout: 10_000
+    timeout: 10_000,
   },
   reporter: process.env.CI
-    ? [['line'], ['html', { open: 'never', outputFolder: 'playwright-report' }], ['json', { outputFile: 'test-results.json' }]]
+    ? [
+        ['line'],
+        ['html', { open: 'never', outputFolder: 'playwright-report' }],
+        ['json', { outputFile: 'test-results.json' }],
+      ]
     : [['line'], ['html', { open: 'on-failure' }]],
   use: {
     baseURL: 'http://127.0.0.1:4173',
@@ -20,43 +24,106 @@ export default defineConfig({
     locale: 'en-US',
     colorScheme: 'light',
     navigationTimeout: 15_000,
-    actionTimeout: 10_000
+    actionTimeout: 10_000,
   },
   projects: [
     {
-      name: 'chromium',
+      name: 'chromium-desktop',
       use: {
         ...devices['Desktop Chrome'],
         viewport: {
           width: 1365,
-          height: 768
+          height: 768,
         },
         // Reduce motion for stable visual tests
-        reducedMotion: 'reduce'
-      }
+        reducedMotion: 'reduce',
+      },
     },
     {
-      name: 'firefox',
+      name: 'firefox-desktop',
       use: {
         ...devices['Desktop Firefox'],
         viewport: {
           width: 1365,
-          height: 768
+          height: 768,
         },
-        reducedMotion: 'reduce'
-      }
+        reducedMotion: 'reduce',
+      },
     },
     {
-      name: 'webkit',
+      name: 'webkit-desktop',
       use: {
         ...devices['Desktop Safari'],
         viewport: {
           width: 1365,
-          height: 768
+          height: 768,
         },
-        reducedMotion: 'reduce'
-      }
-    }
+        reducedMotion: 'reduce',
+      },
+    },
+    {
+      name: 'chromium-tablet',
+      use: {
+        ...devices['iPad (gen 7)'],
+        reducedMotion: 'reduce',
+      },
+    },
+    {
+      name: 'chromium-mobile-small',
+      use: {
+        ...devices['iPhone SE'],
+        reducedMotion: 'reduce',
+      },
+    },
+    {
+      name: 'chromium-mobile-large',
+      use: {
+        ...devices['Pixel 7'],
+        reducedMotion: 'reduce',
+      },
+    },
+    {
+      name: 'firefox-tablet',
+      use: {
+        ...devices['iPad (gen 7)'],
+        reducedMotion: 'reduce',
+      },
+    },
+    {
+      name: 'firefox-mobile-small',
+      use: {
+        ...devices['iPhone SE'],
+        reducedMotion: 'reduce',
+      },
+    },
+    {
+      name: 'firefox-mobile-large',
+      use: {
+        ...devices['Pixel 7'],
+        reducedMotion: 'reduce',
+      },
+    },
+    {
+      name: 'webkit-tablet',
+      use: {
+        ...devices['iPad (gen 7)'],
+        reducedMotion: 'reduce',
+      },
+    },
+    {
+      name: 'webkit-mobile-small',
+      use: {
+        ...devices['iPhone SE'],
+        reducedMotion: 'reduce',
+      },
+    },
+    {
+      name: 'webkit-mobile-large',
+      use: {
+        ...devices['Pixel 7'],
+        reducedMotion: 'reduce',
+      },
+    },
   ],
   webServer: {
     command:
@@ -65,6 +132,6 @@ export default defineConfig({
     reuseExistingServer: true,
     timeout: 120_000,
     stdout: 'ignore',
-    stderr: 'pipe'
-  }
+    stderr: 'pipe',
+  },
 });

@@ -41,8 +41,7 @@ jobs:
         run: corepack pnpm typecheck
 
       - name: Security audit
-        run: corepack pnpm audit --audit-level moderate
-        continue-on-error: true
+        run: corepack pnpm audit --audit-level high
 
   build:
     runs-on: ubuntu-latest

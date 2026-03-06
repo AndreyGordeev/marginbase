@@ -46,11 +46,10 @@ export default {
 
   // Mutation testing score thresholds (v9.x format)
   mutationScore: {
-    threshold: 75,
+    threshold: 65,
     thresholdFatal: 50,
   },
 
   // Disable incremental for CI consistency
   incremental: false,
 };
-

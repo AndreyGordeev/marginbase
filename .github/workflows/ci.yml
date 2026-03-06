@@ -41,8 +41,7 @@ jobs:
         run: corepack pnpm typecheck
 
       - name: Security audit
-        run: corepack pnpm audit --audit-level moderate
-        continue-on-error: true
+        run: corepack pnpm audit --audit-level high
 
   build:
     runs-on: ubuntu-latest
@@ -198,7 +197,7 @@ jobs:
         run: corepack pnpm --filter @marginbase/web build
 
       - name: Run E2E tests
-        run: corepack pnpm exec playwright test -c playwright.config.ts --reporter=html,line --grep-invert "visual:"
+        run: corepack pnpm exec playwright test -c playwright.config.ts --project=chromium-desktop --project=firefox-desktop --project=webkit-desktop --reporter=html,line --grep-invert "visual:"
         env:
           CI: true
 
@@ -280,7 +279,7 @@ jobs:
         run: corepack pnpm --filter @marginbase/web build
 
       - name: 🔒 Privacy Hard Gate Test
-        run: corepack pnpm exec playwright test privacy-hard-gate.spec.ts --reporter=html,line
+        run: corepack pnpm exec playwright test privacy-hard-gate.spec.ts --project=chromium-desktop --reporter=html,line
         env:
           CI: true
 
@@ -344,7 +343,7 @@ jobs:
         run: corepack pnpm --filter @marginbase/web build
 
       - name: 🌐 Offline Hard Gate Test
-        run: corepack pnpm exec playwright test offline-hard-gate.spec.ts --reporter=html,line
+        run: corepack pnpm exec playwright test offline-hard-gate.spec.ts --project=chromium-desktop --reporter=html,line
         env:
           CI: true
 
@@ -408,7 +407,7 @@ jobs:
         run: corepack pnpm --filter @marginbase/web build
 
       - name: 📐 Layout Guards Hard Gate Test
-        run: corepack pnpm exec playwright test layout-guards-hard-gate.spec.ts --reporter=html,line
+        run: corepack pnpm exec playwright test layout-guards-hard-gate.spec.ts --project=chromium-desktop --reporter=html,line
         env:
           CI: true
 
@@ -472,7 +471,7 @@ jobs:
         run: corepack pnpm --filter @marginbase/web build
 
       - name: ♿ Accessibility Hard Gate Test (WCAG 2.1 AA)
-        run: corepack pnpm exec playwright test accessibility.spec.ts --reporter=html,line
+        run: corepack pnpm exec playwright test accessibility.spec.ts --project=chromium-desktop --reporter=html,line
         env:
           CI: true
 
@@ -540,7 +539,7 @@ jobs:
         run: corepack pnpm --filter @marginbase/web build
 
       - name: 🎨 Visual Regression Tests
-        run: corepack pnpm exec playwright test visual-regression.spec.ts --reporter=html,line
+        run: corepack pnpm exec playwright test visual-regression.spec.ts --project=chromium-desktop --reporter=html,line
         env:
           CI: true
         continue-on-error: true
@@ -623,11 +622,23 @@ jobs:
 
       - name: 🧪 Property-Based & Fuzz Tests
         run: corepack pnpm --filter @marginbase/domain-core run test:property
-        continue-on-error: true
 
   ci-status:
     runs-on: ubuntu-latest
-    needs: [lint_typecheck, build, tests, e2e, privacy-hard-gate, offline-hard-gate, layout-guards-hard-gate, accessibility-hard-gate, visual-regression, contract-tests, property-based-tests]
+    needs:
+      [
+        lint_typecheck,
+        build,
+        tests,
+        e2e,
+        privacy-hard-gate,
+        offline-hard-gate,
+        layout-guards-hard-gate,
+        accessibility-hard-gate,
+        visual-regression,
+        contract-tests,
+        property-based-tests,
+      ]
     if: always()
     steps:
       - name: Check all critical jobs passed

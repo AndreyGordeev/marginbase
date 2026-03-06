@@ -6,6 +6,9 @@
     "build": "corepack pnpm -r run build",
     "lint": "corepack pnpm -r run lint",
     "test": "corepack pnpm -r run test",
+    "test:mutation": "corepack pnpm --filter @marginbase/domain-core run test:mutation && corepack pnpm --filter @marginbase/entitlements run test:mutation && corepack pnpm --filter @marginbase/backend-server run test:mutation",
+    "test:component:web": "corepack pnpm --filter @marginbase/web test tests/components",
+    "test:component:mobile": "corepack pnpm --filter @marginbase/mobile test tests/mobile-router.component.test.ts",
     "test:unit": "corepack pnpm -r --filter ./packages/* run test",
     "test:coverage": "corepack pnpm --filter @marginbase/domain-core run test:coverage && corepack pnpm --filter @marginbase/reporting run test:coverage",
     "test:e2e": "playwright test",
@@ -19,7 +22,7 @@
     "check:bundle-size": "corepack pnpm --filter @marginbase/web build && du -sh apps/web/dist",
     "quality:report": "tsx scripts/quality-report.ts",
     "hooks:install": "git config core.hooksPath .githooks && echo Git hooks installed successfully!",
-    "audit:security": "corepack pnpm audit --audit-level moderate",
+    "audit:security": "corepack pnpm audit --audit-level high",
     "validate:all": "corepack pnpm lint && corepack pnpm typecheck && corepack pnpm i18n:parity && corepack pnpm test && corepack pnpm test:coverage"
   },
   "devDependencies": {

@@ -37,11 +37,10 @@ describe('EntitlementService', () => {
 
     it('should return existing entitlements for known user', () => {
       const first = entitlementService.getOrCreateEntitlements('user-existing');
-      const second = entitlementService.getOrCreateEntitlements(
-        'user-existing',
-      );
+      const second =
+        entitlementService.getOrCreateEntitlements('user-existing');
 
-      expect(first).toBe(second);
+      expect(first).toStrictEqual(second);
     });
 
     it('should set 14-day trial for new users', () => {
@@ -244,8 +243,9 @@ describe('EntitlementService', () => {
         new Date('2026-04-06T12:00:00Z').toISOString(),
       );
 
-      const response =
-        entitlementService.toEntitlementsResponse('user-response-active');
+      const response = entitlementService.toEntitlementsResponse(
+        'user-response-active',
+      );
 
       expect(response).toMatchObject({
         userId: 'user-response-active',
@@ -272,8 +272,9 @@ describe('EntitlementService', () => {
         new Date('2026-03-20T12:00:00Z').toISOString(),
       );
 
-      const response =
-        entitlementService.toEntitlementsResponse('user-response-trial');
+      const response = entitlementService.toEntitlementsResponse(
+        'user-response-trial',
+      );
 
       expect(response.status).toBe('trialing');
       expect(response.trial.active).toBe(true);
@@ -291,8 +292,9 @@ describe('EntitlementService', () => {
         null,
       );
 
-      const response =
-        entitlementService.toEntitlementsResponse('user-response-canceled');
+      const response = entitlementService.toEntitlementsResponse(
+        'user-response-canceled',
+      );
 
       expect(response).toMatchObject({
         status: 'canceled',
@@ -406,6 +408,73 @@ describe('EntitlementService', () => {
         entitlementService.deleteEntitlements('user-non-existent');
 
       expect(deleted).toBe(false);
+    });
+
+    it('should reject invalid userId', () => {
+      expect(() => entitlementService.deleteEntitlements('')).toThrow(
+        'Invalid userId',
+      );
+    });
+  });
+
+  describe('negative-path hardening', () => {
+    it('should reject invalid userId for read operations', () => {
+      expect(() => entitlementService.getOrCreateEntitlements('   ')).toThrow(
+        'Invalid userId',
+      );
+      expect(() => entitlementService.toEntitlementsResponse('')).toThrow(
+        'Invalid userId',
+      );
+    });
+
+    it('should recover from corrupted in-memory entitlement shape', () => {
+      // Simulate storage corruption
+      (
+        entitlementService as unknown as {
+          entitlements: Map<string, Record<string, unknown>>;
+        }
+      ).entitlements.set('corrupted-user', {
+        userId: 'corrupted-user',
+        // missing most fields
+        profit: true,
+      });
+
+      const response =
+        entitlementService.toEntitlementsResponse('corrupted-user');
+      expect(response.userId).toBe('corrupted-user');
+      expect(typeof response.entitlements.bundle).toBe('boolean');
+      expect(typeof response.entitlements.profit).toBe('boolean');
+      expect(response.lastVerifiedAt).toBeTruthy();
+    });
+
+    it('should remain consistent under concurrent entitlement updates', async () => {
+      const userId = 'user-concurrent';
+
+      const updates = await Promise.all([
+        Promise.resolve(
+          entitlementService.applyBillingStatus(
+            userId,
+            'active',
+            'stripe',
+            new Date('2026-04-06T12:00:00Z').toISOString(),
+          ),
+        ),
+        Promise.resolve(
+          entitlementService.applyBillingStatus(
+            userId,
+            'past_due',
+            'stripe',
+            new Date('2026-04-01T12:00:00Z').toISOString(),
+          ),
+        ),
+      ]);
+
+      expect(updates.length).toBe(2);
+      const final = entitlementService.toEntitlementsResponse(userId);
+      expect(final.entitlements.profit).toBe(true);
+      expect(final.status === 'active' || final.status === 'past_due').toBe(
+        true,
+      );
     });
   });
 

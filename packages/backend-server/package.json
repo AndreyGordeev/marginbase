@@ -12,7 +12,8 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:mutation": "stryker run"
   },
   "dependencies": {
     "@marginbase/api-client": "workspace:*",
@@ -23,6 +24,9 @@
     "crypto": "^1.0.1"
   },
   "devDependencies": {
+    "@stryker-mutator/core": "^9.6.0",
+    "@stryker-mutator/typescript-checker": "^9.6.0",
+    "@stryker-mutator/vitest-runner": "^9.6.0",
     "@types/express": "^4.17.21",
     "@types/cors": "^2.8.17",
     "tsx": "^4.20.6",

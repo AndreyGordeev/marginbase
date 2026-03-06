@@ -24,6 +24,10 @@ export class AuthService {
     const verificationMode =
       process.env.GOOGLE_VERIFICATION_MODE ?? 'tokeninfo';
 
+    if (verificationMode !== 'development' && audiences.length === 0) {
+      throw new Error('GOOGLE_CLIENT_IDS is required in tokeninfo mode.');
+    }
+
     if (verificationMode === 'development') {
       return this.verifyTokenDevelopment(idToken, audiences);
     }
@@ -46,6 +50,14 @@ export class AuthService {
 
     if (audiences.length > 0 && !audiences.includes(audience)) {
       throw new Error('Google token audience is not allowed.');
+    }
+
+    if (this.isExpired(tokenInfo.exp)) {
+      throw new Error('Google token is expired.');
+    }
+
+    if (this.isRevokedSubject(subject)) {
+      throw new Error('Google session is revoked.');
     }
 
     return {
@@ -76,6 +88,14 @@ export class AuthService {
 
     if (issuer && !this.isTrustedIssuer(issuer)) {
       throw new Error('Google token issuer is not trusted.');
+    }
+
+    if (this.isExpired(payload?.exp)) {
+      throw new Error('Google token is expired.');
+    }
+
+    if (this.isRevokedSubject(subject)) {
+      throw new Error('Google session is revoked.');
     }
 
     return {
@@ -130,5 +150,28 @@ export class AuthService {
       .split(',')
       .map((item) => item.trim())
       .filter(Boolean);
+  }
+
+  private isExpired(exp: unknown): boolean {
+    if (typeof exp !== 'string' && typeof exp !== 'number') {
+      return false;
+    }
+
+    const expSeconds = typeof exp === 'number' ? exp : Number.parseInt(exp, 10);
+    if (!Number.isFinite(expSeconds)) {
+      return false;
+    }
+
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    return expSeconds <= nowSeconds;
+  }
+
+  private isRevokedSubject(subject: string): boolean {
+    const revoked = (process.env.REVOKED_SESSION_SUBJECTS ?? '')
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+
+    return revoked.includes(subject);
   }
 }

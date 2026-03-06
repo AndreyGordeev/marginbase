@@ -17,5 +17,8 @@
     "@marginbase/entitlements": "workspace:*",
     "@marginbase/storage": "workspace:*",
     "@marginbase/telemetry": "workspace:*"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0"
   }
 }

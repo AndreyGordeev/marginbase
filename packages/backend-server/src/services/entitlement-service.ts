@@ -38,8 +38,15 @@ export class EntitlementService {
    * Get or create user entitlements
    */
   getOrCreateEntitlements(userId: string): UserEntitlements {
+    this.assertValidUserId(userId);
+
     if (this.entitlements.has(userId)) {
-      return this.entitlements.get(userId)!;
+      const normalized = this.normalizeEntitlements(
+        this.entitlements.get(userId)!,
+        userId,
+      );
+      this.entitlements.set(userId, normalized);
+      return normalized;
     }
 
     const trialEnd = new Date();
@@ -74,6 +81,7 @@ export class EntitlementService {
     source: UserEntitlements['source'],
     periodEnd: string | null,
   ): UserEntitlements {
+    this.assertValidUserId(userId);
     const existing = this.getOrCreateEntitlements(userId);
 
     const updated: UserEntitlements = {
@@ -107,6 +115,7 @@ export class EntitlementService {
    * Check and expire trials
    */
   updateTrialStatus(userId: string): UserEntitlements {
+    this.assertValidUserId(userId);
     const userEntitlements = this.getOrCreateEntitlements(userId);
 
     if (userEntitlements.status === 'trialing' && userEntitlements.trialEnd) {
@@ -128,6 +137,7 @@ export class EntitlementService {
    * Format entitlements as API response
    */
   toEntitlementsResponse(userId: string): EntitlementsResponse {
+    this.assertValidUserId(userId);
     const userEntitlements = this.updateTrialStatus(userId);
 
     return {
@@ -161,6 +171,7 @@ export class EntitlementService {
     platform: PurchasePlatform,
     productId: string,
   ): BillingVerifyResponse {
+    this.assertValidUserId(userId);
     const userEntitlements = this.applyBillingStatus(
       userId,
       'active',
@@ -191,10 +202,51 @@ export class EntitlementService {
    * Delete user entitlements
    */
   deleteEntitlements(userId: string): boolean {
+    this.assertValidUserId(userId);
     return this.entitlements.delete(userId);
   }
 
   private now(): string {
     return new Date().toISOString();
+  }
+
+  private assertValidUserId(userId: string): void {
+    if (!userId || !userId.trim()) {
+      throw new Error('Invalid userId');
+    }
+  }
+
+  private normalizeEntitlements(
+    value: Partial<UserEntitlements>,
+    userId: string,
+  ): UserEntitlements {
+    const now = this.now();
+    return {
+      userId,
+      bundle: value.bundle === true,
+      profit: value.profit !== false,
+      breakeven: value.breakeven === true,
+      cashflow: value.cashflow === true,
+      status:
+        value.status === 'active' ||
+        value.status === 'trialing' ||
+        value.status === 'past_due' ||
+        value.status === 'canceled'
+          ? value.status
+          : 'canceled',
+      source:
+        value.source === 'stripe' ||
+        value.source === 'app_store' ||
+        value.source === 'google_play' ||
+        value.source === 'unknown'
+          ? value.source
+          : 'unknown',
+      currentPeriodEnd: value.currentPeriodEnd ?? null,
+      trialEnd: value.trialEnd ?? null,
+      trialStartedAt: value.trialStartedAt ?? now,
+      createdAt: value.createdAt ?? now,
+      updatedAt: value.updatedAt ?? now,
+      lastVerifiedAt: value.lastVerifiedAt ?? now,
+    };
   }
 }

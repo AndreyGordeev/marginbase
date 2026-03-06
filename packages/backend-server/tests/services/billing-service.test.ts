@@ -105,6 +105,18 @@ describe('BillingService', () => {
       expect(url).toContain('checkout.stripe.dev');
       expect(url).toContain('planId=breakeven');
     });
+
+    it('should fallback for unknown plan (price mismatch scenario)', async () => {
+      const url = await billingService.createCheckoutSession({
+        planId: 'unknown_plan',
+        userId: 'user-price-mismatch',
+        email: 'price@example.com',
+      });
+
+      expect(url).toContain('checkout.stripe.dev');
+      expect(url).toContain('planId=unknown_plan');
+      expect(mockProvider.createCheckoutSession).not.toHaveBeenCalled();
+    });
   });
 
   describe('createPortalSession', () => {
@@ -363,6 +375,19 @@ describe('BillingService', () => {
       const result = billingService.processWebhookEvent(event);
 
       expect(result?.userId).toBe('user-from-ref');
+    });
+
+    it('should return null for malformed webhook payload', () => {
+      const malformedEvent = {
+        id: 'evt-malformed',
+        type: undefined,
+        data: {
+          object: undefined,
+        },
+      };
+
+      const result = billingService.processWebhookEvent(malformedEvent);
+      expect(result).toBeNull();
     });
   });
 
