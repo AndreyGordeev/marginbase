@@ -15,6 +15,11 @@ export default {
   // Mutants to inject
   mutate: ['src/**/*.ts', '!src/index.ts'],
 
+  // Test configuration
+  test: {
+    include: ['tests/**/*.test.ts'],
+  },
+
   // Reporting
   reporters: ['progress', 'clear-text'],
   coverageAnalysis: 'perTest',

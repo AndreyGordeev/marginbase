@@ -1,6 +1,6 @@
 /**
- * Stryker mutation config for entitlements policy package.
- * Exclusions are limited to barrel exports where mutation has no signal.
+ * Stryker mutation config for storage package.
+ * Advanced integration tests for IndexedDB/SQLite/SQLiteAPI persistence.
  */
 export default {
   testRunner: 'vitest',
@@ -14,13 +14,13 @@ export default {
   },
   reporters: ['progress', 'clear-text', 'html'],
   coverageAnalysis: 'perTest',
-  concurrency: 3,
-  timeoutMS: 60000,
-  timeoutFactor: 1.5,
+  concurrency: 2,
+  timeoutMS: 120000,
+  timeoutFactor: 2,
   thresholds: {
-    high: 80,
-    low: 65,
-    break: 50,
+    high: 95,
+    low: 85,
+    break: 70,
   },
   incremental: false,
 };

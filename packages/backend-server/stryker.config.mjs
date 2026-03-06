@@ -1,7 +1,3 @@
-/**
- * Stryker mutation config for backend handlers/services.
- * Exclusions: entrypoint files and adapters with minimal branch logic.
- */
 export default {
   testRunner: 'vitest',
   plugins: [
@@ -14,6 +10,9 @@ export default {
     '!src/server.ts',
     '!src/adapters/**/*.ts',
   ],
+  test: {
+    include: ['tests/**/*.test.ts'],
+  },
   reporters: ['progress', 'clear-text', 'html'],
   coverageAnalysis: 'perTest',
   concurrency: 3,
