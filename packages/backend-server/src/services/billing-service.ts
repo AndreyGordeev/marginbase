@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import type { BillingProvider } from '../providers/billing-provider';
+import type { BillingProvider } from '../providers/billing-provider.js';
 
 export interface CheckoutSessionParams {
   planId: string;

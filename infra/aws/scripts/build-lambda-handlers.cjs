@@ -13,23 +13,37 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-const root = process.cwd();
+const root = path.resolve(__dirname, '..', '..', '..');
 const infrastructureDir = path.join(root, 'infra', 'aws');
 const modulesDir = path.join(infrastructureDir, 'modules', 'backend_api');
 const handlersDir = path.join(modulesDir, 'lambda_handlers');
 const backendServerDir = path.join(root, 'packages', 'backend-server');
 const backendDistDir = path.join(backendServerDir, 'dist');
+const backendPackageJsonPath = path.join(backendServerDir, 'package.json');
 
 console.log('Building Lambda handlers...');
 
 // Step 1: Compile backend-server
 console.log('\n[1/3] Compiling @marginbase/backend-server...');
-const buildResult = spawnSync('corepack', ['pnpm', '--filter', '@marginbase/backend-server', 'build'], {
-  cwd: root,
-  stdio: 'inherit',
-});
+const buildResult = spawnSync(
+  'corepack pnpm --filter @marginbase/backend-server build',
+  {
+    cwd: root,
+    stdio: 'inherit',
+    shell: true,
+  },
+);
 
 if (buildResult.status !== 0) {
+  if (buildResult.error) {
+    console.error('Build command execution error:', buildResult.error);
+  }
+  if (typeof buildResult.status !== 'number') {
+    console.error(
+      'Build command exited without numeric status:',
+      buildResult.status,
+    );
+  }
   console.error('Failed to compile backend-server');
   process.exit(1);
 }
@@ -48,12 +62,13 @@ if (!fs.existsSync(handlersDir)) {
   process.exit(1);
 }
 
-// Step 4: Create a marker file to indicate backend-server integration
-const markerFile = path.join(handlersDir, '.backend-integrated');
-fs.writeFileSync(markerFile, `Backend-server integration\nBuilt: ${new Date().toISOString()}\n`);
-
 console.log('\n[2/3] Verifying Lambda handler wrappers...');
-const requiredHandlers = ['auth-new.js', 'billing-new.js', 'entitlements-new.js', 'express-adapter.js'];
+const requiredHandlers = [
+  'auth.js',
+  'billing.js',
+  'entitlements.js',
+  'backend-delegate.js',
+];
 const missingHandlers = requiredHandlers.filter(
   (handler) => !fs.existsSync(path.join(handlersDir, handler)),
 );
@@ -61,6 +76,13 @@ const missingHandlers = requiredHandlers.filter(
 if (missingHandlers.length > 0) {
   console.warn(`Missing handler wrappers: ${missingHandlers.join(', ')}`);
   console.warn('These should have been created by infra migration step');
+}
+
+if (missingHandlers.length > 0) {
+  console.error(
+    `Missing required Lambda thin wrappers: ${missingHandlers.join(', ')}`,
+  );
+  process.exit(1);
 }
 
 console.log('✓ Lambda handler wrappers verified');
@@ -76,21 +98,20 @@ if (!fs.existsSync(marginbaseDir)) {
   fs.mkdirSync(marginbaseDir, { recursive: true });
 }
 
-// Copy backend-server dist to node_modules (this is a workaround for local dev)
-if (fs.existsSync(backendDistDir)) {
-  // Create a package.json in the backend-server location
-  const packageJson = {
-    name: '@marginbase/backend-server',
-    version: '1.0.0',
-    main: 'dist/index.js',
-    type: 'module',
-  };
-
-  if (!fs.existsSync(backendServerPathInLambda)) {
-    fs.mkdirSync(backendServerPathInLambda, { recursive: true });
-    fs.writeFileSync(path.join(backendServerPathInLambda, 'package.json'), JSON.stringify(packageJson, null, 2));
-  }
+if (!fs.existsSync(backendServerPathInLambda)) {
+  fs.mkdirSync(backendServerPathInLambda, { recursive: true });
 }
+
+const backendDistTarget = path.join(backendServerPathInLambda, 'dist');
+if (fs.existsSync(backendDistTarget)) {
+  fs.rmSync(backendDistTarget, { recursive: true, force: true });
+}
+
+fs.cpSync(backendDistDir, backendDistTarget, { recursive: true });
+fs.copyFileSync(
+  backendPackageJsonPath,
+  path.join(backendServerPathInLambda, 'package.json'),
+);
 
 // Step 6: Install dependencies if needed
 console.log('✓ Dependencies prepared');

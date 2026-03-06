@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import type { AuthVerifyResponse } from '@marginbase/api-client';
-import { AuthService } from '../services/auth-service';
+import { AuthService } from '../services/auth-service.js';
 
 /**
  * POST /auth/verify - Verify Google ID token

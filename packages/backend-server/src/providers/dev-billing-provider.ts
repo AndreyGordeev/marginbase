@@ -1,4 +1,4 @@
-import type { BillingProvider } from './billing-provider';
+import type { BillingProvider } from './billing-provider.js';
 
 /**
  * Development/Test billing provider - no credentials required

@@ -6,8 +6,8 @@ import type {
   BillingVerifyResponse,
   PurchasePlatform,
 } from '@marginbase/api-client';
-import { BillingService } from '../services/billing-service';
-import { EntitlementService } from '../services/entitlement-service';
+import { BillingService } from '../services/billing-service.js';
+import { EntitlementService } from '../services/entitlement-service.js';
 
 /**
  * POST /billing/checkout - Create checkout session

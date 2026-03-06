@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "node scripts/infra-validate.mjs --mode build",
+    "build": "node scripts/build-lambda-handlers.cjs && node scripts/infra-validate.mjs --mode build",
     "lint": "node scripts/infra-validate.mjs --mode lint",
-    "test": "node scripts/infra-validate.mjs --mode test && node --test tests/*.test.mjs",
+    "test": "node scripts/build-lambda-handlers.cjs && node scripts/infra-validate.mjs --mode test && node --test tests/*.test.mjs",
     "typecheck": "node scripts/infra-validate.mjs --mode typecheck"
   }
 }

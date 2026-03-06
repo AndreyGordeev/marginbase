@@ -1,55 +1,75 @@
+resource "null_resource" "prepare_backend_server_runtime" {
+  triggers = {
+    backend_server_source_hash = filemd5("${path.module}/../../../../packages/backend-server/src/index.ts")
+  }
+
+  provisioner "local-exec" {
+    command     = "node ${path.module}/../../scripts/build-lambda-handlers.cjs"
+    working_dir = "${path.module}/../../../.."
+  }
+}
+
 data "archive_file" "auth_lambda" {
   type        = "zip"
   source_dir  = "${path.module}/lambda_handlers"
   output_path = "${path.module}/dist/auth.zip"
+  depends_on  = [null_resource.prepare_backend_server_runtime]
 }
 
 data "archive_file" "entitlements_lambda" {
   type        = "zip"
   source_dir  = "${path.module}/lambda_handlers"
   output_path = "${path.module}/dist/entitlements.zip"
+  depends_on  = [null_resource.prepare_backend_server_runtime]
 }
 
 data "archive_file" "telemetry_lambda" {
   type        = "zip"
   source_dir  = "${path.module}/lambda_handlers"
   output_path = "${path.module}/dist/telemetry.zip"
+  depends_on  = [null_resource.prepare_backend_server_runtime]
 }
 
 data "archive_file" "billing_lambda" {
   type        = "zip"
   source_dir  = "${path.module}/lambda_handlers"
   output_path = "${path.module}/dist/billing.zip"
+  depends_on  = [null_resource.prepare_backend_server_runtime]
 }
 
 data "archive_file" "account_delete_lambda" {
   type        = "zip"
   source_dir  = "${path.module}/lambda_handlers"
   output_path = "${path.module}/dist/account-delete.zip"
+  depends_on  = [null_resource.prepare_backend_server_runtime]
 }
 
 data "archive_file" "share_create_lambda" {
   type        = "zip"
   source_dir  = "${path.module}/lambda_handlers"
   output_path = "${path.module}/dist/share-create.zip"
+  depends_on  = [null_resource.prepare_backend_server_runtime]
 }
 
 data "archive_file" "share_get_lambda" {
   type        = "zip"
   source_dir  = "${path.module}/lambda_handlers"
   output_path = "${path.module}/dist/share-get.zip"
+  depends_on  = [null_resource.prepare_backend_server_runtime]
 }
 
 data "archive_file" "share_delete_lambda" {
   type        = "zip"
   source_dir  = "${path.module}/lambda_handlers"
   output_path = "${path.module}/dist/share-delete.zip"
+  depends_on  = [null_resource.prepare_backend_server_runtime]
 }
 
 data "archive_file" "share_list_lambda" {
   type        = "zip"
   source_dir  = "${path.module}/lambda_handlers"
   output_path = "${path.module}/dist/share-list.zip"
+  depends_on  = [null_resource.prepare_backend_server_runtime]
 }
 
 data "aws_iam_policy_document" "lambda_assume_role" {
@@ -538,6 +558,18 @@ resource "aws_apigatewayv2_route" "billing_portal_session" {
 resource "aws_apigatewayv2_route" "billing_webhook_stripe" {
   api_id    = aws_apigatewayv2_api.http.id
   route_key = "POST /billing/webhook/stripe"
+  target    = "integrations/${aws_apigatewayv2_integration.billing.id}"
+}
+
+resource "aws_apigatewayv2_route" "billing_webhook" {
+  api_id    = aws_apigatewayv2_api.http.id
+  route_key = "POST /billing/webhook"
+  target    = "integrations/${aws_apigatewayv2_integration.billing.id}"
+}
+
+resource "aws_apigatewayv2_route" "billing_entitlements" {
+  api_id    = aws_apigatewayv2_api.http.id
+  route_key = "GET /billing/entitlements/{userId}"
   target    = "integrations/${aws_apigatewayv2_integration.billing.id}"
 }
 

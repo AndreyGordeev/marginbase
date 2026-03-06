@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import type { BillingProvider } from './billing-provider';
+import type { BillingProvider } from './billing-provider.js';
 
 const STRIPE_API_BASE_URL = 'https://api.stripe.com/v1';
 const STRIPE_SIGNATURE_TOLERANCE_SECONDS = 300;

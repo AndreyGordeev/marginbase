@@ -41,12 +41,12 @@ export const createBillingProvider = async (): Promise<BillingProvider> => {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
   if (stripeSecretKey) {
-    const { StripeBillingProvider } = await import('./stripe-billing-provider');
+    const { StripeBillingProvider } = await import('./stripe-billing-provider.js');
     console.info('🔐 Using LIVE Stripe billing provider');
     return new StripeBillingProvider(stripeSecretKey);
   }
 
-  const { DevBillingProvider } = await import('./dev-billing-provider');
+  const { DevBillingProvider } = await import('./dev-billing-provider.js');
   console.info('⚠️  Using DEV billing provider (Stripe credentials not configured)');
   return new DevBillingProvider();
 };

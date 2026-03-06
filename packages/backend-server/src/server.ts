@@ -17,17 +17,17 @@ import type {
   TelemetryBatchResponse,
 } from '@marginbase/api-client';
 import {
-  AuthService,
-  BillingService,
-  EntitlementService,
-  createBillingProvider,
-  handleAuthVerify,
   handleCheckoutCreate,
   handlePortalCreate,
   handleWebhook,
   handleEntitlementsGet,
   handleBillingVerify,
-} from './index';
+} from './handlers/billing.js';
+import { handleAuthVerify } from './handlers/auth.js';
+import { createBillingProvider } from './providers/billing-provider.js';
+import { AuthService } from './services/auth-service.js';
+import { BillingService } from './services/billing-service.js';
+import { EntitlementService } from './services/entitlement-service.js';
 
 // In-memory persistence for local/dev runtime.
 interface UserProfile {
@@ -131,11 +131,13 @@ export const createBackendServer = async (): Promise<Express> => {
 
   // ENTITLEMENTS ENDPOINTS
   app.get('/entitlements/:userId', handleEntitlementsGet(entitlementService));
+  app.get('/billing/entitlements/:userId', handleEntitlementsGet(entitlementService));
 
   // BILLING ENDPOINTS
   app.post('/billing/verify', handleBillingVerify(billingService, entitlementService));
   app.post('/billing/checkout/session', handleCheckoutCreate(billingService));
   app.post('/billing/portal-session', handlePortalCreate(billingService));
+  app.post('/billing/portal/session', handlePortalCreate(billingService));
   app.post('/billing/webhook/stripe', handleWebhook(billingService, entitlementService));
   app.post('/billing/webhook', handleWebhook(billingService, entitlementService));
 
