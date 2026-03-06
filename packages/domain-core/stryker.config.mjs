@@ -20,6 +20,11 @@ export default {
     include: ['tests/**/*.test.ts'],
   },
 
+  // Disable vitest.related auto-discovery
+  vitest: {
+    related: false,
+  },
+
   // Reporting
   reporters: ['progress', 'clear-text'],
   coverageAnalysis: 'perTest',

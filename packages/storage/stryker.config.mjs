@@ -12,6 +12,9 @@ export default {
   test: {
     include: ['tests/**/*.test.ts'],
   },
+  vitest: {
+    related: false,
+  },
   reporters: ['progress', 'clear-text', 'html'],
   coverageAnalysis: 'perTest',
   concurrency: 2,
