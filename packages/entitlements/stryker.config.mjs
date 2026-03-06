@@ -4,7 +4,10 @@
  */
 export default {
   testRunner: 'vitest',
-  plugins: ['@stryker-mutator/vitest-runner', '@stryker-mutator/typescript-checker'],
+  plugins: [
+    '@stryker-mutator/vitest-runner',
+    '@stryker-mutator/typescript-checker',
+  ],
   mutate: ['src/**/*.ts', '!src/index.ts'],
   reporters: ['progress', 'clear-text', 'html'],
   coverageAnalysis: 'perTest',

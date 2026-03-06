@@ -7,7 +7,10 @@
 export default {
   // Test runner configuration (v9.x uses just testRunner, auto-detects framework)
   testRunner: 'vitest',
-  plugins: ['@stryker-mutator/vitest-runner', '@stryker-mutator/typescript-checker'],
+  plugins: [
+    '@stryker-mutator/vitest-runner',
+    '@stryker-mutator/typescript-checker',
+  ],
 
   // Mutants to inject
   mutate: ['src/**/*.ts', '!src/index.ts'],
