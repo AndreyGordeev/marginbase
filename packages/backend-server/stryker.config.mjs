@@ -4,6 +4,7 @@
  */
 export default {
   testRunner: 'vitest',
+  plugins: ['@stryker-mutator/vitest-runner', '@stryker-mutator/typescript-checker'],
   mutate: [
     'src/**/*.ts',
     '!src/index.ts',

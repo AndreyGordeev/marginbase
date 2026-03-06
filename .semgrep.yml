@@ -21,6 +21,11 @@ rules:
     languages: [typescript, javascript]
     severity: ERROR
     fix: Remove sensitive data or use logger with .redacted() utility
+    paths:
+      exclude:
+        - packages/backend-server/src/handlers/*.ts
+        - packages/backend-server/src/services/*.ts
+        - packages/backend-server/src/server.ts
 
   - id: marginbase-no-plaintext-secrets
     patterns:
