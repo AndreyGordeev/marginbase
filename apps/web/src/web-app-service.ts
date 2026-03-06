@@ -2,23 +2,30 @@ import {
   type ShareListItem,
   type ShareCreateResponse,
   type BillingPlanId,
-  MarginbaseApiClient
+  MarginbaseApiClient,
 } from '@marginbase/api-client';
-import { createTelemetryEvent, type TelemetryEventName } from '@marginbase/telemetry';
+import {
+  createTelemetryEvent,
+  type TelemetryEventName,
+} from '@marginbase/telemetry';
 import {
   calculateBreakEven,
   calculateCashflow,
   calculateProfit,
   type SharedSnapshotV1,
   type ImportReplaceAllResult,
-  type ScenarioV1
+  type ScenarioV1,
 } from '@marginbase/domain-core';
-import { exportReportPdf, exportReportXlsx, type ReportModel } from '@marginbase/reporting';
+import {
+  exportReportPdf,
+  exportReportXlsx,
+  type ReportModel,
+} from '@marginbase/reporting';
 import {
   canUseModule,
   shouldRefreshEntitlements,
   type ModuleId as EntitlementModuleId,
-  type EntitlementCache
+  type EntitlementCache,
 } from '@marginbase/entitlements';
 import {
   createBundleEntitlementCache,
@@ -26,23 +33,23 @@ import {
   createEntitlementCacheFromResponse,
   createTrialEntitlementCache,
   loadEntitlementCache,
-  saveEntitlementCache
+  saveEntitlementCache,
 } from './services/internal/entitlement-cache';
 import { toPlainJson } from './services/internal/plain-json';
 import {
   getBusinessReportExportWatermark,
   hasPaidEntitlement,
-  isExportWatermarked
+  isExportWatermarked,
 } from './services/internal/report-export-policy';
 import { buildBusinessReportModelFromScenarios } from './services/internal/report-inputs';
 import {
   createEncryptedShareSnapshotFromScenario,
-  resolveSharedSnapshot
+  resolveSharedSnapshot,
 } from './services/internal/share-snapshot';
 import {
   exportScenariosAsJson,
   getImportScenariosOrThrow,
-  previewImportReplaceAll
+  previewImportReplaceAll,
 } from './services/internal/scenario-io';
 import {
   IndexedDbConnection,
@@ -50,18 +57,34 @@ import {
   SqlitePlaceholderConnection,
   SqlitePlaceholderScenarioRepository,
   WebVaultScenarioRepository,
-  type ScenarioRepository
+  type ScenarioRepository,
 } from '@marginbase/storage';
 
 type ModuleId = EntitlementModuleId;
 
-type WebApiClient = Pick<MarginbaseApiClient, 'refreshEntitlements' | 'deleteAccount'> &
-  Partial<Pick<MarginbaseApiClient, 'createCheckoutSession' | 'createBillingPortalSession' | 'createShareSnapshot' | 'getShareSnapshot' | 'deleteShareSnapshot' | 'listShareSnapshots' | 'sendTelemetryBatch'>>;
+type WebApiClient = Pick<
+  MarginbaseApiClient,
+  'refreshEntitlements' | 'deleteAccount'
+> &
+  Partial<
+    Pick<
+      MarginbaseApiClient,
+      | 'createCheckoutSession'
+      | 'createBillingPortalSession'
+      | 'createShareSnapshot'
+      | 'getShareSnapshot'
+      | 'deleteShareSnapshot'
+      | 'listShareSnapshots'
+      | 'sendTelemetryBatch'
+    >
+  >;
 
 const SIGNED_IN_STORAGE_KEY = 'marginbase_signed_in';
 const SIGNED_IN_USER_ID_STORAGE_KEY = 'marginbase_signed_in_user_id';
+const GOOGLE_ID_TOKEN_STORAGE_KEY = 'marginbase_google_id_token';
 const TELEMETRY_CONSENT_STORAGE_KEY = 'marginbase_telemetry_consent';
-const FIRST_RUN_DEMO_SCENARIOS_KEY = 'marginbase_first_run_demo_scenarios_seeded';
+const FIRST_RUN_DEMO_SCENARIOS_KEY =
+  'marginbase_first_run_demo_scenarios_seeded';
 const FREE_PLAN_SCENARIO_LIMIT = 3;
 
 const nowIso = (): string => new Date().toISOString();
@@ -70,7 +93,9 @@ const VAULT_SALT_STORAGE_KEY = 'marginbase_vault_salt';
 
 export type TelemetryConsentState = 'enabled' | 'disabled' | 'not_decided';
 
-const isTelemetryConsentState = (value: string): value is TelemetryConsentState => {
+const isTelemetryConsentState = (
+  value: string,
+): value is TelemetryConsentState => {
   return value === 'enabled' || value === 'disabled' || value === 'not_decided';
 };
 
@@ -130,8 +155,8 @@ export class WebAppService {
   public constructor(
     scenarioRepository: ScenarioRepository,
     apiClient: WebApiClient = new MarginbaseApiClient({
-      baseUrl: 'https://api.marginbase.local'
-    })
+      baseUrl: 'https://api.marginbase.local',
+    }),
   ) {
     this.baseScenarioRepository = scenarioRepository;
     this.scenarioRepository = scenarioRepository;
@@ -143,17 +168,34 @@ export class WebAppService {
   }
 
   public static createDefault(): WebAppService {
+    const apiBaseUrl =
+      (import.meta.env.VITE_API_BASE_URL as string | undefined) ||
+      'https://api.marginbase.app';
+
     if (typeof indexedDB !== 'undefined') {
       const connection = new IndexedDbConnection('marginbase-web');
-      return new WebAppService(new IndexedDbScenarioRepository(connection));
+      return new WebAppService(
+        new IndexedDbScenarioRepository(connection),
+        new MarginbaseApiClient({
+          baseUrl: apiBaseUrl,
+        }),
+      );
     }
 
     const connection = new SqlitePlaceholderConnection();
-    return new WebAppService(new SqlitePlaceholderScenarioRepository(connection));
+    return new WebAppService(
+      new SqlitePlaceholderScenarioRepository(connection),
+      new MarginbaseApiClient({
+        baseUrl: apiBaseUrl,
+      }),
+    );
   }
 
   public activateTrial(): void {
-    this.entitlementCache = createTrialEntitlementCache(this.entitlementCache, nowIso);
+    this.entitlementCache = createTrialEntitlementCache(
+      this.entitlementCache,
+      nowIso,
+    );
     saveEntitlementCache(this.entitlementCache);
   }
 
@@ -164,7 +206,9 @@ export class WebAppService {
 
   public async ensureFirstRunDemoScenarios(): Promise<void> {
     const hasLocalStorage = typeof localStorage !== 'undefined';
-    const alreadySeeded = hasLocalStorage && localStorage.getItem(FIRST_RUN_DEMO_SCENARIOS_KEY) === 'true';
+    const alreadySeeded =
+      hasLocalStorage &&
+      localStorage.getItem(FIRST_RUN_DEMO_SCENARIOS_KEY) === 'true';
 
     if (alreadySeeded) {
       return;
@@ -183,7 +227,7 @@ export class WebAppService {
       unitPriceMinor: 2000,
       quantity: 100,
       variableCostPerUnitMinor: 1200,
-      fixedCostsMinor: 30000
+      fixedCostsMinor: 30000,
     });
 
     await this.saveBreakEvenScenario({
@@ -192,7 +236,7 @@ export class WebAppService {
       variableCostPerUnitMinor: 1200,
       fixedCostsMinor: 30000,
       targetProfitMinor: 20000,
-      plannedQuantity: 120
+      plannedQuantity: 120,
     });
 
     await this.saveCashflowScenario({
@@ -202,7 +246,7 @@ export class WebAppService {
       fixedMonthlyCostsMinor: 45000,
       variableMonthlyCostsMinor: 22000,
       forecastMonths: 6,
-      monthlyGrowthRate: 0.02
+      monthlyGrowthRate: 0.02,
     });
 
     if (hasLocalStorage) {
@@ -210,7 +254,11 @@ export class WebAppService {
     }
   }
 
-  public async startCheckoutSession(planId: BillingPlanId, userId: string, email: string): Promise<string | null> {
+  public async startCheckoutSession(
+    planId: BillingPlanId,
+    userId: string,
+    email: string,
+  ): Promise<string | null> {
     if (!this.apiClient.createCheckoutSession) {
       return null;
     }
@@ -218,20 +266,23 @@ export class WebAppService {
     const response = await this.apiClient.createCheckoutSession({
       planId,
       userId,
-      email
+      email,
     });
 
     return response.checkoutUrl;
   }
 
-  public async startBillingPortalSession(userId: string, returnUrl?: string): Promise<string | null> {
+  public async startBillingPortalSession(
+    userId: string,
+    returnUrl?: string,
+  ): Promise<string | null> {
     if (!this.apiClient.createBillingPortalSession) {
       return null;
     }
 
     const response = await this.apiClient.createBillingPortalSession({
       userId,
-      returnUrl
+      returnUrl,
     });
 
     return response.portalUrl;
@@ -246,6 +297,13 @@ export class WebAppService {
       return false;
     }
 
+    // Check if we have a valid Google token
+    const idToken = localStorage.getItem(GOOGLE_ID_TOKEN_STORAGE_KEY);
+    if (idToken && idToken.trim()) {
+      return true;
+    }
+
+    // Fallback to legacy localStorage flag
     return localStorage.getItem(SIGNED_IN_STORAGE_KEY) === 'true';
   }
 
@@ -256,6 +314,53 @@ export class WebAppService {
 
     const value = localStorage.getItem(SIGNED_IN_USER_ID_STORAGE_KEY);
     return value && value.trim() ? value : null;
+  }
+
+  public getIdToken(): string | null {
+    if (typeof localStorage === 'undefined') {
+      return null;
+    }
+
+    const token = localStorage.getItem(GOOGLE_ID_TOKEN_STORAGE_KEY);
+    return token && token.trim() ? token : null;
+  }
+
+  public async signInWithGoogle(
+    idToken: string,
+  ): Promise<{ userId: string; email: string | null }> {
+    try {
+      // Verify token with backend
+      const response = await this.apiClient.verifyAuthToken({
+        googleIdToken: idToken,
+      });
+
+      // Store token and user info in localStorage
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(GOOGLE_ID_TOKEN_STORAGE_KEY, idToken);
+        localStorage.setItem(SIGNED_IN_STORAGE_KEY, 'true');
+        localStorage.setItem(SIGNED_IN_USER_ID_STORAGE_KEY, response.userId);
+      }
+
+      // Refresh entitlements immediately
+      await this.forceRefreshEntitlements(idToken);
+
+      return { userId: response.userId, email: response.email };
+    } catch (error) {
+      console.error('Google sign-in failed:', error);
+      throw error;
+    }
+  }
+
+  public signOut(): void {
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
+
+    localStorage.removeItem(GOOGLE_ID_TOKEN_STORAGE_KEY);
+    localStorage.removeItem(SIGNED_IN_STORAGE_KEY);
+    localStorage.removeItem(SIGNED_IN_USER_ID_STORAGE_KEY);
+    this.entitlementCache = createDefaultEntitlementCache(nowIso);
+    saveEntitlementCache(this.entitlementCache);
   }
 
   public async refreshEntitlementsIfNeeded(idToken: string): Promise<boolean> {
@@ -324,7 +429,7 @@ export class WebAppService {
     const vaultRepository = await WebVaultScenarioRepository.fromPassphrase({
       baseRepository: this.baseScenarioRepository,
       passphrase,
-      saltBase64: existingSalt ?? undefined
+      saltBase64: existingSalt ?? undefined,
     });
 
     if (!existingSalt) {
@@ -369,7 +474,7 @@ export class WebAppService {
         unitPriceMinor: 1000,
         quantity: 10,
         variableCostPerUnitMinor: 700,
-        fixedCostsMinor: 1000
+        fixedCostsMinor: 1000,
       });
     }
 
@@ -380,7 +485,7 @@ export class WebAppService {
         variableCostPerUnitMinor: 700,
         fixedCostsMinor: 5000,
         targetProfitMinor: 0,
-        plannedQuantity: 20
+        plannedQuantity: 20,
       });
     }
 
@@ -392,51 +497,69 @@ export class WebAppService {
         fixedMonthlyCostsMinor: 20_000,
         variableMonthlyCostsMinor: 5_000,
         forecastMonths: 6,
-        monthlyGrowthRate: 0.02
+        monthlyGrowthRate: 0.02,
       });
     }
   }
 
-  public getProfitInputState(inputData?: Record<string, unknown>): ProfitInputState {
+  public getProfitInputState(
+    inputData?: Record<string, unknown>,
+  ): ProfitInputState {
     return {
       scenarioName: 'Profit Scenario',
       unitPriceMinor: Number(inputData?.unitPriceMinor ?? 1000),
       quantity: Number(inputData?.quantity ?? 10),
-      variableCostPerUnitMinor: Number(inputData?.variableCostPerUnitMinor ?? 700),
-      fixedCostsMinor: Number(inputData?.fixedCostsMinor ?? 1000)
+      variableCostPerUnitMinor: Number(
+        inputData?.variableCostPerUnitMinor ?? 700,
+      ),
+      fixedCostsMinor: Number(inputData?.fixedCostsMinor ?? 1000),
     };
   }
 
-  public getBreakEvenInputState(inputData?: Record<string, unknown>): BreakEvenInputState {
+  public getBreakEvenInputState(
+    inputData?: Record<string, unknown>,
+  ): BreakEvenInputState {
     return {
       scenarioName: 'Break-even Scenario',
       unitPriceMinor: Number(inputData?.unitPriceMinor ?? 1000),
-      variableCostPerUnitMinor: Number(inputData?.variableCostPerUnitMinor ?? 700),
+      variableCostPerUnitMinor: Number(
+        inputData?.variableCostPerUnitMinor ?? 700,
+      ),
       fixedCostsMinor: Number(inputData?.fixedCostsMinor ?? 5000),
       targetProfitMinor: Number(inputData?.targetProfitMinor ?? 0),
-      plannedQuantity: Number(inputData?.plannedQuantity ?? 20)
+      plannedQuantity: Number(inputData?.plannedQuantity ?? 20),
     };
   }
 
-  public getCashflowInputState(inputData?: Record<string, unknown>): CashflowInputState {
+  public getCashflowInputState(
+    inputData?: Record<string, unknown>,
+  ): CashflowInputState {
     return {
       scenarioName: 'Cashflow Scenario',
       startingCashMinor: Number(inputData?.startingCashMinor ?? 100_000),
-      baseMonthlyRevenueMinor: Number(inputData?.baseMonthlyRevenueMinor ?? 30_000),
-      fixedMonthlyCostsMinor: Number(inputData?.fixedMonthlyCostsMinor ?? 20_000),
-      variableMonthlyCostsMinor: Number(inputData?.variableMonthlyCostsMinor ?? 5_000),
+      baseMonthlyRevenueMinor: Number(
+        inputData?.baseMonthlyRevenueMinor ?? 30_000,
+      ),
+      fixedMonthlyCostsMinor: Number(
+        inputData?.fixedMonthlyCostsMinor ?? 20_000,
+      ),
+      variableMonthlyCostsMinor: Number(
+        inputData?.variableMonthlyCostsMinor ?? 5_000,
+      ),
       forecastMonths: Number(inputData?.forecastMonths ?? 6),
-      monthlyGrowthRate: Number(inputData?.monthlyGrowthRate ?? 0)
+      monthlyGrowthRate: Number(inputData?.monthlyGrowthRate ?? 0),
     };
   }
 
-  public async saveProfitScenario(input: ProfitInputState & { scenarioId?: string }): Promise<void> {
+  public async saveProfitScenario(
+    input: ProfitInputState & { scenarioId?: string },
+  ): Promise<void> {
     const result = calculateProfit({
       mode: 'unit',
       unitPriceMinor: input.unitPriceMinor,
       quantity: input.quantity,
       variableCostPerUnitMinor: input.variableCostPerUnitMinor,
-      fixedCostsMinor: input.fixedCostsMinor
+      fixedCostsMinor: input.fixedCostsMinor,
     });
 
     await this.scenarioRepository.upsertScenario({
@@ -448,20 +571,22 @@ export class WebAppService {
         unitPriceMinor: input.unitPriceMinor,
         quantity: input.quantity,
         variableCostPerUnitMinor: input.variableCostPerUnitMinor,
-        fixedCostsMinor: input.fixedCostsMinor
+        fixedCostsMinor: input.fixedCostsMinor,
       },
       calculatedData: toPlainJson(result) as Record<string, unknown>,
-      updatedAt: nowIso()
+      updatedAt: nowIso(),
     });
   }
 
-  public async saveBreakEvenScenario(input: BreakEvenInputState & { scenarioId?: string }): Promise<void> {
+  public async saveBreakEvenScenario(
+    input: BreakEvenInputState & { scenarioId?: string },
+  ): Promise<void> {
     const result = calculateBreakEven({
       unitPriceMinor: input.unitPriceMinor,
       variableCostPerUnitMinor: input.variableCostPerUnitMinor,
       fixedCostsMinor: input.fixedCostsMinor,
       targetProfitMinor: input.targetProfitMinor,
-      plannedQuantity: input.plannedQuantity
+      plannedQuantity: input.plannedQuantity,
     });
 
     await this.scenarioRepository.upsertScenario({
@@ -474,21 +599,23 @@ export class WebAppService {
         variableCostPerUnitMinor: input.variableCostPerUnitMinor,
         fixedCostsMinor: input.fixedCostsMinor,
         targetProfitMinor: input.targetProfitMinor,
-        plannedQuantity: input.plannedQuantity
+        plannedQuantity: input.plannedQuantity,
       },
       calculatedData: toPlainJson(result) as Record<string, unknown>,
-      updatedAt: nowIso()
+      updatedAt: nowIso(),
     });
   }
 
-  public async saveCashflowScenario(input: CashflowInputState & { scenarioId?: string }): Promise<void> {
+  public async saveCashflowScenario(
+    input: CashflowInputState & { scenarioId?: string },
+  ): Promise<void> {
     const result = calculateCashflow({
       startingCashMinor: input.startingCashMinor,
       baseMonthlyRevenueMinor: input.baseMonthlyRevenueMinor,
       fixedMonthlyCostsMinor: input.fixedMonthlyCostsMinor,
       variableMonthlyCostsMinor: input.variableMonthlyCostsMinor,
       forecastMonths: input.forecastMonths,
-      monthlyGrowthRate: input.monthlyGrowthRate
+      monthlyGrowthRate: input.monthlyGrowthRate,
     });
 
     await this.scenarioRepository.upsertScenario({
@@ -502,10 +629,10 @@ export class WebAppService {
         fixedMonthlyCostsMinor: input.fixedMonthlyCostsMinor,
         variableMonthlyCostsMinor: input.variableMonthlyCostsMinor,
         forecastMonths: input.forecastMonths,
-        monthlyGrowthRate: input.monthlyGrowthRate
+        monthlyGrowthRate: input.monthlyGrowthRate,
       },
       calculatedData: toPlainJson(result) as Record<string, unknown>,
-      updatedAt: nowIso()
+      updatedAt: nowIso(),
     });
   }
 
@@ -533,26 +660,33 @@ export class WebAppService {
     return exportReportXlsx(report, { watermarkText });
   }
 
-  public async createShareSnapshotFromScenario(scenario: ScenarioV1, expiresInDays: 7 | 30 = 30): Promise<ShareCreateLocalResult> {
+  public async createShareSnapshotFromScenario(
+    scenario: ScenarioV1,
+    expiresInDays: 7 | 30 = 30,
+  ): Promise<ShareCreateLocalResult> {
     if (!this.apiClient.createShareSnapshot) {
       throw new Error('Share API is not available in the current environment.');
     }
 
-    const { encryptedSnapshot, shareKey } = await createEncryptedShareSnapshotFromScenario(scenario);
+    const { encryptedSnapshot, shareKey } =
+      await createEncryptedShareSnapshotFromScenario(scenario);
 
     const created = await this.apiClient.createShareSnapshot({
       encryptedSnapshot,
       expiresInDays,
-      ownerUserId: this.getSignedInUserId() ?? undefined
+      ownerUserId: this.getSignedInUserId() ?? undefined,
     });
 
     return {
       ...created,
-      shareKey
+      shareKey,
     };
   }
 
-  public async deleteShareSnapshot(token: string, idToken?: string): Promise<boolean> {
+  public async deleteShareSnapshot(
+    token: string,
+    idToken?: string,
+  ): Promise<boolean> {
     if (!this.apiClient.deleteShareSnapshot) {
       throw new Error('Share API is not available in the current environment.');
     }
@@ -587,10 +721,13 @@ export class WebAppService {
     return this.deleteShareSnapshot(token);
   }
 
-  public async trackEmbedOpened(moduleId: ModuleId, poweredBy: boolean): Promise<void> {
+  public async trackEmbedOpened(
+    moduleId: ModuleId,
+    poweredBy: boolean,
+  ): Promise<void> {
     await this.emitTelemetryEvent('embed_opened', {
       moduleId,
-      poweredBy
+      poweredBy,
     });
   }
 
@@ -600,13 +737,13 @@ export class WebAppService {
 
   public async trackModuleOpened(moduleId: ModuleId): Promise<void> {
     await this.emitTelemetryEvent('module_opened', {
-      moduleId
+      moduleId,
     });
   }
 
   public async trackPaywallShown(moduleId: ModuleId): Promise<void> {
     await this.emitTelemetryEvent('paywall_shown', {
-      moduleId
+      moduleId,
     });
   }
 
@@ -620,19 +757,19 @@ export class WebAppService {
 
   public async trackPurchaseConfirmed(succeeded: boolean): Promise<void> {
     await this.emitTelemetryEvent('purchase_confirmed', {
-      succeeded
+      succeeded,
     });
   }
 
   public async trackExportClicked(format: 'pdf' | 'xlsx'): Promise<void> {
     await this.emitTelemetryEvent('export_clicked', {
-      format
+      format,
     });
   }
 
   public async trackEmbedCtaClicked(moduleId: ModuleId): Promise<void> {
     await this.emitTelemetryEvent('embed_cta_clicked', {
-      moduleId
+      moduleId,
     });
   }
 
@@ -654,7 +791,9 @@ export class WebAppService {
     const snapshot = await this.getSharedSnapshot(token);
 
     if (!this.canOpenModule(snapshot.module)) {
-      throw new Error('Active entitlement is required to save this shared scenario.');
+      throw new Error(
+        'Active entitlement is required to save this shared scenario.',
+      );
     }
 
     await this.persistSharedSnapshot(snapshot, 'Saved Shared Scenario');
@@ -679,13 +818,13 @@ export class WebAppService {
         unitPriceMinor: input.unitPriceMinor,
         quantity: input.quantity,
         variableCostPerUnitMinor: input.variableCostPerUnitMinor,
-        fixedCostsMinor: input.fixedCostsMinor
+        fixedCostsMinor: input.fixedCostsMinor,
       });
 
       return {
         module: 'profit',
         inputData: snapshot.inputData,
-        calculatedData: toPlainJson(calculatedData) as Record<string, unknown>
+        calculatedData: toPlainJson(calculatedData) as Record<string, unknown>,
       };
     }
 
@@ -696,13 +835,13 @@ export class WebAppService {
         variableCostPerUnitMinor: input.variableCostPerUnitMinor,
         fixedCostsMinor: input.fixedCostsMinor,
         targetProfitMinor: input.targetProfitMinor,
-        plannedQuantity: input.plannedQuantity
+        plannedQuantity: input.plannedQuantity,
       });
 
       return {
         module: 'breakeven',
         inputData: snapshot.inputData,
-        calculatedData: toPlainJson(calculatedData) as Record<string, unknown>
+        calculatedData: toPlainJson(calculatedData) as Record<string, unknown>,
       };
     }
 
@@ -713,13 +852,13 @@ export class WebAppService {
       fixedMonthlyCostsMinor: input.fixedMonthlyCostsMinor,
       variableMonthlyCostsMinor: input.variableMonthlyCostsMinor,
       forecastMonths: input.forecastMonths,
-      monthlyGrowthRate: input.monthlyGrowthRate
+      monthlyGrowthRate: input.monthlyGrowthRate,
     });
 
     return {
       module: 'cashflow',
       inputData: snapshot.inputData,
-      calculatedData: toPlainJson(calculatedData) as Record<string, unknown>
+      calculatedData: toPlainJson(calculatedData) as Record<string, unknown>,
     };
   }
 
@@ -733,7 +872,10 @@ export class WebAppService {
     return resolveSharedSnapshot(response, shareKey);
   }
 
-  private async persistSharedSnapshot(snapshot: SharedSnapshotV1, scenarioNamePrefix: string): Promise<void> {
+  private async persistSharedSnapshot(
+    snapshot: SharedSnapshotV1,
+    scenarioNamePrefix: string,
+  ): Promise<void> {
     const scenarioName = `${scenarioNamePrefix} (${snapshot.module})`;
     const scenarioId = `shared_${snapshot.module}_${Date.now()}_${Math.floor(Math.random() * 1_000_000)}`;
 
@@ -745,7 +887,7 @@ export class WebAppService {
         unitPriceMinor: input.unitPriceMinor,
         quantity: input.quantity,
         variableCostPerUnitMinor: input.variableCostPerUnitMinor,
-        fixedCostsMinor: input.fixedCostsMinor
+        fixedCostsMinor: input.fixedCostsMinor,
       });
       return;
     }
@@ -759,7 +901,7 @@ export class WebAppService {
         variableCostPerUnitMinor: input.variableCostPerUnitMinor,
         fixedCostsMinor: input.fixedCostsMinor,
         targetProfitMinor: input.targetProfitMinor,
-        plannedQuantity: input.plannedQuantity
+        plannedQuantity: input.plannedQuantity,
       });
       return;
     }
@@ -773,11 +915,14 @@ export class WebAppService {
       fixedMonthlyCostsMinor: input.fixedMonthlyCostsMinor,
       variableMonthlyCostsMinor: input.variableMonthlyCostsMinor,
       forecastMonths: input.forecastMonths,
-      monthlyGrowthRate: input.monthlyGrowthRate
+      monthlyGrowthRate: input.monthlyGrowthRate,
     });
   }
 
-  private async emitTelemetryEvent(name: TelemetryEventName, attributes: Record<string, string | boolean>): Promise<void> {
+  private async emitTelemetryEvent(
+    name: TelemetryEventName,
+    attributes: Record<string, string | boolean>,
+  ): Promise<void> {
     if (!this.apiClient.sendTelemetryBatch) {
       return;
     }
@@ -794,9 +939,9 @@ export class WebAppService {
           {
             name: event.name,
             timestamp: event.occurredAt,
-            attributes: event.properties
-          }
-        ]
+            attributes: event.properties,
+          },
+        ],
       });
     } catch {
       return;

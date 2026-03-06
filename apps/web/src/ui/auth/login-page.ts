@@ -1,16 +1,38 @@
 import type { LegalBackTarget } from '../legal/legal-render';
 import { createLanguageSwitcher, translate } from '../../i18n';
+import type { GoogleOAuthService } from '../../services/google-oauth-service';
 
-type LoginRoute = '/gate' | '/dashboard' | '/privacy' | '/terms' | '/legal-center';
+type LoginRoute =
+  | '/gate'
+  | '/dashboard'
+  | '/privacy'
+  | '/terms'
+  | '/legal-center';
 
 type LoginRenderDeps = {
-  createActionButton: (label: string, onClick: () => void, className?: string) => HTMLButtonElement;
+  createActionButton: (
+    label: string,
+    onClick: () => void,
+    className?: string,
+  ) => HTMLButtonElement;
   goTo: (route: LoginRoute) => void;
   setLegalBackTarget: (target: LegalBackTarget) => void;
+  googleOAuthService?: GoogleOAuthService;
+  onGoogleSignIn?: (idToken: string) => Promise<void>;
+  apiBaseUrl?: string;
 };
 
-export const renderLoginPage = (root: HTMLElement, deps: LoginRenderDeps): void => {
-  const { createActionButton, goTo, setLegalBackTarget } = deps;
+export const renderLoginPage = (
+  root: HTMLElement,
+  deps: LoginRenderDeps,
+): void => {
+  const {
+    createActionButton,
+    goTo,
+    setLegalBackTarget,
+    googleOAuthService,
+    onGoogleSignIn,
+  } = deps;
 
   const page = document.createElement('div');
   page.className = 'page-login';
@@ -36,22 +58,62 @@ export const renderLoginPage = (root: HTMLElement, deps: LoginRenderDeps): void 
   const auth = document.createElement('div');
   auth.className = 'login-auth';
   auth.appendChild(createLanguageSwitcher());
-  auth.appendChild(createActionButton(translate('login.continueWithGoogle'), () => {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('marginbase_signed_in', 'true');
-      localStorage.setItem('marginbase_signed_in_user_id', 'local_web_user');
-    }
 
-    goTo('/gate');
-  }, 'primary'));
-  auth.appendChild(createActionButton(translate('login.continueAsGuest'), () => {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('marginbase_signed_in', 'false');
-      localStorage.removeItem('marginbase_signed_in_user_id');
-    }
+  // Google OAuth button or fallback
+  if (googleOAuthService) {
+    const googleButtonContainer = document.createElement('div');
+    googleButtonContainer.id = 'google-signin-button';
+    googleButtonContainer.style.margin = '1rem 0';
+    auth.appendChild(googleButtonContainer);
 
-    goTo('/dashboard');
-  }));
+    // Initialize Google Sign-In button
+    googleOAuthService.initializeButton(
+      'google-signin-button',
+      async (idToken: string) => {
+        try {
+          if (onGoogleSignIn) {
+            await onGoogleSignIn(idToken);
+            goTo('/gate');
+          }
+        } catch (error) {
+          console.error('Google sign-in failed:', error);
+          alert('Sign-in failed. Please try again.');
+        }
+      },
+      (error: Error) => {
+        console.error('Google button initialization failed:', error);
+      },
+    );
+  } else {
+    // Fallback if OAuth service not available
+    auth.appendChild(
+      createActionButton(
+        translate('login.continueWithGoogle'),
+        () => {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('marginbase_signed_in', 'true');
+            localStorage.setItem(
+              'marginbase_signed_in_user_id',
+              'local_web_user',
+            );
+          }
+          goTo('/gate');
+        },
+        'primary',
+      ),
+    );
+  }
+
+  auth.appendChild(
+    createActionButton(translate('login.continueAsGuest'), () => {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('marginbase_signed_in', 'false');
+        localStorage.removeItem('marginbase_signed_in_user_id');
+      }
+
+      goTo('/dashboard');
+    }),
+  );
 
   const trust = document.createElement('div');
   trust.className = 'login-trust';

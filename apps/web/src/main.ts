@@ -1,16 +1,48 @@
 import { WebAppService } from './web-app-service';
-import { getCurrentLanguage, initializeI18nProvider, setCurrentLanguage, translate, type SupportedLanguage } from './i18n';
+import {
+  getCurrentLanguage,
+  initializeI18nProvider,
+  setCurrentLanguage,
+  translate,
+  type SupportedLanguage,
+} from './i18n';
+import {
+  createGoogleOAuthService,
+  type GoogleOAuthService,
+} from './services/google-oauth-service';
 import { renderEmbedBreakevenRoute } from './routes/embedBreakeven';
 import { renderEmbedCashflowRoute } from './routes/embedCashflow';
 import { renderEmbedProfitRoute } from './routes/embedProfit';
-import { getEmbedRoute, getHashPathWithoutLanguageFromHash, getRoute, getSharedToken, parsePathWithOptionalLanguage } from './routes/route-utils';
+import {
+  getEmbedRoute,
+  getHashPathWithoutLanguageFromHash,
+  getRoute,
+  getSharedToken,
+  parsePathWithOptionalLanguage,
+} from './routes/route-utils';
 import { renderSharedScenarioRoute } from './routes/sharedScenario';
 import { renderLoginPage } from './ui/auth/login-page';
-import { type LegalRoute, renderLegalCenter, renderLegalDocument, setLegalBackTarget } from './ui/legal/legal-render';
+import {
+  type LegalRoute,
+  renderLegalCenter,
+  renderLegalDocument,
+  setLegalBackTarget,
+} from './ui/legal/legal-render';
 import { LEGAL_DOCS } from './ui/legal/legal-docs';
-import { type AppRoutePath, renderDashboardPage, renderDataBackupPage, renderGatePage, renderSettingsPage, renderSubscriptionPage, renderWorkspacePage } from './ui/pages/app-pages';
+import {
+  type AppRoutePath,
+  renderDashboardPage,
+  renderDataBackupPage,
+  renderGatePage,
+  renderSettingsPage,
+  renderSubscriptionPage,
+  renderWorkspacePage,
+} from './ui/pages/app-pages';
 import { addBaseStyles } from './ui/styles/base-styles';
-import { checkAuthenticationGuard, handleInitialPathRedirect } from './routes/auth-guard';
+import {
+  checkAuthenticationGuard,
+  handleInitialPathRedirect,
+} from './routes/auth-guard';
 
 declare const __MB_SHOW_DEBUG_RESULTS__: boolean;
 
@@ -35,7 +67,7 @@ const ROUTES: RoutePath[] = [
   '/cookies',
   '/legal-center',
   '/legal/privacy',
-  '/legal/terms'
+  '/legal/terms',
 ];
 
 const getHashPathWithoutLanguage = (): string => {
@@ -70,7 +102,12 @@ const ensureLanguagePrefixedPath = async (): Promise<void> => {
 
   const detectedLanguage = getCurrentLanguage();
   // Redirect to login for root path if not authenticated, otherwise to dashboard
-  const targetPath = normalizedPath === '/' ? (service.isSignedIn() ? '/dashboard' : '/login') : normalizedPath;
+  const targetPath =
+    normalizedPath === '/'
+      ? service.isSignedIn()
+        ? '/dashboard'
+        : '/login'
+      : normalizedPath;
   const query = window.location.search ?? '';
   const hash = window.location.hash ?? '';
   const localizedUrl = `/${detectedLanguage}${targetPath}${query}${hash}`;
@@ -85,7 +122,11 @@ const goTo = (route: RoutePath): void => {
   window.location.hash = route;
 };
 
-const createActionButton = (label: string, onClick: () => void, className = ''): HTMLButtonElement => {
+const createActionButton = (
+  label: string,
+  onClick: () => void,
+  className = '',
+): HTMLButtonElement => {
   const button = document.createElement('button');
   button.type = 'button';
   button.textContent = label;
@@ -94,7 +135,12 @@ const createActionButton = (label: string, onClick: () => void, className = ''):
   return button;
 };
 
-const emptyState = (title: string, description: string, actionText?: string, onAction?: () => void): HTMLElement => {
+const emptyState = (
+  title: string,
+  description: string,
+  actionText?: string,
+  onAction?: () => void,
+): HTMLElement => {
   const container = document.createElement('div');
   container.className = 'empty-state';
   container.innerHTML = `<h3>${title}</h3><p>${description}</p>`;
@@ -111,6 +157,31 @@ let showDebugJson = false;
 
 const service = WebAppService.createDefault();
 
+// Initialize Google OAuth service
+let googleOAuthService: GoogleOAuthService | null = null;
+const initializeGoogleOAuth = async (): Promise<void> => {
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as
+    | string
+    | undefined;
+  if (!googleClientId) {
+    console.warn('Google Client ID not configured. OAuth disabled.');
+    return;
+  }
+
+  const pageUrl = window.location.origin;
+  googleOAuthService = createGoogleOAuthService(
+    googleClientId,
+    `${pageUrl}/login`,
+  );
+
+  try {
+    await googleOAuthService.loadGoogleLibrary();
+  } catch (error) {
+    console.error('Failed to load Google OAuth library:', error);
+    googleOAuthService = null;
+  }
+};
+
 const processBillingReturn = async (): Promise<void> => {
   const params = new URLSearchParams(window.location.search);
   const checkoutState = params.get('checkout');
@@ -120,14 +191,15 @@ const processBillingReturn = async (): Promise<void> => {
   }
 
   if (service.isSignedIn()) {
-    const signedInUserId = service.getSignedInUserId();
-    const refreshToken = signedInUserId && signedInUserId.length > 0 ? signedInUserId : 'local_web_user';
+    const idToken = service.getIdToken();
 
-    try {
-      await service.forceRefreshEntitlements(refreshToken);
-      await service.trackPurchaseConfirmed(true);
-    } catch {
-      await service.trackPurchaseConfirmed(false);
+    if (idToken) {
+      try {
+        await service.forceRefreshEntitlements(idToken);
+        await service.trackPurchaseConfirmed(true);
+      } catch {
+        await service.trackPurchaseConfirmed(false);
+      }
     }
   }
 
@@ -155,7 +227,10 @@ const render = async (): Promise<void> => {
   }
 
   const hashPathWithoutLanguage = getHashPathWithoutLanguage();
-  const embedRoute = getEmbedRoute(pathnameContext.normalizedPath, hashPathWithoutLanguage);
+  const embedRoute = getEmbedRoute(
+    pathnameContext.normalizedPath,
+    hashPathWithoutLanguage,
+  );
   if (embedRoute?.language) {
     await setCurrentLanguage(embedRoute.language);
   }
@@ -175,16 +250,35 @@ const render = async (): Promise<void> => {
     return;
   }
 
-  const sharedToken = getSharedToken(pathnameContext.normalizedPath, hashPathWithoutLanguage);
+  const sharedToken = getSharedToken(
+    pathnameContext.normalizedPath,
+    hashPathWithoutLanguage,
+  );
   if (sharedToken) {
-    await renderSharedScenarioRoute(root, service, sharedToken, { createActionButton, goTo });
+    await renderSharedScenarioRoute(root, service, sharedToken, {
+      createActionButton,
+      goTo,
+    });
     return;
   }
 
-  const route = getRoute(pathnameContext.normalizedPath, hashPathWithoutLanguage, ROUTES);
+  const route = getRoute(
+    pathnameContext.normalizedPath,
+    hashPathWithoutLanguage,
+    ROUTES,
+  );
 
   if (route === '/' || route === '/login') {
-    renderLoginPage(root, { createActionButton, goTo, setLegalBackTarget });
+    await initializeGoogleOAuth();
+    renderLoginPage(root, {
+      createActionButton,
+      goTo,
+      setLegalBackTarget,
+      googleOAuthService: googleOAuthService || undefined,
+      onGoogleSignIn: async (idToken: string) => {
+        await service.signInWithGoogle(idToken);
+      },
+    });
     return;
   }
 
@@ -199,7 +293,11 @@ const render = async (): Promise<void> => {
   }
 
   if (route === '/dashboard') {
-    await renderDashboardPage(root, service, { createActionButton, emptyState, goTo });
+    await renderDashboardPage(root, service, {
+      createActionButton,
+      emptyState,
+      goTo,
+    });
     return;
   }
 
@@ -214,23 +312,35 @@ const render = async (): Promise<void> => {
       getShowDebugJson: () => showDebugJson,
       setShowDebugJson: (value) => {
         showDebugJson = value;
-      }
+      },
     });
     return;
   }
 
   if (route === '/subscription') {
-    renderSubscriptionPage(root, service, { createActionButton, goTo, setLegalBackTarget });
+    renderSubscriptionPage(root, service, {
+      createActionButton,
+      goTo,
+      setLegalBackTarget,
+    });
     return;
   }
 
   if (route === '/data') {
-    await renderDataBackupPage(root, service, { createActionButton, goTo, render });
+    await renderDataBackupPage(root, service, {
+      createActionButton,
+      goTo,
+      render,
+    });
     return;
   }
 
   if (route === '/settings') {
-    await renderSettingsPage(root, service, { createActionButton, goTo, setLegalBackTarget });
+    await renderSettingsPage(root, service, {
+      createActionButton,
+      goTo,
+      setLegalBackTarget,
+    });
     return;
   }
 
@@ -258,7 +368,7 @@ const render = async (): Promise<void> => {
     '/cookies': '/cookies',
     '/legal-center': null,
     '/legal/privacy': '/privacy',
-    '/legal/terms': '/terms'
+    '/legal/terms': '/terms',
   };
 
   const mappedLegalRoute = legalRouteMap[route];

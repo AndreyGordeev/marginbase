@@ -167,6 +167,7 @@
   "subscription.disclosureRenewal": "Po okresie próbnym subskrypcja odnawia się automatycznie, chyba że ją anulujesz.",
   "settings.title": "Ustawienia",
   "settings.subtitle": "Akcje konta i przyszłe opcje konfiguracji.",
+  "settings.logout": "Wyloguj się",
   "settings.deleteAccountData": "Usuń dane konta",
   "settings.accountDeleted": "Dane konta usunięte.",
   "settings.telemetry.title": "Zgoda na telemetrię",

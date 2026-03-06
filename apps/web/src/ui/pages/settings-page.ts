@@ -8,7 +8,7 @@ import type { CommonDeps } from './page-types';
 export const renderSettingsPage = async (
   root: HTMLElement,
   service: WebAppService,
-  deps: Pick<CommonDeps, 'createActionButton' | 'goTo' | 'setLegalBackTarget'>
+  deps: Pick<CommonDeps, 'createActionButton' | 'goTo' | 'setLegalBackTarget'>,
 ): Promise<void> => {
   const { createActionButton, goTo, setLegalBackTarget } = deps;
 
@@ -24,15 +24,63 @@ export const renderSettingsPage = async (
   card.className = 'card';
   card.innerHTML = `<h2>${translate('settings.title')}</h2><p>${translate('settings.subtitle')}</p>`;
 
-  const deleteAccountButton = createActionButton(translate('settings.deleteAccountData'), async () => {
-    const deleted = await service.deleteAccount('local_web_user');
-    if (deleted) {
-      window.alert(translate('settings.accountDeleted'));
-      goTo('/login');
-    }
-  });
+  const authActions = document.createElement('div');
+  authActions.className = 'button-row';
 
-  card.appendChild(deleteAccountButton);
+  // Logout button
+  authActions.appendChild(
+    createActionButton(translate('settings.logout'), () => {
+      service.signOut();
+      goTo('/login');
+    }),
+  );
+
+  // Manage Billing button (only if signed in)
+  const userId = service.getSignedInUserId();
+  if (userId && userId !== 'local_web_user') {
+    const entitlements = service.getEntitlementCache();
+    // Only show billing portal if user has an active subscription
+    if (
+      entitlements?.source === 'stripe' ||
+      entitlements?.status === 'active'
+    ) {
+      authActions.appendChild(
+        createActionButton(
+          translate('subscription.manageBilling'),
+          async () => {
+            const returnUrl = `${window.location.origin}/#/settings`;
+            const portalUrl = await service.startBillingPortalSession(
+              userId,
+              returnUrl,
+            );
+            if (portalUrl) {
+              window.location.href = portalUrl;
+            } else {
+              window.alert(translate('subscription.manageBillingFailed'));
+            }
+          },
+          'primary',
+        ),
+      );
+    }
+  }
+
+  // Delete account button
+  const deleteAccountButton = createActionButton(
+    translate('settings.deleteAccountData'),
+    async () => {
+      const userId = service.getSignedInUserId() || 'anonymous';
+      const deleted = await service.deleteAccount(userId);
+      if (deleted) {
+        window.alert(translate('settings.accountDeleted'));
+        service.signOut();
+        goTo('/login');
+      }
+    },
+  );
+
+  authActions.appendChild(deleteAccountButton);
+  card.appendChild(authActions);
 
   const telemetryCard = document.createElement('div');
   telemetryCard.className = 'card';
@@ -45,20 +93,30 @@ export const renderSettingsPage = async (
   const telemetryActions = document.createElement('div');
   telemetryActions.className = 'button-row';
 
-  telemetryActions.appendChild(createActionButton(translate('settings.telemetry.enable'), () => {
-    service.setTelemetryConsentState('enabled');
-    telemetryState.textContent = `${translate('settings.telemetry.state')}: ${translate('settings.telemetry.enabled')}`;
-  }, 'primary'));
+  telemetryActions.appendChild(
+    createActionButton(
+      translate('settings.telemetry.enable'),
+      () => {
+        service.setTelemetryConsentState('enabled');
+        telemetryState.textContent = `${translate('settings.telemetry.state')}: ${translate('settings.telemetry.enabled')}`;
+      },
+      'primary',
+    ),
+  );
 
-  telemetryActions.appendChild(createActionButton(translate('settings.telemetry.disable'), () => {
-    service.setTelemetryConsentState('disabled');
-    telemetryState.textContent = `${translate('settings.telemetry.state')}: ${translate('settings.telemetry.disabled')}`;
-  }));
+  telemetryActions.appendChild(
+    createActionButton(translate('settings.telemetry.disable'), () => {
+      service.setTelemetryConsentState('disabled');
+      telemetryState.textContent = `${translate('settings.telemetry.state')}: ${translate('settings.telemetry.disabled')}`;
+    }),
+  );
 
-  telemetryActions.appendChild(createActionButton(translate('settings.telemetry.reset'), () => {
-    service.setTelemetryConsentState('not_decided');
-    telemetryState.textContent = `${translate('settings.telemetry.state')}: ${translate('settings.telemetry.not_decided')}`;
-  }));
+  telemetryActions.appendChild(
+    createActionButton(translate('settings.telemetry.reset'), () => {
+      service.setTelemetryConsentState('not_decided');
+      telemetryState.textContent = `${translate('settings.telemetry.state')}: ${translate('settings.telemetry.not_decided')}`;
+    }),
+  );
 
   telemetryCard.appendChild(telemetryActions);
 
@@ -74,7 +132,7 @@ export const renderSettingsPage = async (
     { label: translate('legal.cancellation'), route: '/cancellation' },
     { label: translate('legal.refund'), route: '/refund' },
     { label: translate('legal.notice'), route: '/legal' },
-    { label: translate('legal.cookies'), route: '/cookies' }
+    { label: translate('legal.cookies'), route: '/cookies' },
   ];
 
   for (const entry of settingsEntries) {

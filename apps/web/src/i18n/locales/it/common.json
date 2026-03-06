@@ -167,6 +167,7 @@
   "subscription.disclosureRenewal": "Dopo la prova, l'abbonamento si rinnova automaticamente salvo cancellazione.",
   "settings.title": "Impostazioni",
   "settings.subtitle": "Azioni account e opzioni di configurazione future.",
+  "settings.logout": "Esci",
   "settings.deleteAccountData": "Elimina dati account",
   "settings.accountDeleted": "Dati account eliminati.",
   "settings.telemetry.title": "Consenso telemetria",

@@ -7,14 +7,16 @@ import type { CommonDeps } from './page-types';
 export const renderSubscriptionPage = (
   root: HTMLElement,
   service: WebAppService,
-  deps: Pick<CommonDeps, 'createActionButton' | 'goTo' | 'setLegalBackTarget'>
+  deps: Pick<CommonDeps, 'createActionButton' | 'goTo' | 'setLegalBackTarget'>,
 ): void => {
   const { createActionButton, goTo, setLegalBackTarget } = deps;
 
   const shell = document.createElement('div');
   shell.className = 'shell';
   shell.appendChild(renderAppHeader());
-  shell.appendChild(renderSidebar('/subscription', { createActionButton, goTo }));
+  shell.appendChild(
+    renderSidebar('/subscription', { createActionButton, goTo }),
+  );
   const main = document.createElement('main');
   main.className = 'main';
   const card = document.createElement('div');
@@ -23,58 +25,85 @@ export const renderSubscriptionPage = (
 
   const actions = document.createElement('div');
   actions.className = 'button-row';
-  actions.appendChild(createActionButton(translate('subscription.startCheckout'), async () => {
-    const signedInUserId = service.getSignedInUserId();
-    const userId = signedInUserId && signedInUserId.length > 0 ? signedInUserId : 'local_web_user';
-    const email = `${userId}@marginbase.local`;
+  actions.appendChild(
+    createActionButton(
+      translate('subscription.startCheckout'),
+      async () => {
+        const signedInUserId = service.getSignedInUserId();
+        const userId =
+          signedInUserId && signedInUserId.length > 0
+            ? signedInUserId
+            : 'local_web_user';
+        const email = `${userId}@marginbase.local`;
 
-    await service.trackUpgradeClicked();
+        await service.trackUpgradeClicked();
 
-    let checkoutUrl: string | null = null;
+        let checkoutUrl: string | null = null;
 
-    try {
-      checkoutUrl = await service.startCheckoutSession('bundle', userId, email);
-    } catch {
-      checkoutUrl = null;
-    }
+        try {
+          checkoutUrl = await service.startCheckoutSession(
+            'bundle',
+            userId,
+            email,
+          );
+        } catch {
+          checkoutUrl = null;
+        }
 
-    if (checkoutUrl) {
-      await service.trackCheckoutRedirected();
-      window.location.href = checkoutUrl;
-      return;
-    }
+        if (checkoutUrl) {
+          await service.trackCheckoutRedirected();
+          window.location.href = checkoutUrl;
+          return;
+        }
 
-    window.alert(translate('subscription.checkoutFailed'));
-  }, 'primary'));
-  actions.appendChild(createActionButton(translate('subscription.manageBilling'), async () => {
-    const signedInUserId = service.getSignedInUserId();
-    if (!signedInUserId) {
-      window.alert(translate('subscription.signInRequired'));
-      return;
-    }
+        window.alert(translate('subscription.checkoutFailed'));
+      },
+      'primary',
+    ),
+  );
+  actions.appendChild(
+    createActionButton(translate('subscription.manageBilling'), async () => {
+      const signedInUserId = service.getSignedInUserId();
+      if (!signedInUserId) {
+        window.alert(translate('subscription.signInRequired'));
+        return;
+      }
 
-    const defaultReturnUrl = `${window.location.origin}${window.location.pathname}#/settings`;
+      const defaultReturnUrl = `${window.location.origin}${window.location.pathname}#/settings`;
 
-    let portalUrl: string | null = null;
+      let portalUrl: string | null = null;
 
-    try {
-      portalUrl = await service.startBillingPortalSession(signedInUserId, defaultReturnUrl);
-    } catch {
-      portalUrl = null;
-    }
+      try {
+        portalUrl = await service.startBillingPortalSession(
+          signedInUserId,
+          defaultReturnUrl,
+        );
+      } catch {
+        portalUrl = null;
+      }
 
-    if (portalUrl) {
-      window.location.href = portalUrl;
-      return;
-    }
+      if (portalUrl) {
+        window.location.href = portalUrl;
+        return;
+      }
 
-    window.alert(translate('subscription.manageBillingFailed'));
-  }));
-  actions.appendChild(createActionButton(translate('subscription.activateBundleLocal'), () => {
-    service.activateBundle();
-    goTo('/dashboard');
-  }));
-  actions.appendChild(createActionButton(translate('subscription.refreshStatus'), () => goTo('/subscription')));
+      window.alert(translate('subscription.manageBillingFailed'));
+    }),
+  );
+  // Development-only: Mock bundle activation
+  if (import.meta.env.MODE === 'development' || import.meta.env.DEV) {
+    actions.appendChild(
+      createActionButton('[DEV] Activate Bundle Local', () => {
+        service.activateBundle();
+        goTo('/dashboard');
+      }),
+    );
+  }
+  actions.appendChild(
+    createActionButton(translate('subscription.refreshStatus'), () =>
+      goTo('/subscription'),
+    ),
+  );
 
   const disclosure = document.createElement('div');
   disclosure.className = 'inline-error';

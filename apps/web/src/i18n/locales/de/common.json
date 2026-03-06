@@ -167,6 +167,7 @@
   "subscription.disclosureRenewal": "Nach der Testphase verlängert sich Ihr Abo automatisch, sofern es nicht gekündigt wird.",
   "settings.title": "Einstellungen",
   "settings.subtitle": "Kontoaktionen und zukünftige Konfigurationsoptionen.",
+  "settings.logout": "Abmelden",
   "settings.deleteAccountData": "Kontodaten löschen",
   "settings.accountDeleted": "Kontodaten gelöscht.",
   "settings.telemetry.title": "Einwilligung in Telemetrie",

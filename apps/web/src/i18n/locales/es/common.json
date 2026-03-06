@@ -167,6 +167,7 @@
   "subscription.disclosureRenewal": "Después de la prueba, tu suscripción se renueva automáticamente salvo cancelación.",
   "settings.title": "Configuración",
   "settings.subtitle": "Acciones de cuenta y futuras opciones de configuración.",
+  "settings.logout": "Cerrar sesión",
   "settings.deleteAccountData": "Eliminar datos de la cuenta",
   "settings.accountDeleted": "Datos de la cuenta eliminados.",
   "settings.telemetry.title": "Consentimiento de telemetría",

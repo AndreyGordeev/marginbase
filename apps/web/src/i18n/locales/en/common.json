@@ -129,6 +129,7 @@
   "subscription.disclosureRenewal": "After the trial, your subscription renews automatically unless cancelled.",
   "settings.title": "Settings",
   "settings.subtitle": "Account actions and future configuration options.",
+  "settings.logout": "Sign out",
   "settings.deleteAccountData": "Delete account data",
   "settings.accountDeleted": "Account data deleted.",
   "settings.telemetry.title": "Telemetry Consent",

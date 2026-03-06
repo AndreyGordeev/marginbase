@@ -167,6 +167,7 @@
   "subscription.disclosureRenewal": "После пробного периода подписка продлевается автоматически, если её не отменить.",
   "settings.title": "Настройки",
   "settings.subtitle": "Действия с аккаунтом и будущие параметры конфигурации.",
+  "settings.logout": "Выйти",
   "settings.deleteAccountData": "Удалить данные аккаунта",
   "settings.accountDeleted": "Данные аккаунта удалены.",
   "settings.telemetry.title": "Согласие на телеметрию",

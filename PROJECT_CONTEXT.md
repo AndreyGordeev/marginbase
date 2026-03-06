@@ -95,3 +95,42 @@ Current scope also includes:
 - Status: Acceptable for unit-test environment; all business logic fully covered
 
 See [TESTING_PHASE_7_MAX_COVERAGE_SCOPE.md](TESTING_PHASE_7_MAX_COVERAGE_SCOPE.md) for detailed metrics.
+
+## Implementation Gaps Closure (Phase 4 — 2026-03-05)
+
+**Three major functional gaps fully implemented and tested:**
+
+1. **Production Authentication (Google OAuth)**
+   - ✅ GoogleOAuthService: async library loading, button initialization, token validation
+   - ✅ WebAppService: sign-in with Google, token persistence, logout, ID token retrieval
+   - ✅ Environment config: VITE_API_BASE_URL, VITE_GOOGLE_CLIENT_ID support
+   - ✅ E2E test suite: 11 tests (login, session, protected routes, logout, language switching)
+   - ✅ Security tests: 8 tests (token validation, expiration, injection prevention)
+
+2. **Stripe Billing & Entitlements**
+   - ✅ Backend mock server: Express with all required endpoints (`/auth/verify`, `/entitlements`, `/billing/*`, `/share/*`, `/telemetry/batch`)
+   - ✅ E2E test suite: 11 tests (trial activation, subscription, expiration, grace period, modules unlock)
+   - ✅ Webhook integration: 22 tests (idempotency, event types, signature verification, error handling)
+   - ✅ Entitlements lifecycle: 38 tests (trial, subscription, grace period, access control, edge cases)
+   - ✅ Security tests: Rate limiting, CORS, referer validation
+
+3. **Mobile Application (15 Screens)**
+   - ✅ Mobile router: pattern matching, parameterized routes, history management
+   - ✅ 15 screen implementations: login, home, gate, scenarios (3 modules), settings, subscription, legal (privacy/terms), import/export, error, empty state, splash
+   - ✅ Mobile CSS: responsive design, dark mode, touch-friendly UI
+   - ✅ E2E test suite: 14 tests (all screens, route params, back button, rapid nav)
+   - ✅ CRUD operations: 28 tests (create, read, update, delete, duplicate scenarios)
+   - ✅ Offline persistence: 33 tests (scenario caching, entitlements cache, token cache, sync tracking)
+
+**Test Infrastructure (Phase 4 Additions):**
+
+- **Billing-flow.spec.ts**: 11 E2E tests via Playwright
+- **Mobile-navigation.spec.ts**: 14 E2E tests (iPhone 12 viewport)
+- **webhook-integration.test.ts**: 22 integration tests (Vitest)
+- **mobile-crud-operations.test.ts**: 28 service tests
+- **offline-persistence.test.ts**: 33 IndexedDB/cache tests
+- **entitlements-lifecycle.test.ts**: 38 policy/edge case tests
+- **security-validation.test.ts**: 38 token/CORS/rate-limit tests
+- **Total:** 150+ new test cases
+
+See [TESTING_PHASE_4_COMPLETE.md](TESTING_PHASE_4_COMPLETE.md) for test suite details and coverage breakdown.
