@@ -304,6 +304,12 @@ export class WebAppService {
     // Check if we have a valid Google token
     const idToken = localStorage.getItem(GOOGLE_ID_TOKEN_STORAGE_KEY);
     if (idToken && idToken.trim()) {
+      // Optionally check token expiration (basic check)
+      if (this.isTokenExpired(idToken)) {
+        // Token expired, clear auth state
+        this.signOut();
+        return false;
+      }
       return true;
     }
 
@@ -326,7 +332,43 @@ export class WebAppService {
     }
 
     const token = localStorage.getItem(GOOGLE_ID_TOKEN_STORAGE_KEY);
-    return token && token.trim() ? token : null;
+    if (token && token.trim()) {
+      // Check if token is expired before returning
+      if (this.isTokenExpired(token)) {
+        this.signOut();
+        return null;
+      }
+      return token;
+    }
+    return null;
+  }
+
+  /**
+   * Check if a JWT token is expired
+   * @param token JWT token string
+   * @returns true if expired or invalid, false otherwise
+   */
+  private isTokenExpired(token: string): boolean {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        return true;
+      }
+
+      const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const decoded = JSON.parse(atob(payload)) as { exp?: number };
+
+      if (typeof decoded.exp !== 'number') {
+        return false; // No expiration claim, assume valid
+      }
+
+      const now = Math.floor(Date.now() / 1000);
+      const bufferSeconds = 60; // Consider expired 60s before actual expiration
+
+      return decoded.exp < now + bufferSeconds;
+    } catch {
+      return true; // Invalid token format
+    }
   }
 
   public async signInWithGoogle(

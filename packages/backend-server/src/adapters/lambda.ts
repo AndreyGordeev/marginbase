@@ -89,6 +89,12 @@ const toRequest = (
   const rawBody =
     typeof event.body === 'string' ? event.body : JSON.stringify(body);
 
+  // Extract Bearer token from Authorization header (same logic as bearerTokenMiddleware)
+  const authHeader = headers['authorization'];
+  const idToken = authHeader?.startsWith('Bearer ')
+    ? authHeader.substring(7)
+    : undefined;
+
   const request = {
     method: event.requestContext?.http?.method ?? 'GET',
     path: event.rawPath ?? event.requestContext?.http?.path ?? '/',
@@ -97,6 +103,7 @@ const toRequest = (
     params: overrides?.params ?? event.pathParameters ?? {},
     body,
     rawBody,
+    idToken,
     get(name: string): string | undefined {
       return headers[name.toLowerCase()];
     },
