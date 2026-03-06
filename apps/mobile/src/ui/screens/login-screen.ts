@@ -1,5 +1,9 @@
 import type { MobileScreen, MobileScreenProps } from '../screen-types';
-import { createScreenElement, createButton, createInput } from '../screen-types';
+import {
+  createScreenElement,
+  createButton,
+  createInput,
+} from '../screen-types';
 
 export const createLoginScreen = (): MobileScreen => ({
   route: '/login',

@@ -25,7 +25,9 @@ export const createHomeScreen = (): MobileScreen => ({
     ];
 
     for (const mod of modules) {
-      const isLocked = !props.service.canOpenModule(mod.id as 'profit' | 'breakeven' | 'cashflow');
+      const isLocked = !props.service.canOpenModule(
+        mod.id as 'profit' | 'breakeven' | 'cashflow',
+      );
       const button = createButton(
         `${mod.icon} ${mod.label}${isLocked ? ' (Locked)' : ''}`,
         () => props.onNavigate(`/module/${mod.id}/scenarios`),

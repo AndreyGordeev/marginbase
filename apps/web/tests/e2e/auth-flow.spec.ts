@@ -26,9 +26,7 @@ test.describe('Authentication Flow', () => {
     await expect(page).toHaveURL(/login/);
   });
 
-  test('should maintain session after page refresh', async ({
-    page,
-  }) => {
+  test('should maintain session after page refresh', async ({ page }) => {
     // Sign in as guest
     await page.click('button:has-text("Continue as Guest")');
     await page.waitForURL('**/#/dashboard');

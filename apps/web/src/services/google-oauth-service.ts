@@ -66,7 +66,10 @@ export class GoogleOAuthService {
 
         script.onload = () => {
           // Verify google object is available
-          if ((window as Window & { google?: { accounts?: { id?: unknown } } }).google?.accounts?.id) {
+          if (
+            (window as Window & { google?: { accounts?: { id?: unknown } } })
+              .google?.accounts?.id
+          ) {
             this.scriptLoaded = true;
             resolve();
           } else {
@@ -99,7 +102,18 @@ export class GoogleOAuthService {
       onError(new Error('Google library not loaded'));
       return;
     }
-  const google = (window as Window & { google?: { accounts?: { id?: { initialize: (config: unknown) => void; renderButton: (el: HTMLElement | null, config: unknown) => void } } } }).google;
+    const google = (
+      window as Window & {
+        google?: {
+          accounts?: {
+            id?: {
+              initialize: (config: unknown) => void;
+              renderButton: (el: HTMLElement | null, config: unknown) => void;
+            };
+          };
+        };
+      }
+    ).google;
     if (!google?.accounts?.id) {
       onError(new Error('Google Identity Services not available'));
       return;
