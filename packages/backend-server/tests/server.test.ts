@@ -7,7 +7,7 @@ let closeServer: (() => Promise<void>) | null = null;
 
 beforeAll(async () => {
   process.env.GOOGLE_VERIFICATION_MODE = 'development';
-  const app = createBackendServer();
+  const app = await createBackendServer();
   const server = app.listen(0);
 
   await new Promise<void>((resolve) => {
