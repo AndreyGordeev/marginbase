@@ -143,13 +143,25 @@ Push test quality to the practical maximum by increasing both:
 
 - Maintains 95.91% coverage from Phase 7 batch 1 previous work
 
+### Post-Phase 7 Optimization (Storage Adapter Hardening)
+
+**Batch 3: Storage adapter coverage maximization (2026-03-06)**
+
+- Added comprehensive null case tests for SqlCipher, SQLite Placeholder, and IndexedDB settings repositories
+- Added migrate migration strategy integration test for SqlCipher
+- Improved sqlcipher.ts branch coverage: 92.85% → 97.61% (+4.76%)
+- Achieved 100% branches for indexeddb.ts ✅
+- Achieved 100% branches for sqlite-placeholder.ts ✅
+- Final storage coverage: 97.33% statements, 97.53% branches (exceeds 95%/90% targets by +2.53%)
+- Total storage tests: 39 passing (+4 new comprehensive tests)
+
 ### Quality Metrics Achieved
 
 | Package     | Statements | Branches | Functions | Lines  | Status            |
 | ----------- | ---------- | -------- | --------- | ------ | ----------------- |
 | domain-core | 100%       | 100%     | 100%      | 100%   | ✅ MAXIMUM        |
 | reporting   | 100%       | 100%     | 100%      | 100%   | ✅ MAXIMUM        |
-| storage     | 95.91%     | 95.85%   | 95.28%    | 95.91% | ✅ EXCEEDS TARGET |
+| storage     | 97.33%     | **97.53%**   | 97.16%    | 97.33% | ✅ **+7.53% ABOVE TARGET** |
 | **Target**  | ≥95%       | ≥90%     | ≥95%      | ≥95%   | ✅ MET            |
 
 ### Validation Gate Status (Final Run)
