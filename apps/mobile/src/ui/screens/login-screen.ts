@@ -24,7 +24,7 @@ export const createLoginScreen = (): MobileScreen => ({
     if (typeof window !== 'undefined' && 'cordova' in window) {
       // Mobile platform (iOS/Android)
       const platform = navigator.userAgent.includes('iPhone') ? 'iOS' : 'Android';
-      
+
       content.appendChild(
         createButton(
           `Sign in with ${platform}`,
