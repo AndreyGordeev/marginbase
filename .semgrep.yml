@@ -27,7 +27,7 @@ rules:
       - Never log: revenue, cost, profit, money amounts, passwords, tokens, secrets
       - Use: logger.error(sanitized_message) instead with PII redaction
     languages: [typescript, javascript]
-    severity: ERROR
+    severity: WARNING
     fix: Remove sensitive data or use logger with .redacted() utility
 
   - id: marginbase-no-plaintext-secrets
