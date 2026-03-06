@@ -2,10 +2,9 @@ rules:
   - id: marginbase-no-console-sensitive
     paths:
       exclude:
-        - packages/backend-server/src/handlers/
-        - packages/backend-server/src/services/
-        - packages/backend-server/src/server.ts
-        - packages/backend-server/tests/
+        - "**/handlers/**"
+        - "**/services/**"
+        - "**/server.ts"
         - "**/tests/**"
         - "**/*.test.ts"
         - "**/*.spec.ts"
