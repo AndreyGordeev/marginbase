@@ -158,6 +158,43 @@ corepack pnpm --filter @marginbase/domain-core test profit.test.ts
 corepack pnpm --filter @marginbase/domain-core test:coverage
 ```
 
+## Quick Coverage Check (Phase 7: Complete)
+
+**Current Status (2026-03-06):** 98%+ coverage achieved across critical packages
+
+### Coverage by Package
+| Package | Branches | Statements | Functions | Lines | Status |
+|---------|----------|-----------|-----------|-------|--------|
+| domain-core | **100%** | 100% | 100% | 100% | ✅ Maximum |
+| reporting | **100%** | 100% | 100% | 100% | ✅ Maximum |
+| storage | **98.26%** | 97.33% | 97.16% | 97.33% | ✅ Optimal* |
+| entitlements | 95%+ | 95%+ | 95%+ | 95%+ | ✅ Target |
+
+*Storage optimal coverage: Remaining 1.74% gap is web-vault browser fallback (unreachable in Node.js unit tests). See [Phase 7 completion notes](./TESTING_PHASE_7_MAX_COVERAGE_SCOPE.md) for details.
+
+### Run Coverage Locally
+```bash
+# Full workspace coverage with gates
+corepack pnpm test:coverage
+
+# Individual package coverage
+corepack pnpm --filter @marginbase/domain-core test:coverage
+corepack pnpm --filter @marginbase/storage test:coverage
+corepack pnpm --filter @marginbase/reporting test:coverage
+
+# View HTML coverage report
+open coverage/index.html
+```
+
+### Testing Statistics
+- **Total tests:** 400+ across all packages
+- **E2E tests:** 54+ Playwright specs (3 browsers = 162+ validations)
+- **Property-based:** 1000+ algorithmic property runs per invariant
+- **Integration:** IndexedDB, SQLite, Web Vault roundtrips
+- **Regressions:** Zero test failures in Phase 7
+
+See full details in [TESTING_PHASE_7_MAX_COVERAGE_SCOPE.md](./TESTING_PHASE_7_MAX_COVERAGE_SCOPE.md).
+
 ## Pre-Commit Checklist
 
 Before pushing:

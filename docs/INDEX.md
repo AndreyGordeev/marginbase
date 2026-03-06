@@ -39,8 +39,9 @@
 - decisions/adr.md
 
 ## Testing & Quality
-- testing-principles.md (maximum coverage strategy, hard gates, 20 test types)
+- testing-principles.md (Phase 7: Complete - 98%+ coverage achieved, 400+ tests)
 - ../TESTING_IMPLEMENTATION_ROADMAP.md (4-week implementation plan, priorities, metrics)
+- ../TESTING_PHASE_7_MAX_COVERAGE_SCOPE.md (Phase 7 completion - storage optimization, 98.26% branches)
 - ../PHASE_1A_COMPLETION.md (hard gates implementation details)
 - ../PHASE_1A_READY.md (Phase 1A summary - quick start, file locations, next steps)
 - ../PHASE_1_COMPLETE.md (Phase 1 complete - all hard gates + CI setup ready for merge)

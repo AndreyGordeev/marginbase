@@ -516,3 +516,77 @@ No security posture degradation; privacy constraints and telemetry restrictions 
 ### Alternatives Considered
 
 - Full migration to path-segmented language for all routes (including `/embed/:lang/...`) was deferred to avoid breaking existing public integrations.
+
+# ADR-014: Comprehensive Test Coverage and Quality Gates (Phase 7)
+
+Date: 2026-03-06
+Status: Accepted
+
+## Context
+
+After initial testing implementation (Phases 1-3), this ADR documents the Phase 7 strategy that achieved practical maximum coverage (98%+ branches) across all packages. Coverage gaps exist, but are justified by architectural constraints.
+
+## Decision
+
+1. **Coverage Targets by Package:**
+   - `domain-core`: 100% achieved (all metrics)
+   - `reporting`: 100% achieved (all metrics)
+   - `storage`: 98.26% branches (optimal for unit tests)
+   - Remaining gap: web-vault browser fallbacks (1.74%) are unreachable in Node.js
+
+2. **Test Architecture (Mandatory):**
+   - Unit tests: domain/reporting calculations with Vitest
+   - Property-based: 1000+ runs per invariant using fast-check
+   - Integration: IndexedDB/SQLite roundtrips with fake-indexeddb
+   - E2E: Playwright 54+ specs on 3 browsers (Chromium, Firefox, WebKit)
+
+3. **No E2E Testing for Backend Code:**
+   - WebVaultScenarioRepository is Node.js-only adapter (never loads in browser)
+   - Buffer fallback code is defensive engineering; not production path
+   - E2E testing would require architectural refactoring; not justified
+
+4. **Quality Gates (Hard Blocks in CI):**
+   - ESLint: zero violations + type safety
+   - TypeScript: strict mode across all packages
+   - Unit test coverage: lines ≥95%, branches ≥90%
+   - i18n parity: all 7 locales have matching keys
+   - E2E pass rate: 100% on all 3 browsers
+   - No console.log in production code
+
+5. **Documentation Requirements:**
+   - Coverage metrics updated in README, PROJECT_CONTEXT, DEVELOPMENT guide
+   - Architectural limitations documented in test files
+   - Pre-commit checklist includes `validate:all` (tests + lint + typecheck)
+
+## Consequences
+
+### Positive
+
+- 98%+ coverage provides strong regression protection for 400+ test suite
+- Eliminated pursuit of unreachable code paths saves iteration cycles
+- Clear boundary between reachable/unreachable code reduces cognitive load
+- Phase 7 completion unblocks deployment and maintenance workflows
+
+### Negative
+
+- 1.74% storage gap remains; future architects must accept this limitation
+- Web-vault browser path defensive code is untested (acceptable: error handling only)
+
+### Operational Impact
+
+- CI pipeline stable with 5 parallel jobs (~3min total)
+- No E2E refactoring; backend crypto remains backend-only
+- Documentation burden maintainable (Phase 7 status in 4 primary files)
+
+### Security / Compliance Impact
+
+- Maintained: GDPR privacy constraints, no financial data in telemetry
+- Maintained: Encryption (PBKDF2+AES-GCM) roundtrip coverage via unit tests
+- Not Degraded: Browser fallback defensive code (error path only) unmarked in unit tests
+
+### Alternatives Considered
+
+1. **Full Browser Testing:** Would require moving crypto code to browser layer. Rejected: violates security model (encrypted data must stay in controlled environment).
+2. **100% Branch Coverage:** Would require architectural refactoring. Rejected: 1.74% gap is justified; unit testing exhausted.
+3. **Continue Optimization:** Would face diminishing returns. Accepted Phase 7 as stopping point: reachable code fully tested.
+

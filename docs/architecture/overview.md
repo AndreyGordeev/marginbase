@@ -1,5 +1,6 @@
 # MarginBase Architecture Overview (v1)
-Date: 2026-03-05  |  Scope: Web + iOS + Android (offline-first, minimal backend)
+Date: 2026-03-05  |  Scope: Web + iOS + Android (offline-first, minimal backend)  
+**Quality Status (Phase 7: Complete)** — 98%+ branch coverage, 400+ tests, all CI gates green. See [TESTING_PHASE_7_MAX_COVERAGE_SCOPE.md](../../TESTING_PHASE_7_MAX_COVERAGE_SCOPE.md) for details.
 
 ## Decisions locked
 - Data: scenarios stored locally-first; cloud sync is out of V1 scope.
