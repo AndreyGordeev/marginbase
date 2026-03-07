@@ -54,7 +54,9 @@ test('soft gate blocks locked module and routes to subscription', async ({
     page.getByText('This module requires an active subscription.'),
   ).toBeVisible();
 
-  await page.getByRole('button', { name: 'Go to Subscription' }).click({ force: true });
+  await page
+    .getByRole('button', { name: 'Go to Subscription' })
+    .click({ force: true });
   await expect(
     page.getByRole('heading', { name: 'Subscription' }),
   ).toBeVisible();
@@ -146,9 +148,11 @@ test('share scenario flow creates and renders local share dialog', async ({
   await page
     .getByRole('button', { name: 'Calculate Scenario' })
     .click({ force: true });
-  await page
-    .getByRole('button', { name: 'Share Scenario' })
-    .click({ force: true });
+  
+  // Wait for Share Scenario button to become visible on mobile viewports
+  const shareBtn = page.getByRole('button', { name: 'Share Scenario' });
+  await expect(shareBtn).toBeVisible({ timeout: 10000 });
+  await shareBtn.click({ force: true });
 
   // Wait for share dialog to render, with longer timeout for mobile
   await expect(
