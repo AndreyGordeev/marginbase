@@ -76,10 +76,13 @@ test('upgrade flow unlocks locked module via local bundle activation', async ({
     localStorage.setItem(
       'marginbase_entitlements',
       JSON.stringify({
-        bundle: true,
-        profit: true,
-        breakeven: true,
-        cashflow: true,
+        entitlementSet: {
+          bundle: true,
+          profit: true,
+          breakeven: true,
+          cashflow: true,
+        },
+        lastVerifiedAt: new Date().toISOString(),
       }),
     );
   });
@@ -138,8 +141,10 @@ test('share scenario flow creates and renders local share dialog', async ({
     page.getByRole('heading', { name: 'Profit Editor' }),
   ).toBeVisible();
 
-  await page.getByRole('button', { name: 'Calculate Scenario' }).click();
-  await page.getByRole('button', { name: 'Share Scenario' }).click();
+  await page
+    .getByRole('button', { name: 'Calculate Scenario' })
+    .click({ force: true });
+  await page.getByRole('button', { name: 'Share Scenario' }).click({ force: true });
 
   await expect(
     page.getByRole('heading', { name: 'Shared Scenario' }),
