@@ -88,7 +88,11 @@ export default defineConfig({
     {
       name: 'firefox-tablet',
       use: {
-        ...devices['iPad (gen 7)'],
+        ...devices['Desktop Firefox'],
+        viewport: {
+          width: 768,
+          height: 1024,
+        },
         browserName: 'firefox',
         reducedMotion: 'reduce',
       },
@@ -96,7 +100,11 @@ export default defineConfig({
     {
       name: 'firefox-mobile-small',
       use: {
-        ...devices['iPhone SE'],
+        ...devices['Desktop Firefox'],
+        viewport: {
+          width: 375,
+          height: 667,
+        },
         browserName: 'firefox',
         reducedMotion: 'reduce',
       },
@@ -104,7 +112,11 @@ export default defineConfig({
     {
       name: 'firefox-mobile-large',
       use: {
-        ...devices['Pixel 7'],
+        ...devices['Desktop Firefox'],
+        viewport: {
+          width: 412,
+          height: 915,
+        },
         browserName: 'firefox',
         reducedMotion: 'reduce',
       },
