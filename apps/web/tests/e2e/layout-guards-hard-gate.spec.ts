@@ -45,6 +45,8 @@ function getVerticalDistance(
   return -1;
 }
 
+// Keep test navigation aligned with Playwright config webServer/baseURL.
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:4173';
 
 test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
   let page: Page;
@@ -56,7 +58,9 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
   });
 
   test.afterAll(async () => {
-    await context.close();
+    if (context) {
+      await context.close();
+    }
   });
 
   // ============================================================================
@@ -66,7 +70,7 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
   test.describe('1: Profit Calculator Layout', () => {
     test('1A: No field overlap on desktop (1280px)', async () => {
       await page.setViewportSize({ width: 1280, height: 720 });
-      await page.goto('http://localhost:5173/profit');
+      await page.goto(`${BASE_URL}/profit`);
       await page.waitForLoadState('networkidle');
 
       // Get input fields (may be in a form or scattered)
@@ -89,7 +93,7 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
 
     test('1B: Minimum spacing between fields on desktop', async () => {
       await page.setViewportSize({ width: 1280, height: 720 });
-      await page.goto('http://localhost:5173/profit');
+      await page.goto(`${BASE_URL}/profit`);
       await page.waitForLoadState('networkidle');
 
       const inputs = page.locator('input[type="number"]');
@@ -113,7 +117,7 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
 
     test('1C: No field overlap on tablet (768px)', async () => {
       await page.setViewportSize({ width: 768, height: 1024 });
-      await page.goto('http://localhost:5173/profit');
+      await page.goto(`${BASE_URL}/profit`);
       await page.waitForLoadState('networkidle');
 
       const inputs = page.locator('input[type="number"]');
@@ -135,7 +139,7 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
 
     test('1D: No field overlap on mobile (360px)', async () => {
       await page.setViewportSize({ width: 360, height: 800 });
-      await page.goto('http://localhost:5173/profit');
+      await page.goto(`${BASE_URL}/profit`);
       await page.waitForLoadState('networkidle');
 
       const inputs = page.locator('input[type="number"]');
@@ -157,7 +161,7 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
 
     test('1E: Labels not clipped by adjacent fields', async () => {
       await page.setViewportSize({ width: 1280, height: 720 });
-      await page.goto('http://localhost:5173/profit');
+      await page.goto(`${BASE_URL}/profit`);
       await page.waitForLoadState('networkidle');
 
       // Find labels
@@ -171,8 +175,14 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
 
           if (labelBox) {
             // Check label is not clipped by being too small
-            expect(labelBox.height).toBeGreaterThanOrEqual(16, `Label ${i} height too small`);
-            expect(labelBox.width).toBeGreaterThanOrEqual(30, `Label ${i} width too small`);
+            expect(labelBox.height).toBeGreaterThanOrEqual(
+              16,
+              `Label ${i} height too small`,
+            );
+            expect(labelBox.width).toBeGreaterThanOrEqual(
+              30,
+              `Label ${i} width too small`,
+            );
           }
         }
       }
@@ -186,7 +196,7 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
   test.describe('2: Break-Even Calculator Layout', () => {
     test('2A: No field overlap on desktop', async () => {
       await page.setViewportSize({ width: 1280, height: 720 });
-      await page.goto('http://localhost:5173/break-even');
+      await page.goto(`${BASE_URL}/break-even`);
       await page.waitForLoadState('networkidle');
 
       const inputs = page.locator('input[type="number"]');
@@ -208,7 +218,7 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
 
     test('2B: No field overlap on mobile', async () => {
       await page.setViewportSize({ width: 360, height: 800 });
-      await page.goto('http://localhost:5173/break-even');
+      await page.goto(`${BASE_URL}/break-even`);
       await page.waitForLoadState('networkidle');
 
       const inputs = page.locator('input[type="number"]');
@@ -236,19 +246,21 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
   test.describe('3: Cashflow Calculator Layout', () => {
     test('3A: Projection table not overlapping with controls', async () => {
       await page.setViewportSize({ width: 1280, height: 720 });
-      await page.goto('http://localhost:5173/cashflow');
+      await page.goto(`${BASE_URL}/cashflow`);
       await page.waitForLoadState('networkidle');
 
-      const controls = page.locator('input, button, select').first();
-      const table = page.locator('table').first();
+      const controls = page.locator('input, button, select');
+      const table = page.locator('table');
 
-      if ((await controls.boundingBox()) && (await table.boundingBox())) {
-        const controlsBox = await controls.boundingBox();
-        const tableBox = await table.boundingBox();
+      if ((await controls.count()) > 0 && (await table.count()) > 0) {
+        const controlsBox = await controls.first().boundingBox();
+        const tableBox = await table.first().boundingBox();
 
-        expect(!boxesIntersect(controlsBox, tableBox)).toBeTruthy(
-          'Cashflow controls and table should not overlap',
-        );
+        if (controlsBox && tableBox) {
+          expect(!boxesIntersect(controlsBox, tableBox)).toBeTruthy(
+            'Cashflow controls and table should not overlap',
+          );
+        }
       }
     });
   });
@@ -260,13 +272,15 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
   test.describe('4: Dialog Layout Guards', () => {
     test('4A: Share dialog buttons not clipped', async () => {
       await page.setViewportSize({ width: 1280, height: 720 });
-      await page.goto('http://localhost:5173/profit');
+      await page.goto(`${BASE_URL}/profit`);
 
       // Open share dialog
       await page.click('button:has-text("Share")').catch(() => {});
       await page.waitForTimeout(500);
 
-      const shareDialog = page.locator('[role="dialog"], .modal, [class*="dialog"]').first();
+      const shareDialog = page
+        .locator('[role="dialog"], .modal, [class*="dialog"]')
+        .first();
 
       if (await shareDialog.isVisible()) {
         const buttons = shareDialog.locator('button');
@@ -275,8 +289,14 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
         if (count > 0) {
           for (let i = 0; i < count; i++) {
             const buttonBox = await buttons.nth(i).boundingBox();
-            expect(buttonBox?.width).toBeGreaterThanOrEqual(60, `Button ${i} too narrow`);
-            expect(buttonBox?.height).toBeGreaterThanOrEqual(25, `Button ${i} too short`);
+            expect(buttonBox?.width).toBeGreaterThanOrEqual(
+              60,
+              `Button ${i} too narrow`,
+            );
+            expect(buttonBox?.height).toBeGreaterThanOrEqual(
+              25,
+              `Button ${i} too short`,
+            );
           }
         }
       }
@@ -284,13 +304,15 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
 
     test('4B: Export dialog not clipped on mobile', async () => {
       await page.setViewportSize({ width: 360, height: 800 });
-      await page.goto('http://localhost:5173/profit');
+      await page.goto(`${BASE_URL}/profit`);
 
       // Open export dialog
       await page.click('button:has-text("Export")').catch(() => {});
       await page.waitForTimeout(500);
 
-      const dialog = page.locator('[role="dialog"], .modal, [class*="dialog"]').first();
+      const dialog = page
+        .locator('[role="dialog"], .modal, [class*="dialog"]')
+        .first();
 
       if (await dialog.isVisible()) {
         const dialogBox = await dialog.boundingBox();
@@ -299,7 +321,10 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
 
         if (dialogBox && contentBox) {
           // Dialog content should fit within viewport with padding
-          expect(contentBox.x).toBeGreaterThanOrEqual(8, 'Dialog too close to left edge');
+          expect(contentBox.x).toBeGreaterThanOrEqual(
+            8,
+            'Dialog too close to left edge',
+          );
           expect(contentBox.x + contentBox.width).toBeLessThanOrEqual(
             360 - 8,
             'Dialog too close to right edge',
@@ -315,7 +340,7 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
 
   test.describe('5: Layout Stability Under Resize', () => {
     test('5A: Desktop to mobile resize maintains layout integrity', async () => {
-      await page.goto('http://localhost:5173/profit');
+      await page.goto(`${BASE_URL}/profit`);
 
       // Start with desktop
       await page.setViewportSize({ width: 1280, height: 720 });
@@ -348,7 +373,7 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
     });
 
     test('5B: Mobile to desktop resize maintains layout integrity', async () => {
-      await page.goto('http://localhost:5173/profit');
+      await page.goto(`${BASE_URL}/profit`);
 
       // Start with mobile
       await page.setViewportSize({ width: 360, height: 800 });
@@ -380,9 +405,9 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
   // ============================================================================
 
   test.describe('6: Layout Stress - Long Content', () => {
-    test('6A: Long input values don\'t break layout', async () => {
+    test("6A: Long input values don't break layout", async () => {
       await page.setViewportSize({ width: 1280, height: 720 });
-      await page.goto('http://localhost:5173/profit');
+      await page.goto(`${BASE_URL}/profit`);
 
       const inputs = page.locator('input[type="number"]');
       if ((await inputs.count()) > 0) {
@@ -399,9 +424,9 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
       }
     });
 
-    test('6B: Long labels don\'t break layout', async () => {
+    test("6B: Long labels don't break layout", async () => {
       await page.setViewportSize({ width: 360, height: 800 });
-      await page.goto('http://localhost:5173/profit');
+      await page.goto(`${BASE_URL}/profit`);
 
       const inputs = page.locator('input[type="number"]');
 
@@ -424,10 +449,12 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
 
     test('6C: Scenario name truncation prevents overflow', async () => {
       await page.setViewportSize({ width: 768, height: 1024 });
-      await page.goto('http://localhost:5173/profit');
+      await page.goto(`${BASE_URL}/profit`);
 
       // Check scenario name display (if user enters long name)
-      const scenarioName = page.locator('[class*="scenario"], [class*="title"]').first();
+      const scenarioName = page
+        .locator('[class*="scenario"], [class*="title"]')
+        .first();
 
       if (await scenarioName.isVisible()) {
         const box = await scenarioName.boundingBox();
@@ -446,7 +473,7 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
 
   test('7A: Layout survives browser font scaling (130%)', async () => {
     // Set zoom level
-    await page.goto('http://localhost:5173/profit');
+    await page.goto(`${BASE_URL}/profit`);
     await page.evaluate(() => {
       document.documentElement.style.fontSize = '130%';
     });
@@ -483,7 +510,7 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
       for (const vp of viewports) {
         test(`8X: ${calc} calculator layout stable on ${vp.name}`, async () => {
           await page.setViewportSize({ width: vp.width, height: vp.height });
-          await page.goto(`http://localhost:5173/${calc}`);
+          await page.goto(`${BASE_URL}/${calc}`);
           await page.waitForLoadState('networkidle');
 
           const inputs = page.locator('input[type="number"]');
@@ -504,3 +531,4 @@ test.describe('Layout Guards: Hard Gate #4 - Form Integrity', () => {
     }
   });
 });
+
