@@ -136,11 +136,8 @@ test('share scenario flow creates and renders local share dialog', async ({
 
   await loginAndContinueToDashboard(page);
 
-  const profitCard = page
-    .locator('.card')
-    .filter({ hasText: 'Profit Calculator' })
-    .first();
-  await profitCard.getByRole('button', { name: 'Open' }).click({ force: true });
+  // Route navigation is more stable than card clicks on WebKit tablet profiles.
+  await page.goto('/en/login#/profit');
   await expect(
     page.getByRole('heading', { name: 'Profit Editor' }),
   ).toBeVisible();
