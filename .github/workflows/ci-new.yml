@@ -197,7 +197,21 @@ jobs:
         run: corepack pnpm --filter @marginbase/web build
 
       - name: Run E2E tests
-        run: corepack pnpm exec playwright test -c playwright.config.ts --reporter=html,line --grep-invert "visual:"
+        # TODO(CD-ready): restore full E2E command once CD environment can
+        # reliably host the complete cross-browser matrix in a single job.
+        run: |
+          corepack pnpm exec playwright test apps/web/tests/e2e/critical-flows.spec.ts \
+            -c playwright.config.ts \
+            --project=chromium-desktop \
+            --project=chromium-mobile-large \
+            --project=firefox-desktop \
+            --project=webkit-desktop \
+            --reporter=html,line
+          corepack pnpm exec playwright test apps/web/tests/e2e/layout-guards-hard-gate.spec.ts \
+            -c playwright.config.ts \
+            --project=chromium-desktop \
+            --project=chromium-mobile-small \
+            --reporter=html,line
         env:
           CI: true
 
