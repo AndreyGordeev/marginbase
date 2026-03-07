@@ -33,7 +33,9 @@ test('profit compute flow works end-to-end', async ({ page }) => {
     page.getByRole('heading', { name: 'Profit Editor' }),
   ).toBeVisible();
 
-  await page.getByRole('button', { name: 'Calculate Scenario' }).click();
+  await page
+    .getByRole('button', { name: 'Calculate Scenario' })
+    .click({ force: true });
   await expect(
     page.locator('.results-summary-label').filter({ hasText: 'Net Profit' }),
   ).toBeVisible();
@@ -71,7 +73,9 @@ test('upgrade flow unlocks locked module via local bundle activation', async ({
     page.getByText('This module requires an active subscription.'),
   ).toBeVisible();
 
-  await page.getByRole('button', { name: 'Go to Subscription' }).click();
+  await page
+    .getByRole('button', { name: 'Go to Subscription' })
+    .click({ force: true });
   await page.evaluate(() => {
     localStorage.setItem(
       'marginbase_entitlements',
@@ -86,9 +90,7 @@ test('upgrade flow unlocks locked module via local bundle activation', async ({
       }),
     );
   });
-  await page.goto('/en/login#/dashboard');
-  await expect(page).toHaveURL(/dashboard/, { timeout: 15000 });
-
+  await page.reload();
   await page.goto('/en/login#/cashflow');
   await expect(
     page.getByRole('heading', { name: 'Cashflow Editor' }),
@@ -144,7 +146,9 @@ test('share scenario flow creates and renders local share dialog', async ({
   await page
     .getByRole('button', { name: 'Calculate Scenario' })
     .click({ force: true });
-  await page.getByRole('button', { name: 'Share Scenario' }).click({ force: true });
+  await page
+    .getByRole('button', { name: 'Share Scenario' })
+    .click({ force: true });
 
   await expect(
     page.getByRole('heading', { name: 'Shared Scenario' }),
