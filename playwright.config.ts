@@ -65,6 +65,7 @@ export default defineConfig({
       name: 'chromium-tablet',
       use: {
         ...devices['iPad (gen 7)'],
+        browserName: 'chromium',
         reducedMotion: 'reduce',
       },
     },
@@ -72,6 +73,7 @@ export default defineConfig({
       name: 'chromium-mobile-small',
       use: {
         ...devices['iPhone SE'],
+        browserName: 'chromium',
         reducedMotion: 'reduce',
       },
     },
@@ -79,6 +81,7 @@ export default defineConfig({
       name: 'chromium-mobile-large',
       use: {
         ...devices['Pixel 7'],
+        browserName: 'chromium',
         reducedMotion: 'reduce',
       },
     },
@@ -86,6 +89,7 @@ export default defineConfig({
       name: 'firefox-tablet',
       use: {
         ...devices['iPad (gen 7)'],
+        browserName: 'firefox',
         reducedMotion: 'reduce',
       },
     },
@@ -93,6 +97,7 @@ export default defineConfig({
       name: 'firefox-mobile-small',
       use: {
         ...devices['iPhone SE'],
+        browserName: 'firefox',
         reducedMotion: 'reduce',
       },
     },
@@ -100,6 +105,7 @@ export default defineConfig({
       name: 'firefox-mobile-large',
       use: {
         ...devices['Pixel 7'],
+        browserName: 'firefox',
         reducedMotion: 'reduce',
       },
     },
@@ -107,6 +113,7 @@ export default defineConfig({
       name: 'webkit-tablet',
       use: {
         ...devices['iPad (gen 7)'],
+        browserName: 'webkit',
         reducedMotion: 'reduce',
       },
     },
@@ -114,6 +121,7 @@ export default defineConfig({
       name: 'webkit-mobile-small',
       use: {
         ...devices['iPhone SE'],
+        browserName: 'webkit',
         reducedMotion: 'reduce',
       },
     },
@@ -121,6 +129,7 @@ export default defineConfig({
       name: 'webkit-mobile-large',
       use: {
         ...devices['Pixel 7'],
+        browserName: 'webkit',
         reducedMotion: 'reduce',
       },
     },
